@@ -19,6 +19,8 @@ You can access the course here 👉 [Coming Soon]
 | 0       | Welcome to the Course                               | Welcome, guidelines, necessary tools, and course overview.                                              |
 | 1       | Introduction to Model Context Protocol              | Definition of MCP, key concepts, and its role in connecting AI models with external data and tools.     |
 | 2       | Building with MCP: Practical Development            | Learn to implement MCP clients and servers using available SDKs and frameworks.                         |
+| 3       | MCP Protocol Deep Dive                            | Explore advanced MCP features, architecture, and real-world integration patterns|
+| 4       | Bonus Units & Collaborations                    | Special topics, partner libraries, and community-driven projects.|
 
 ## Prerequisites
 
@@ -50,4 +52,4 @@ To cite this repository in publications:
   howpublished = {\url{https://github.com/yourusername/mcp-course}},
   note = {GitHub repository},
 }
-``` 
+```
