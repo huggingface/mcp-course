@@ -1,0 +1,251 @@
+# 理解 MCP 能力
+
+MCP 服务器通过通信协议向客户端暴露多种能力。这些能力分为四大主要类别，每个类别都有独特的特性和用例。让我们探索构成 MCP 功能基础的核心要素。
+
+<Tip>
+
+在本节中，我们将以框架无关的函数形式展示不同语言的示例。这样做是为了聚焦概念及其协作方式，而非具体框架的复杂性。
+
+在后续单元中，我们将展示这些概念如何通过 MCP 专用代码实现。
+
+</Tip>
+
+## 工具（Tools）
+
+工具是 AI 模型可以通过 MCP 协议调用的可执行函数或操作。
+
+- **控制**：工具通常是**模型控制**的，即 AI 模型（LLM）根据用户请求和上下文决定何时调用
+- **安全性**：由于可能产生副作用，工具执行可能存在风险，因此通常需要用户明确批准
+- **用例**：发送消息、创建工单、查询 API、执行计算
+
+**示例**：获取指定位置天气数据的工具：
+
+<hfoptions id="tool-example">
+<hfoption id="python">
+
+```python
+def get_weather(location: str) -> dict:
+    """Get the current weather for a specified location."""
+    # Connect to weather API and fetch data
+    return {
+        "temperature": 72,
+        "conditions": "Sunny",
+        "humidity": 45
+    }
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function getWeather(location) {
+    // Connect to weather API and fetch data
+    return {
+        temperature: 72,
+        conditions: 'Sunny',
+        humidity: 45
+    };
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## 资源（Resources）
+
+资源提供对数据源的只读访问，使 AI 模型能够检索上下文而无需执行复杂逻辑。
+
+- **控制**: 资源是**应用控制**的，通常由宿主应用决定访问时机
+- **特性**: 设计用于最小化计算的数据检索，类似 REST API 的 GET 端点
+- **安全性**: 只读特性使其安全风险低于工具
+- **用例**: 访问文件内容、检索数据库记录、读取配置信息
+
+**示例**: 提供文件内容访问的资源：
+
+<hfoptions id="resource-example">
+<hfoption id="python">
+
+```python
+def read_file(file_path: str) -> str:
+    """Read the contents of a file at the specified path."""
+    with open(file_path, 'r') as f:
+        return f.read()
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function readFile(filePath) {
+    // Using fs.readFile to read file contents
+    const fs = require('fs');
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(data);
+        });
+    });
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## 提示词（Prompts）
+
+提示词是预定义的模板或工作流，用于引导用户、AI 模型和服务器能力之间的交互。
+
+- **控制权**：提示词由**用户控制**，通常以选项形式呈现在宿主应用的用户界面中
+- **目的**：优化工具和资源的使用结构
+- **选择时机**：用户通常在 AI 模型开始处理前选择提示词，设定交互的上下文
+- **应用场景**：通用工作流程、专项任务模板、引导式交互
+
+**示例**：生成代码审查的提示模板：
+
+<hfoptions id="prompt-example">
+<hfoption id="python">
+
+```python
+def code_review(code: str, language: str) -> list:
+    """Generate a code review for the provided code snippet."""
+    return [
+        {
+            "role": "system",
+            "content": f"You are a code reviewer examining {language} code. Provide a detailed review highlighting best practices, potential issues, and suggestions for improvement."
+        },
+        {
+            "role": "user",
+            "content": f"Please review this {language} code:\n\n```{language}\n{code}\n```"
+        }
+    ]
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function codeReview(code, language) {
+    return [
+        {
+            role: 'system',
+            content: `You are a code reviewer examining ${language} code. Provide a detailed review highlighting best practices, potential issues, and suggestions for improvement.`
+        },
+        {
+            role: 'user',
+            content: `Please review this ${language} code:\n\n\`\`\`${language}\n${code}\n\`\`\``
+        }
+    ];
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## 采样（Sampling）
+
+采样允许服务端请求客户端（具体指宿主应用）执行 LLM 交互。
+
+- **控制权**：采样由**服务端发起**，但需要客户端/宿主配合
+- **目的**：支持服务端驱动的智能体行为和递归多步骤交互
+- **安全性**：类似工具操作，通常需要用户授权
+- **应用场景**：复杂多步骤任务、自主智能体工作流、交互式流程
+
+**示例**：服务端请求客户端分析已处理数据：
+
+<hfoptions id="sampling-example">
+<hfoption id="python">
+
+```python
+def request_sampling(messages, system_prompt=None, include_context="none"):
+    """Request LLM sampling from the client."""
+    # In a real implementation, this would send a request to the client
+    return {
+        "role": "assistant",
+        "content": "Analysis of the provided data..."
+    }
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function requestSampling(messages, systemPrompt = null, includeContext = 'none') {
+    // In a real implementation, this would send a request to the client
+    return {
+        role: 'assistant',
+        content: 'Analysis of the provided data...'
+    };
+}
+
+function handleSamplingRequest(request) {
+    const { messages, systemPrompt, includeContext } = request;
+    // In a real implementation, this would process the request and return a response
+    return {
+        role: 'assistant',
+        content: 'Response to the sampling request...'
+    };
+}
+```
+
+</hfoption>
+</hfoptions>
+
+采样流程包含以下步骤：
+1. 服务端向客户端发送 `sampling/createMessage` 请求
+2. 客户端审核并可能修改请求
+3. 客户端执行 LLM 采样
+4. 客户端审核生成结果
+5. 客户端返回结果至服务端
+
+<Tip>
+这种人机协同设计确保用户对 LLM 的输入输出保持控制权。实现采样时需注意：
+- 提供结构清晰、内容明确的提示词
+- 包含相关上下文信息
+</Tip>
+
+## 能力协作机制
+
+| 能力类型   | 控制方         | 通信方向               | 副作用   | 需授权 | 典型应用场景         |
+|------------|----------------|------------------------|----------|--------|----------------------|
+| 工具       | 模型 (LLM)     | Client → Server       | 可能有   | 是     | API 调用、数据操作   |
+| 资源       | 应用           | Client → Server       | 无       | 通常否 | 数据检索             |
+| 提示词     | 用户           | Server → Client       | 无       | 否     | 引导式工作流         |
+| 采样       | 服务端         | Server → Client → Server | 间接有 | 是     | 多步骤智能体任务     |
+
+能力协作范例：
+1. 用户选择**提示词**启动专项流程
+2. 提示词整合**资源**提供的上下文
+3. AI 模型调用**工具**执行操作
+4. 复杂任务中服务端使用**采样**请求额外 LLM 处理
+
+这种分层设计为 MCP 交互提供了清晰结构，使 AI 模型能够：
+- 安全访问信息
+- 执行具体操作
+- 处理复杂工作流
+同时保持合理的控制边界
+
+## 动态发现机制
+
+MCP 的关键特性之一是能力动态发现机制：
+- `tools/list`: 发现可用工具
+- `resources/list`: 发现可用资源
+- `prompts/list`: 发现可用提示词
+
+该机制使客户端无需硬编码即可适配不同服务端的能力组合
+
+## 核心价值
+
+理解这些核心要素对于有效使用 MCP 至关重要：
+- **明确的能力边界**：区分不同类型的能力及其控制权
+- **安全机制**：通过授权机制保障敏感操作的安全性
+- **灵活扩展**：支持动态发现新接入的服务端能力
+
+这些设计原则使 MCP 能够：
+- 实现 AI 模型与外部系统的高效交互
+- 保持生态系统的可扩展性
+- 确保复杂场景下的可控性
+
+下一节我们将探索如何通过 Gradio 为这些能力构建易用接口 
