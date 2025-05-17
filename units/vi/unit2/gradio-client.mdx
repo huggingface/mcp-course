@@ -1,0 +1,144 @@
+# Gradio với vai trò Máy khách MCP
+
+Ở chương trước, chúng ta đã tìm hiểu cách tạo MCP Server bằng Gradio và kết nối đến nó bằng một MCP Client. Trong chương này, chúng ta sẽ khám phá cách sử dụng Gradio như một MCP Client để kết nối đến MCP Server.
+
+<Tip>
+
+Gradio phù hợp nhất để tạo UI client và MCP server, nhưng cũng có thể dùng nó như MCP Client và hiển thị dưới dạng UI.
+
+</Tip>
+
+Chúng ta sẽ kết nối đến MCP server đã tạo ở chương trước và dùng nó để trả lời câu hỏi.
+
+## MCP Client trong Gradio
+
+Đầu tiên, cần cài đặt các thư viện `smolagents`, gradio và mcp-client nếu chưa có:
+
+```bash
+pip install smolagents[mcp] gradio[mcp] mcp
+```
+
+Giờ chúng ta có thể import các thư viện cần thiết và tạo giao diện Gradio đơn giản sử dụng MCP Client để kết nối đến MCP Server.
+
+```python
+import gradio as gr
+
+from mcp.client.stdio import StdioServerParameters
+from smolagents import ToolCollection, CodeAgent
+from smolagents import CodeAgent, InferenceClientModel
+from smolagents.mcp_client import MCPClient
+```
+
+Tiếp theo, kết nối đến MCP Server và lấy các công cụ có thể dùng để trả lời câu hỏi.
+
+```python
+mcp_client = MCPClient(
+    {"url": "http://localhost:7860/gradio_api/mcp/sse"}
+)
+tools = mcp_client.get_tools()
+```
+
+Sau khi có các công cụ, ta có thể tạo một agent đơn giản sử dụng chúng để trả lời câu hỏi. Hiện tại chúng ta sẽ dùng `InferenceClientModel` và mô hình mặc định từ `smolagents`.
+
+```python
+model = InferenceClientModel()
+agent = CodeAgent(tools=[*tools], model=model)
+```
+
+Giờ tạo giao diện Gradio đơn giản sử dụng agent để trả lời câu hỏi.
+
+```python
+demo = gr.ChatInterface(
+    fn=lambda message, history: str(agent.run(message)),
+    type="messages",
+    examples=["Prime factorization of 68"],
+    title="Agent with MCP Tools",
+    description="Đây là agent đơn giản sử dụng các công cụ MCP để trả lời câu hỏi.",
+    messages=[],
+)
+
+demo.launch()
+```
+
+Vậy là xong! Chúng ta đã tạo một giao diện Gradio đơn giản dùng MCP Client để kết nối đến MCP Server và trả lời câu hỏi.
+
+<iframe
+	src="https://mcp-course-unit2-gradio-client.hf.space"
+	frameborder="0"
+	width="850"
+	height="450"
+></iframe>
+
+
+## Ví dụ hoàn chỉnh
+
+Dưới đây là ví dụ hoàn chỉnh của MCP Client trong Gradio:
+
+```python
+import gradio as gr
+
+from mcp.client.stdio import StdioServerParameters
+from smolagents import ToolCollection, CodeAgent
+from smolagents import CodeAgent, InferenceClientModel
+from smolagents.mcp_client import MCPClient
+
+
+try:
+    mcp_client = MCPClient(
+        # {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
+        {"url": "http://localhost:7860/gradio_api/mcp/sse"}
+    )
+    tools = mcp_client.get_tools()
+
+    model = InferenceClientModel()
+    agent = CodeAgent(tools=[*tools], model=model)
+
+    def call_agent(message, history):
+        return str(agent.run(message))
+
+
+    demo = gr.ChatInterface(
+        fn=lambda message, history: str(agent.run(message)),
+        type="messages",
+        examples=["Prime factorization of 68"],
+        title="Agent with MCP Tools",
+        description="Đây là agent đơn giản sử dụng các công cụ MCP để trả lời câu hỏi.",
+        messages=[],
+    )
+
+    demo.launch()
+finally:
+    mcp_client.close()
+```
+
+Bạn sẽ thấy chúng ta đóng MCP Client trong khối `finally`. Điều này quan trọng vì MCP Client là đối tượng tồn tại lâu dài cần được đóng khi chương trình kết thúc.
+
+## Triển khai lên Hugging Face Spaces
+
+Để chia sẻ server của bạn với mọi người, bạn có thể triển khai lên Hugging Face Spaces như đã làm ở chương trước.
+Để triển khai Gradio MCP client lên Hugging Face Spaces:
+
+1. Tạo Space mới trên Hugging Face:
+   - Truy cập huggingface.co/spaces
+   - Click "Create new Space"
+   - Chọn "Gradio" làm SDK
+   - Đặt tên cho Space (ví dụ: "mcp-client")
+
+2. Tạo một tệp `requirements.txt`:
+```txt
+gradio[mcp]
+smolagents[mcp]
+```
+
+3. Đẩy code lên Space:
+```bash
+git init
+git add server.py requirements.txt
+git commit -m "Initial commit"
+git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/mcp-client
+git push -u origin main
+```
+
+## Kết luận
+
+Trong phần này, chúng ta đã tìm hiểu cách sử dụng Gradio như một MCP Client để kết nối đến một MCP Server. Chúng ta cũng đã xem qua cách triển khai MCP Client trên Hugging Face Spaces.

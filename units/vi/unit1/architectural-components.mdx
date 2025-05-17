@@ -1,0 +1,85 @@
+# Các thành phần kiến trúc của MCP
+
+Ở chương trước, chúng ta đã thảo luận về các khái niệm và thuật ngữ chính của MCP. Giờ hãy cùng đi sâu hơn vào các thành phần kiến trúc tạo nên hệ sinh thái MCP.
+
+## Host, Client và Server
+
+Giao Thức Ngữ Cảnh Mô Hình (MCP) được xây dựng trên kiến trúc client-server để kích hoạt giao tiếp có cấu trúc giữa các mô hình AI và hệ thống bên ngoài.
+
+![MCP Architecture](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/4.png)
+
+Kiến trúc MCP bao gồm ba thành phần chính với vai trò và trách nhiệm được xác định rõ ràng: Host, Client và Server. Chúng ta đã đề cập sơ qua ở phần trước, giờ hãy phân tích kỹ hơn từng thành phần.
+
+### Host
+
+**Host** là ứng dụng AI tiếp xúc trực tiếp với người dùng cuối. 
+
+Ví dụ bao gồm:
+- Ứng dụng chat AI như OpenAI ChatGPT hay Claude Desktop của Anthropic
+- IDE tích hợp AI như Cursor, hoặc các công cụ như Continue.dev
+- Các agent AI tùy chỉnh và ứng dụng xây dựng bằng thư viện như LangChain hay smolagents
+
+Trách nhiệm của Host:
+- Quản lý tương tác và quyền hạn người dùng
+- Thiết lập kết nối tới MCP Server thông qua MCP Client
+- Điều phối luồng xử lý giữa yêu cầu người dùng, xử lý LLM và công cụ bên ngoài
+- Hiển thị kết quả cho người dùng dưới định dạng mạch lạc
+
+Thông thường, người dùng sẽ chọn ứng dụng Host dựa trên nhu cầu cá nhân. Ví dụ, nhà phát triển có thể chọn Cursor cho khả năng chỉnh sửa mã mạnh mẽ, trong khi chuyên gia nghiệp vụ có thể dùng ứng dụng tùy chỉnh xây bằng smolagents.
+
+### Client
+
+**Client** là thành phần trong ứng dụng Host quản lý giao tiếp với một MCP Server cụ thể. Đặc điểm chính:
+
+- Mỗi Client duy trì kết nối 1:1 với một Server
+- Xử lý các chi tiết giao thức của MCP
+- Đóng vai trò trung gian giữa logic của Host và Server bên ngoài
+
+### Server
+
+**Server** là chương trình/dịch vụ bên ngoài cung cấp khả năng truy cập vào các công cụ, nguồn dữ liệu hoặc dịch vụ thông qua giao thức MCP. Server:
+
+- Cung cấp quyền truy cập vào các công cụ/dịch vụ bên ngoài
+- Đóng vai trò lớp bao bọc nhẹ cho chức năng có sẵn
+- Có thể chạy cục bộ (cùng máy với Host) hoặc từ xa (qua mạng)
+- Cung cấp khả năng dưới định dạng chuẩn để Client khám phá và sử dụng
+
+## Luồng giao tiếp
+
+Cùng xem cách các thành phần tương tác trong quy trình MCP điển hình:
+
+<Tip>
+
+Trong phần tiếp theo, chúng ta sẽ khám phá sâu hơn về giao thức giao tiếp với các ví dụ thực tế.
+
+</Tip>
+
+1. **Tương tác người dùng**: Người dùng tương tác với ứng dụng **Host**, thể hiện nhu cầu hoặc truy vấn.
+
+2. **Xử lý Host**: **Host** xử lý đầu vào, có thể dùng LLM để hiểu yêu cầu và xác định cần dùng công cụ nào.
+
+3. **Kết nối Client**: **Host** hướng dẫn **Client** kết nối tới Server phù hợp.
+
+4. **Khám phá khả năng**: **Client** truy vấn **Server** để biết các khả năng (Công cụ, Tài nguyên, Prompt) mà nó cung cấp.
+
+5. **Kích hoạt khả năng**: Dựa trên nhu cầu người dùng hoặc quyết định của LLM, Host yêu cầu **Client** kích hoạt khả năng cụ thể từ **Server**.
+
+6. **Thực thi Server**: **Server** thực thi chức năng được yêu cầu và trả kết quả về **Client**.
+
+7. **Tích hợp kết quả**: **Client** chuyển kết quả về **Host**, nơi tích hợp chúng vào ngữ cảnh LLM hoặc hiển thị trực tiếp cho người dùng.
+
+Ưu điểm chính của kiến trúc này là tính mô-đun. Một Host duy nhất có thể kết nối với nhiều Server cùng lúc thông qua các Client khác nhau. Có thể thêm Server mới vào hệ sinh thái mà không cần thay đổi Host hiện có. Có thể dễ dàng kết hợp các khả năng trên nhiều Server khác nhau.
+
+<Tip>
+
+Như đã thảo luận ở phần trước, tính mô-đun này biến bài toán tích hợp M×N truyền thống (khi M ứng dụng AI kết nối với N công cụ/dịch vụ) thành một bài toán M+N dễ quản lý hơn - nơi mỗi Host và Server chỉ cần triển khai chuẩn MCP một lần.
+
+</Tip>
+
+Kiến trúc này trông có vẻ đơn giản, nhưng sức mạnh thực sự nằm ở việc chuẩn hóa giao thức truyền thông và sự phân tách rõ ràng trách nhiệm giữa các thành phần. Thiết kế này cho phép tạo ra một hệ sinh thái gắn kết nơi các mô hình AI có thể kết nối liền mạch với một mảng các công cụ và nguồn dữ liệu bên ngoài ngày càng phát triển.
+
+## Kết luận
+
+Những mẫu tương tác này được định hướng bởi các nguyên tắc chính định hình thiết kế và sự phát triển của MCP. Giao thức nhấn mạnh **tính chuẩn hóa** thông qua việc cung cấp một giao thức kết nối phổ quát cho AI, đồng thời duy trì **sự đơn giản** bằng cách giữ phần lõi giao thức dễ hiểu nhưng vẫn hỗ trợ các tính năng nâng cao. **An toàn** được ưu tiên thông qua yêu cầu phê duyệt rõ ràng từ người dùng cho các thao tác nhạy cảm, trong khi khả năng khám phá cho phép phát hiện động các chức năng. Giao thức được xây dựng với tư duy **mở rộng**, hỗ trợ phát triển thông qua phiên bản hóa và đàm phán chức năng, đồng thời đảm bảo **khả năng tương tác** giữa các triển khai và môi trường khác nhau.
+
+Trong phần tiếp theo, chúng ta sẽ khám phá giao thức truyền thông giúp các thành phần này phối hợp hiệu quả với nhau.

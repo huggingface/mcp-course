@@ -1,0 +1,422 @@
+# MCP Clients
+
+Giờ khi đã hiểu cơ bản về Giao Thức Ngữ Cảnh Mô Hình (MCP), chúng ta có thể khám phá vai trò quan trọng của Client MCP trong hệ sinh thái MCP.
+
+Trong phần này của Chương 1, chúng ta sẽ khám phá vai trò thiết yếu của Client MCP trong hệ sinh thái MCP.
+
+Trong phần này, các bạn sẽ:
+
+* Hiểu Client MCP là gì và vai trò của chúng trong kiến trúc MCP
+* Tìm hiểu về các trách nhiệm chính của Client MCP
+* Khám phá các triển khai Client MCP chính
+* Khám phá cách sử dụng triển khai Client MCP của Hugging Face
+* Xem các ví dụ thực tế về cách sử dụng Client MCP
+
+## Hiểu về Client MCP
+
+Client MCP là thành phần quan trọng đóng vai trò cầu nối giữa các ứng dụng AI (Server) và các khả năng bên ngoài được cung cấp bởi Server MCP. Hãy hình dung Server như ứng dụng chính của bạn (ví dụ: trợ lý AI hoặc IDE) và Client như một mô-đun chuyên biệt trong Server đó chịu trách nhiệm xử lý các giao tiếp MCP.
+
+## Client giao diện người dùng
+
+Hãy bắt đầu bằng cách khám phá các Client giao diện người dùng có sẵn cho MCP.
+
+### Client giao diện chat
+
+Claude Desktop của Anthropic là một trong những Client MCP nổi bật nhất, cung cấp tích hợp với nhiều Server MCP khác nhau.
+
+### Client phát triển tương tác
+
+Triển khai Client MCP của Cursor cho phép trợ lý lập trình hỗ trợ AI thông qua tích hợp trực tiếp với các tính năng chỉnh sửa code. Nó hỗ trợ nhiều kết nối Server MCP và cung cấp khả năng gọi công cụ thời gian thực khi lập trình, biến nó thành công cụ mạnh mẽ cho các nhà phát triển.
+
+Continue.dev là một ví dụ khác về Client phát triển tương tác hỗ trợ MCP và kết nối với Server MCP từ VS Code.
+
+## Cấu hình Client MCP
+
+Giờ khi đã nắm được phần cốt lõi của giao thức MCP, hãy xem cách cấu hình các Server và Client MCP của bạn.
+
+Triển khai hiệu quả các Server và Client MCP yêu cầu cấu hình đúng cách.
+
+<Tip>
+
+Đặc tả MCP vẫn đang phát triển, vì vậy các phương pháp cấu hình có thể thay đổi. Chúng ta sẽ tập trung vào các phương pháp tốt nhất hiện tại để cấu hình.
+
+</Tip>
+
+### Tệp cấu hình MCP
+
+Các Server MCP sử dụng các tệp cấu hình để quản lý kết nối với Server. Những tệp này xác định các Server nào có sẵn và cách kết nối với chúng.
+
+May mắn là các tệp cấu hình rất đơn giản, dễ hiểu và thống nhất giữa các Server MCP chính.
+
+#### Cấu trúc `mcp.json`
+
+Tệp cấu hình tiêu chuẩn cho MCP có tên `mcp.json`. Đây là cấu trúc cơ bản:
+
+```json
+{
+  "servers": [
+    {
+      "name": "Server Name",
+      "transport": {
+        "type": "stdio|sse",
+        // Cấu hình cụ thể cho phương thức truyền tải
+      }
+    }
+  ]
+}
+```
+
+Trong ví dụ này, chúng ta có một Server duy nhất với tên và loại phương thức truyền tải. Loại phương thức truyền tải có thể là `stdio` hoặc `sse`.
+
+#### Cấu hình cho phương thức truyền tải stdio
+
+Đối với các Server cục bộ sử dụng phương thức truyền tải stdio, cấu hình bao gồm lệnh và các đối số để khởi chạy tiến trình Server:
+
+```json
+{
+  "servers": [
+    {
+      "name": "File Explorer",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+Ở đây, chúng ta có một Server có tên "File Explorer" là một tập lệnh cục bộ.
+
+#### Cấu hình cho phương thức truyền tải HTTP+SSE
+
+Đối với các Server từ xa sử dụng phương thức truyền tải HTTP+SSE, cấu hình bao gồm URL của Server:
+
+```json
+{
+  "servers": [
+    {
+      "name": "Remote API Server",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+#### Biến môi trường trong cấu hình
+
+Các biến môi trường có thể được truyền vào tiến trình Server bằng cách sử dụng trường `env`. Đây là cách truy cập chúng trong mã Server của bạn:
+
+<hfoptions id="env-variables">
+<hfoption id="python">
+
+Trong Python, chúng ta sử dụng module `os` để truy cập các biến môi trường:
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```
+import os
+
+# Truy cập các biến môi trường
+github_token = os.environ.get("GITHUB_TOKEN")
+if not github_token:
+    raise ValueError("GITHUB_TOKEN environment variable is required")
+
+# Sử dụng token trong mã Server
+def make_github_request():
+    headers = {"Authorization": f"Bearer {github_token}"}
+    # ... phần còn lại của mã
+```
+</details>
+```
+import os
+
+# Access environment variables
+github_token = os.environ.get("GITHUB_TOKEN")
+if not github_token:
+    raise ValueError("GITHUB_TOKEN environment variable is required")
+
+# Use the token in your server code
+def make_github_request():
+    headers = {"Authorization": f"Bearer {github_token}"}
+    # ... rest of your code
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+Trong JavaScript, chúng ta sử dụng object `process.env` để truy cập các biến môi trường:
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```
+// Truy cập các biến môi trường
+const githubToken = process.env.GITHUB_TOKEN;
+if (!githubToken) {
+    throw new Error("GITHUB_TOKEN environment variable is required");
+}
+
+// Sử dụng token trong mã Server
+function makeGithubRequest() {
+    const headers = { "Authorization": `Bearer ${githubToken}` };
+    // ... phần còn lại của mã
+}
+```
+</details>
+```
+// Access environment variables
+const githubToken = process.env.GITHUB_TOKEN;
+if (!githubToken) {
+    throw new Error("GITHUB_TOKEN environment variable is required");
+}
+
+// Use the token in your server code
+function makeGithubRequest() {
+    const headers = { "Authorization": `Bearer ${githubToken}` };
+    // ... rest of your code
+}
+```
+
+</hfoption>
+</hfoptions>
+
+Cấu hình tương ứng trong `mcp.json` sẽ trông như thế này:
+
+```json
+{
+  "servers": [
+    {
+      "name": "GitHub API",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/github_server.py"],
+        "env": {
+          "GITHUB_TOKEN": "your_github_token"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Ví dụ về Cấu hình
+
+Hãy cùng xem qua một số kịch bản cấu hình trong thực tế:
+
+#### Kịch bản 1: Cấu hình Server Cục bộ
+
+Trong kịch bản này, chúng ta có một Server cục bộ là script Python có thể là trình khám phá file hoặc trình chỉnh sửa code.
+
+```json
+{
+  "servers": [
+    {
+      "name": "File Explorer",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+#### Kịch bản 2: Cấu hình Server Từ xa
+
+Trong kịch bản này, chúng ta có một Server từ xa là API thời tiết.
+
+```json
+{
+  "servers": [
+    {
+      "name": "Weather API",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+Việc cấu hình đúng cách là yếu tố thiết yếu để triển khai thành công các tích hợp MCP. Bằng cách hiểu rõ các khía cạnh này, các bạn có thể tạo ra các kết nối mạnh mẽ và đáng tin cậy giữa các ứng dụng AI và các khả năng bên ngoài.
+
+Trong phần tiếp theo, chúng ta sẽ khám phá hệ sinh thái các Server MCP có sẵn trên Hugging Face Hub và cách xuất bản Server của riêng bạn tại đó.
+
+## Code Clients
+
+Bạn cũng có thể sử dụng MCP Client trong code để các công cụ có sẵn cho LLM. Hãy cùng khám phá một số ví dụ trong `smolagents`.
+
+Đầu tiên, hãy xem qua Server thời tiết từ trang trước. Trong `smolagents`, chúng ta có thể sử dụng lớp `ToolCollection` để tự động phát hiện và đăng ký các công cụ từ Server MCP. Việc này được thực hiện bằng cách truyền `StdioServerParameters` hoặc `SSEServerParameters` vào phương thức `ToolCollection.from_mcp`. Sau đó chúng ta có thể in các công cụ ra console.
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp.client.stdio import StdioServerParameters
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tools:
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+```
+</details>
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp.client.stdio import StdioServerParameters
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tools:
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+
+```
+
+<details>
+<summary>
+Kết quả
+</summary>
+
+```sh
+Weather API: Get the weather in a specific location
+
+```
+
+</details>
+
+Chúng ta cũng có thể kết nối đến Server MCP được host trên máy từ xa. Trong trường hợp này, chúng ta cần truyền `SSEServerParameters` vào phương thức `ToolCollection.from_mcp`.
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```python
+from smolagents.mcp_client import MCPClient
+
+with MCPClient(
+    {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
+) as tools:
+    # Tools from the remote server are available
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+```
+</details>
+```python
+from smolagents.mcp_client import MCPClient
+
+with MCPClient(
+    {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
+) as tools:
+    # Tools from the remote server are available
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+```
+
+<details>
+<summary>
+Kết quả
+</summary>
+
+```sh
+prime_factors: Compute the prime factorization of a positive integer.
+generate_cheetah_image: Generate a cheetah image.
+image_orientation: Returns whether image is portrait or landscape.
+sepia: Apply a sepia filter to the input image.
+```
+
+</details>
+
+Bây giờ hãy xem cách sử dụng MCP Client trong một code agent.
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp.client.stdio import StdioServerParameters
+from smolagents import CodeAgent, InferenceClientModel
+
+model = InferenceClientModel()
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], model=model)
+    agent.run("What's the weather in Tokyo?")
+```
+</details>
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp.client.stdio import StdioServerParameters
+from smolagents import CodeAgent, InferenceClientModel
+
+model = InferenceClientModel()
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], model=model)
+    agent.run("What's the weather in Tokyo?")
+
+```
+
+<details>
+<summary>
+Kết quả
+</summary>
+
+```sh
+The weather in Tokyo is sunny with a temperature of 20 degrees Celsius.
+```
+
+</details>
+
+Chúng ta cũng có thể kết nối đến các gói MCP. Đây là ví dụ về cách kết nối đến gói `pubmedmcp`.
+
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp import StdioServerParameters
+
+server_parameters = StdioServerParameters(
+    command="uv",
+    args=["--quiet", "pubmedmcp@0.1.3"],
+    env={"UV_PYTHON": "3.12", **os.environ},
+)
+
+with ToolCollection.from_mcp(server_parameters, trust_remote_code=True) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], add_base_tools=True)
+    agent.run("Please find a remedy for hangover.")
+```
+
+<details>
+<summary>Kết quả</summary>
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```sh
+Phương pháp chữa nôn nao là uống nước.
+```
+</details>
+```sh
+The remedy for hangover is to drink water.
+```
+
+</details>
+
+## Bước tiếp theo
+
+Giờ bạn đã hiểu về MCP Client, hãy sẵn sàng để:
+* Khám phá các triển khai MCP Server cụ thể
+* Tìm hiểu về cách tạo MCP Client tùy chỉnh
+* Đi sâu vào các mẫu tích hợp MCP nâng cao
+
+Hãy tiếp tục hành trình của chúng ta vào thế giới của Giao Thức Ngữ Cảnh Mô Hình!

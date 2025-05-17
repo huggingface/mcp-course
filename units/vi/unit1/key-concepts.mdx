@@ -1,0 +1,88 @@
+# Các Khái Niệm và Thuật Ngữ Chính
+
+Trước khi đi sâu vào Giao Thức Ngữ Cảnh Mô Hình (MCP), chúng ta cần hiểu các khái niệm và thuật ngữ then chốt tạo nền tảng cho MCP. Chương này sẽ giới thiệu những ý tưởng cốt lõi cùng bộ từ vựng chung để thảo luận về các triển khai MCP xuyên suốt khóa học.
+
+MCP thường được ví như "USB-C cho các ứng dụng AI". Giống như USB-C cung cấp giao diện vật lý và logic chuẩn hóa để kết nối các thiết bị ngoại vi với máy tính, MCP đưa ra giao thức đồng nhất để liên kết các mô hình AI với khả năng mở rộng. Sự chuẩn hóa này mang lợi ích cho toàn bộ hệ sinh thái:
+
+- **Người dùng** được trải nghiệm đơn giản và nhất quán hơn trên mọi ứng dụng AI
+- **Nhà phát triển ứng dụng AI** dễ dàng tích hợp với hệ sinh thái công cụ và nguồn dữ liệu ngày càng phong phú
+- **Nhà cung cấp công cụ/dữ liệu** chỉ cần xây dựng một triển khai duy nhất tương thích với nhiều ứng dụng AI
+- **Toàn hệ sinh thái** hưởng lợi từ khả năng tương tác cao hơn, đổi mới mạnh mẽ hơn và giảm phân mảnh
+
+## Bài Toán Tích Hợp
+
+**Bài Toán Tích Hợp M×N** ám chỉ thách thức khi kết nối M ứng dụng AI khác nhau với N công cụ/nguồn dữ liệu ngoài mà không có phương pháp chuẩn hóa.
+
+### Không có MCP (Bài Toán M×N)
+
+Không có giao thức như MCP, nhà phát triển phải tạo M×N tích hợp tùy biến - mỗi tích hợp cho một cặp ứng dụng AI với khả năng mở rộng.
+
+![Without MCP](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/1.png)
+
+Mỗi ứng dụng AI cần tích hợp riêng lẻ với từng công cụ/nguồn dữ liệu. Quá trình này rất phức tạp, tốn kém và gây nhiều khó khăn cho nhà phát triển, đồng thời làm tăng chi phí bảo trì.
+
+### Với MCP (Giải Pháp M+N)
+
+MCP biến bài toán này thành M+N bằng cách cung cấp giao diện chuẩn: mỗi ứng dụng AI triển khai phía Máy khách MCP một lần, mỗi công cụ/nguồn dữ liệu triển khai phía Máy chủ một lần. Cách này giảm đáng kể độ phức tạp tích hợp và gánh nặng bảo trì.
+
+![With MCP](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/2.png)
+
+Mỗi ứng dụng AI triển khai phía Máy khách MCP một lần, mỗi công cụ/nguồn dữ liệu triển khai phía Máy chủ một lần.
+
+## Thuật ngữ cốt lõi trong MCP
+
+Giờ chúng ta đã hiểu vấn đề mà MCP giải quyết, hãy cùng khám phá các thuật ngữ và khái niệm cốt lõi tạo nên giao thức MCP.
+
+<Tip>
+
+MCP là một chuẩn như HTTP hay USB-C, và là giao thức để kết nối các ứng dụng AI với công cụ và nguồn dữ liệu bên ngoài. Vì vậy, việc sử dụng thuật ngữ chuẩn là cực kỳ quan trọng để MCP hoạt động hiệu quả.
+
+Khi viết tài liệu ứng dụng và trao đổi với cộng đồng, chúng ta nên sử dụng các thuật ngữ sau đây.
+
+</Tip>
+
+### Thành phần
+
+Tương tự như mối quan hệ client-server trong HTTP, MCP có client (máy khách) và server (máy chủ).
+
+![MCP Components](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/3.png)
+
+- **Host**: Ứng dụng AI mà người dùng cuối tương tác trực tiếp. Ví dụ: Claude Desktop của Anthropic, các IDE tích hợp AI như Cursor, thư viện inference như Hugging Face Python SDK, hoặc ứng dụng tùy chỉnh xây dựng bằng thư viện như LangChain hay smolagents. Host khởi tạo kết nối đến Máy chủ MCP và điều phối luồng làm việc giữa yêu cầu người dùng, xử lý LLM và công cụ bên ngoài.
+
+- **Client**: Thành phần trong ứng dụng Host quản lý giao tiếp với một MCP Server cụ thể. Mỗi Client duy trì kết nối 1:1 với một Server, xử lý các chi tiết giao thức của MCP và đóng vai trò trung gian giữa logic của Host và Server bên ngoài.
+
+- **Server**: Chương trình hoặc dịch vụ bên ngoài cung cấp các khả năng (Tools, Resources, Prompts) thông qua giao thức MCP.
+
+<Tip warning={true}>
+
+Nhiều tài liệu sử dụng 'Client' và 'Host' thay thế cho nhau. Về mặt kỹ thuật, Host là ứng dụng hướng đến người dùng, còn Client là thành phần bên trong ứng dụng Host quản lý giao tiếp với MCP Server.
+
+</Tip>
+
+### Khả năng
+
+Tất nhiên, giá trị ứng dụng của bạn được quyết định bởi tổng các khả năng mà nó cung cấp. Các khả năng là phần quan trọng nhất trong ứng dụng. MCP có thể kết nối với mọi dịch vụ phần mềm, nhưng có một số khả năng phổ biến được dùng cho nhiều ứng dụng AI.
+
+| Khả năng     | Mô tả         | Ví dụ         |
+| ------------ | ------------- | ------------- |
+| **Tools**    | Các hàm có thể thực thi mà mô hình AI có thể gọi để thực hiện hành động hoặc truy xuất dữ liệu đã tính toán. Thường liên quan đến use case của ứng dụng. | Một tool cho ứng dụng thời tiết có thể là hàm trả về thời tiết ở địa điểm cụ thể. |
+| **Resources** | Nguồn dữ liệu chỉ đọc cung cấp ngữ cảnh mà không cần tính toán phức tạp. | Trợ lý nghiên cứu có thể có nguồn về các bài báo khoa học. |
+| **Prompts**   | Các mẫu hoặc quy trình làm việc được định nghĩa sẵn để hướng dẫn tương tác giữa người dùng, mô hình AI và các khả năng có sẵn. | Prompt tóm tắt văn bản. |
+| **Sampling**  | Các yêu cầu do Máy chủ khởi tạo để Client/Host thực hiện tương tác LLM, cho phép hành động đệ quy nơi LLM có thể xem xét nội dung đã tạo và đưa ra quyết định tiếp theo. | Ứng dụng viết lách tự đánh giá output và quyết định cải thiện thêm. |
+
+Trong sơ đồ sau, chúng ta có thể thấy các khả năng được áp dụng cho use case của một CodeAgent.
+
+![collective diagram](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/8.png)
+
+Ứng dụng này có thể sử dụng các thực thể MCP theo cách sau:
+
+| Thực thể | Tên            | Mô tả                     |
+| -------- | -------------- | ------------------------- |
+| Tool     | Code Interpreter | Công cụ có thể thực thi mã mà LLM viết. |
+| Resource | Documentation  | Tài nguyên chứa tài liệu hướng dẫn của ứng dụng. |
+| Prompt   | Code Style     | Prompt hướng dẫn LLM tạo mã. |
+| Sampling | Code Review    | Sampling cho phép LLM review mã và đưa ra quyết định tiếp theo.|
+
+### Kết luận
+
+Hiểu rõ những khái niệm và thuật ngữ chính này sẽ tạo nền tảng để làm việc hiệu quả với MCP (Giao Thức Ngữ Cảnh Mô Hình). Trong các phần tiếp theo, chúng ta sẽ xây dựng dựa trên nền tảng này để khám phá các thành phần kiến trúc, giao thức truyền thông và tính năng tạo nên Giao Thức Ngữ Cảnh Mô Hình.
