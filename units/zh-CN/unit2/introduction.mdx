@@ -1,0 +1,64 @@
+# 构建端到端 MCP 应用
+
+欢迎来到 MCP 课程的第二单元！
+
+在本单元中，我们将从零开始构建一个完整的 MCP 应用，重点创建使用 Gradio 的服务器并连接多个客户端。这种实践方法将让你获得整个 MCP 生态系统的实际经验。
+
+<Tip>
+
+在本单元中，我们将使用 Gradio 和 HuggingFace hub 构建一个简单的 MCP 服务器和客户端。在下一个单元中，我们将构建一个更复杂的服务器来解决实际用例。
+
+</Tip>
+
+## 你将学到什么
+
+在本单元中，你将：
+
+- 使用 Gradio 内置的 MCP 支持创建 MCP 服务器
+- 构建一个可供 AI 模型使用的情感分析工具
+- 使用不同的客户端实现连接到服务器：
+  - 基于 HuggingFace.js 的客户端
+  - 基于 SmolAgents 的 Python 客户端
+- 将你的 MCP 服务器部署到 Hugging Face Spaces
+- 测试和调试完整系统
+
+在本单元结束时，你将拥有一个展示协议强大功能和灵活性的可运行的 MCP 应用。
+
+## 前提条件
+
+在继续本单元之前，请确保你：
+
+- 已完成第一单元或对 MCP 概念有基本了解
+- 熟悉 Python 和 JavaScript/TypeScript
+- 对 API 和客户端-服务器架构有基本了解
+- 拥有包含以下内容的开发环境：
+  - Python 3.10+
+  - Node.js 18+
+  - Hugging Face 账户（用于部署）
+
+## 我们的端到端项目
+
+我们将构建一个情感分析应用，它包含三个主要部分：服务器、客户端和部署。
+
+![情感分析应用](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit2/1.png)
+
+### 服务器端
+
+- 使用 Gradio 通过 `gr.Interface` 创建 Web 界面和 MCP 服务器
+- 使用 TextBlob 实现情感分析工具
+- 通过 HTTP 和 MCP 协议暴露工具
+
+### 客户端
+
+- 实现 HuggingFace.js 客户端
+- 或创建 smolagents Python 客户端
+- 演示如何使用不同的客户端实现连接同一个服务器
+
+### 部署
+
+- 将服务器部署到 Hugging Face Spaces
+- 配置客户端以与已部署的服务器配合工作
+
+## 让我们开始吧！
+
+准备好构建你的第一个端到端 MCP 应用了吗？让我们从设置开发环境和创建 Gradio MCP 服务器开始。
