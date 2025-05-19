@@ -165,17 +165,24 @@ gradio[mcp]
 textblob
 ```
 
-3. Push your code to the Space:
+3. Create a token to push your code to 
+   - Go to https://huggingface.co/settings/tokens
+   - Click "+ Create new token"
+   - Click "write"
+   - Enter Token name
+   - Click "Create token"
+   - Copy Token to your clipboard (used in next step)
+
+4. Return to your files/IDE and Push your code to the Space:
 ```bash
-cp server.py app.py
 git init
 git add app.py requirements.txt
 git commit -m "Initial commit"
-git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/mcp-sentiment
+git remote add origin https://YOUR_USERNAME:YOUR_TOKEN@huggingface.co/spaces/YOUR_USERNAME/mcp-sentiment
 git push -u origin main
 ```
 
-Your MCP server will now be available at:
+Your MCP server will start and then will be available at:
 ```
 https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse
 ```
