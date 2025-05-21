@@ -27,11 +27,15 @@ import gradio as gr
 from mcp.client.stdio import StdioServerParameters
 from smolagents import InferenceClientModel, CodeAgent, ToolCollection
 from smolagents.mcp_client import MCPClient
+from huggingface_hub import login
 ```
 
-Next, we'll connect to the MCP Server and get the tools that we can use to answer questions.
+Next, we'll login to HF Hub and then connect to the MCP Server and get the tools that we can use to answer questions.
 
 ```python
+# login if running MCP Client locally. This is not needed if deploying the app on HF Hub
+login("<your_token_goes_here>")
+
 mcp_client = MCPClient(
     {"url": "http://localhost:7860/gradio_api/mcp/sse"}
 )
@@ -54,7 +58,6 @@ demo = gr.ChatInterface(
     examples=["Prime factorization of 68"],
     title="Agent with MCP Tools",
     description="This is a simple agent that uses MCP tools to answer questions.",
-    messages=[],
 )
 
 demo.launch()
@@ -80,7 +83,10 @@ import gradio as gr
 from mcp.client.stdio import StdioServerParameters
 from smolagents import InferenceClientModel, CodeAgent, ToolCollection
 from smolagents.mcp_client import MCPClient
+from huggingface_hub import login
 
+# login if running MCP Client locally. This is not needed if deploying the app on HF Hub
+login("<your_token_goes_here>")
 
 try:
     mcp_client = MCPClient(
