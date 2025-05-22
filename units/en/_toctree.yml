@@ -41,12 +41,12 @@
   - local: unit2/tiny-agents
     title: Building a Tiny Agent with TypeScript
 
-- title: "3. Use Case: Advanced MCP Development"
+- title: "3. Advanced MCP Development: Custom Workflow Servers"
   sections:
   - local: unit3/introduction
-    title: Coming Soon
+    title: Building Custom Workflow Servers for Claude Code
 
-- title: "Bonus Units"
+- title: "4. Production Deployment: Remote Servers and Authentication"
   sections:
   - local: unit4/introduction
-    title: Coming Soon
+    title: Remote Servers, Authentication, and Deployment

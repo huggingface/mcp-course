@@ -1,3 +1,49 @@
-# Coming Soon
+# Advanced MCP Development: Building Custom Workflow Servers for Claude Code
 
-This will be another use case that dives deeper into the MCP protocol and how to use it in more complex ways.
+Welcome to Unit 3! In this unit, we'll build a production-ready MCP server that enhances Claude Code with custom development workflows.
+
+## What You'll Build
+
+**Development Workflow Server** - An MCP server that makes Claude Code team-aware and workflow-intelligent:
+
+- **Smart PR Management**: Automatic PR template selection based on code changes
+- **Post-Actions Automation**: React to GitHub Actions completion via webhooks and orchestrate follow-up tasks
+- **Team Communication**: Slack notifications with intelligent summaries of workflow results
+- **Claude Code Integration**: Connect your server so Claude Code understands your team's specific processes
+
+## Real-World Case Study
+
+We'll implement a practical scenario every development team faces:
+
+**Before**: Developer manually creates PRs, waits for Actions to complete, manually checks results, remembers to notify team members
+
+**After**: Claude Code connected to your workflow server can intelligently:
+- Suggest the right PR template based on changed files
+- Monitor GitHub Actions runs and provide formatted summaries
+- Automatically notify team via Slack when deployments succeed/fail
+- Guide developers through team-specific review processes based on Actions results
+
+## Key Learning Outcomes
+
+1. **Production MCP Server Architecture**: Security, error handling, and webhook management
+2. **GitHub Actions Integration**: Monitoring Actions runs, parsing results, and orchestrating follow-up workflows
+3. **Claude Code Enhancement**: Making Claude Code team-specific and workflow-aware
+4. **Multi-System Coordination**: Connecting GitHub, Slack, and CI/CD monitoring through a unified MCP interface
+
+## Tutorial Structure
+
+1. **Server Foundation**: Build the core MCP server with proper authentication and error handling
+2. **PR Template Intelligence**: Implement smart template selection based on file changes
+3. **Actions Monitoring**: Set up webhooks to track GitHub Actions completion and parse results
+4. **Slack Integration**: Create formatted notifications based on workflow outcomes
+5. **Claude Code Connection**: Configure Claude Code to use your workflow server
+6. **End-to-End Testing**: Demonstrate the complete workflow from PR creation to team notification
+
+## Prerequisites
+
+- Completion of Units 1 and 2
+- Basic familiarity with GitHub Actions and webhook concepts
+- Claude Code installed and configured
+- Access to a GitHub repository for testing
+
+By the end of this unit, you'll have a production-ready MCP server that transforms Claude Code into a powerful team development assistant.

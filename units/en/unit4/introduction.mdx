@@ -1,5 +1,106 @@
-# Coming Soon
+# Remote Servers, Authentication, and Deployment
 
-This unit will be a collaboration with partners from the AI community.
+Welcome to Unit 4! In this unit, we'll build on our workflow server from Unit 3 and advance your MCP development skills by focusing on practical deployment knowledge: remote servers, authentication systems, and production deployment strategies.
 
-If you're building tools for MCP, please reach out to us and we'll add you to the unit. Open a [discussion](https://huggingface.co/spaces/mcp-course/README/discussions) on the hub organization.
+## Going Production-Ready
+
+**Unit 3 Recap**: Building custom workflow servers for Claude Code in a local development environment
+
+**Unit 4 Focus**: Taking your MCP applications to production with remote deployment and authentication using Cloudflare Workers
+
+## What You'll Learn
+
+### Cloudflare Workers Remote MCP Deployment
+
+Learn how to deploy MCP workflow servers as remote services using Cloudflare Workers:
+
+- **Remote MCP Architecture**: Understanding Cloudflare's remote Model Context Protocol implementation
+- **Durable Objects**: Using stateful server patterns with persistent storage ([pricing details](https://developers.cloudflare.com/durable-objects/platform/pricing/))
+- **Server-Sent Events (SSE)**: Implementing real-time communication for MCP servers
+- **Global Distribution**: Deploying MCP servers close to users worldwide
+
+### OAuth 2.1 Authentication Implementation
+
+Implement robust OAuth authentication for remote MCP applications:
+
+- **OAuth 2.1 Provider**: Using Cloudflare's workers-oauth-provider library
+- **Dynamic Client Registration**: Allowing clients to register automatically
+- **Token-Based Security**: Server-issued tokens for enhanced security
+- **Access Control**: Managing permissions and scopes
+- **GitHub and Slack Integration**: OAuth support for GitHub and Slack providers
+- **KV Storage Considerations**: OAuth operations use KV storage ([pricing details](https://developers.cloudflare.com/kv/platform/pricing/))
+
+### Cloudflare Security Best Practices
+
+Ensure your remote MCP applications are secure in production:
+
+- **Environment Variables**: Managing secrets with Cloudflare Workers
+- **HTTPS by Default**: Automatic encryption for all communications
+- **Built-in Protection**: Using Cloudflare's DDoS protection
+- **Access Logging**: Monitoring and tracking MCP usage
+- **Rate Limiting**: Protecting against abuse and ensuring fair usage
+
+### GitHub Actions CI/CD Integration
+
+Implement continuous deployment for your MCP applications:
+
+- **GitHub Actions Workflow**: Setting up automated builds and deployments
+- **Environment Management**: Configuring different deployment environments
+- **Secrets Handling**: Managing sensitive information in GitHub Actions
+- **Testing Integration**: Running automated tests before deployment
+- **Deployment Automation**: Automated updates to your MCP applications
+
+### mcp-remote Client Adapter
+
+Enable Claude Code to connect to your remote servers:
+
+- **Client Bridge**: Using mcp-remote to connect Claude Code to remote servers
+- **Configuration Management**: Setting up remote server connections
+- **Debugging Tools**: Troubleshooting remote MCP connections
+- **Claude Code Integration**: Connecting your remote MCP server to Claude Code
+
+## Technical Deep Dive
+
+1. **Cloudflare Workers Implementation**: Building stateful MCP servers with minimal code
+2. **OAuth Integration Code**: Step-by-step OAuth 2.1 flow with GitHub and Slack
+3. **Durable Objects Pattern**: Managing persistent connections and state
+4. **Remote Transport Configuration**: Setting up SSE communication
+5. **GitHub Actions Workflows**: Creating CI/CD pipelines for Cloudflare deployment
+6. **Client Adapter Setup**: Bridging Claude Code to remote servers
+
+## Tutorial Structure
+
+1. **Cloudflare Workers Setup**: Prepare your Cloudflare account and development environment
+2. **OAuth Provider Configuration**: Set up OAuth applications with GitHub and Slack
+3. **Remote MCP Server Creation**: Build your first remote MCP server (authless and authenticated)
+4. **Durable Objects Implementation**: Add stateful capabilities to your workflow server
+5. **Authentication Integration**: Implement OAuth 2.1 with GitHub and Slack providers
+6. **GitHub Actions Setup**: Configure CI/CD workflows for automated Cloudflare deployment
+7. **Client Connection Setup**: Configure mcp-remote for Claude Code
+8. **Testing with AI Playground**: Use Cloudflare's Workers AI Playground as a test client
+9. **Production Deployment**: Deploy and monitor your remote MCP server
+
+## Cloudflare Free Tier and Pricing
+
+This unit leverages Cloudflare's free tier, which is generous for development and testing. For production applications, you should review the current pricing and limits:
+
+- **Workers**: [Pricing and Limits](https://developers.cloudflare.com/workers/platform/pricing/)
+- **Durable Objects**: [Pricing and Limits](https://developers.cloudflare.com/durable-objects/platform/pricing/)
+- **Workers KV**: [Pricing and Limits](https://developers.cloudflare.com/kv/platform/pricing/) (used by the OAuth library)
+
+The free tier is ideal for learning, development, and small-scale applications. For production deployments with higher traffic, consider Cloudflare's paid plans.
+
+## Prerequisites
+
+- Completion of Unit 3 (we'll use the same workflow server)
+- Cloudflare account (free tier available - see pricing section above)
+- GitHub account for OAuth integration and Actions
+- Slack workspace for OAuth integration (optional)
+- Basic understanding of web authentication concepts
+- Node.js and npm/yarn/pnpm installed
+
+## Community Contribution
+
+If you've deployed remote MCP applications on Cloudflare Workers or have experience with OAuth 2.1 authentication, we'd love to hear about your experience! Open a [discussion](https://huggingface.co/spaces/mcp-course/README/discussions) on the hub organization.
+
+By the end of this unit, you'll have the knowledge and hands-on experience to deploy secure, scalable remote MCP applications on Cloudflare Workers with OAuth authentication and automated GitHub Actions deployment. While we'll build production-ready architectures, note that Cloudflare's free tier is primarily suitable for development, testing, and small-scale applications. For high-traffic production use, you may need Cloudflare's paid plans. These skills will directly benefit your development work and prepare you for building AI applications with remote MCP capabilities.
