@@ -25,6 +25,8 @@
     title: MCP Clients
   - local: unit1/gradio-mcp
     title: Gradio MCP Integration
+  - local: unit1/unit1-recap
+    title: Unit 1 Recap
   - local: unit1/certificate
     title: Get your certificate!
 
