@@ -1,0 +1,556 @@
+# Tiny Agents: um agente MCP em 50 linhas de código
+
+Agora que construímos servidores MCP no Gradio e aprendemos sobre a criação de clientes MCP, vamos completar nossa aplicação completa construindo um agente TypeScript que pode interagir perfeitamente com nossa ferramenta de análise de sentimentos. Esta seção é baseada no projeto [Tiny Agents](https://huggingface.co/blog/tiny-agents), que demonstra uma maneira super simples de implantar clientes MCP que podem se conectar a serviços como nosso servidor de análise de sentimentos Gradio.
+
+Neste exercício final da Unidade 2, vamos orientá-lo na implementação de um cliente MCP TypeScript (JS) que pode se comunicar com qualquer servidor MCP, incluindo o servidor de análise de sentimentos baseado em Gradio que construímos nas seções anteriores. Isso completa nosso fluxo de aplicação MCP completo: desde a construção de um servidor MCP Gradio expondo uma ferramenta de análise de sentimentos, até a criação de um agente flexível que pode usar esta ferramenta junto com outras capacidades.
+
+![meme](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/thumbnail.jpg)
+<figcaption>Crédito da imagem https://x.com/adamdotdev</figcaption>
+
+## Instalação
+
+Primeiro, precisamos instalar o pacote `tiny-agents`.
+
+```bash
+npm install @huggingface/tiny-agents
+# ou
+pnpm add @huggingface/tiny-agents
+```
+
+Em seguida, precisamos instalar o pacote `mcp-remote`.
+
+```bash
+npm install @mcpjs/mcp-remote
+# ou
+pnpm add @mcpjs/mcp-remote
+```
+
+## Cliente MCP Tiny Agents na Linha de Comando
+
+Tiny Agents pode criar clientes MCP a partir da linha de comando com base em arquivos de configuração JSON.
+
+Vamos configurar um projeto com um Tiny Agent básico.
+
+```bash
+mkdir my-agent
+touch my-agent/agent.json
+```
+
+O arquivo JSON ficará assim:
+
+```json
+{
+	"model": "Qwen/Qwen2.5-72B-Instruct",
+	"provider": "nebius",
+	"servers": [
+		{
+			"type": "stdio",
+			"config": {
+				"command": "npx",
+				"args": [
+					"mcp-remote",
+					"http://localhost:7860/gradio_api/mcp/sse"
+				]
+			}
+		}
+	]
+}
+```
+
+Aqui temos um Tiny Agent básico que pode se conectar ao nosso servidor MCP Gradio. Ele inclui um modelo, provedor e uma configuração de servidor.
+
+| Campo | Descrição |
+|-------|-------------|
+| `model` | O modelo de código aberto a ser usado pelo agente |
+| `provider` | O provedor de inferência a ser usado pelo agente |
+| `servers` | Os servidores a serem usados pelo agente. Usaremos o servidor `mcp-remote` para nosso servidor MCP Gradio. |
+
+Também poderíamos usar um modelo de código aberto executando localmente com Tiny Agents.
+
+```json
+{
+	"model": "Qwen/Qwen3-32B",
+	"endpointUrl": "http://localhost:1234/v1",
+	"servers": [
+		{
+			"type": "stdio",
+			"config": {
+				"command": "npx",
+				"args": [
+					"mcp-remote",
+					"http://localhost:1234/v1/mcp/sse"
+				]
+			}
+		}
+	]
+}
+```
+
+Aqui temos um Tiny Agent que pode se conectar a um modelo local. Ele inclui um modelo, URL de endpoint (`http://localhost:1234/v1`) e uma configuração de servidor. O endpoint deve ser um endpoint compatível com OpenAI.
+
+Podemos então executar o agente com o seguinte comando:
+
+```bash
+npx @huggingface/tiny-agents run ./my-agent
+```
+
+## Cliente MCP Tiny Agents Personalizado
+
+Agora que entendemos tanto os Tiny Agents quanto os servidores MCP Gradio, vamos ver como eles funcionam juntos! A beleza do MCP é que ele fornece uma maneira padronizada para os agentes interagirem com qualquer servidor compatível com MCP, incluindo nosso servidor de análise de sentimentos baseado em Gradio das seções anteriores.
+
+### Usando o Servidor Gradio com Tiny Agents
+
+Para conectar nosso Tiny Agent ao servidor de análise de sentimentos Gradio que construímos anteriormente nesta unidade, só precisamos adicioná-lo à nossa lista de servidores. Veja como podemos modificar nossa configuração de agente:
+
+```ts
+const agent = new Agent({
+    provider: process.env.PROVIDER ?? "nebius",
+    model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+    apiKey: process.env.HF_TOKEN,
+    servers: [
+        // ... servidores existentes ...
+        {
+            command: "npx",
+            args: [
+                "mcp-remote",
+                "http://localhost:7860/gradio_api/mcp/sse"  // Seu servidor MCP Gradio
+            ]
+        }
+    ],
+});
+```
+
+Agora nosso agente pode usar a ferramenta de análise de sentimentos junto com outras ferramentas! Por exemplo, ele poderia:
+1. Ler texto de um arquivo usando o servidor de sistema de arquivos
+2. Analisar seu sentimento usando nosso servidor Gradio
+3. Escrever os resultados de volta em um arquivo
+
+### Exemplo de Interação
+
+Veja como seria uma conversa com nosso agente:
+
+```
+Usuário: Leia o arquivo "feedback.txt" do meu Desktop e analise seu sentimento
+
+Agente: Vou ajudá-lo a analisar o sentimento do arquivo de feedback. Vou dividir isso em etapas:
+
+1. Primeiro, vou ler o arquivo usando a ferramenta do sistema de arquivos
+2. Em seguida, vou analisar seu sentimento usando a ferramenta de análise de sentimentos
+3. Por fim, vou escrever os resultados em um novo arquivo
+
+[O Agente prossegue usando as ferramentas e fornecendo a análise]
+```
+
+### Considerações de Implantação
+
+Ao implantar seu servidor MCP Gradio no Hugging Face Spaces, você precisará atualizar a URL do servidor em sua configuração de agente para apontar para seu espaço implantado:
+
+```ts
+{
+    command: "npx",
+    args: [
+        "mcp-remote",
+        "https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse"
+    ]
+}
+```
+
+Isso permite que seu agente use a ferramenta de análise de sentimentos de qualquer lugar, não apenas localmente!
+
+## Conclusão: Nossa Aplicação MCP Completa
+
+Nesta unidade, passamos do entendimento dos conceitos básicos do MCP para a construção de uma aplicação completa:
+
+1. Criamos um servidor MCP Gradio que expõe uma ferramenta de análise de sentimentos
+2. Aprendemos como se conectar a este servidor usando clientes MCP
+3. Construímos um tiny agent em TypeScript que pode interagir com nossa ferramenta
+
+Isso demonstra o poder do Protocolo de Contexto de Modelo - podemos criar ferramentas especializadas usando frameworks com os quais estamos familiarizados (como Gradio), expô-las através de uma interface padronizada (MCP) e, em seguida, ter agentes usando essas ferramentas perfeitamente junto com outras capacidades.
+
+O fluxo completo que construímos permite que um agente:
+- Se conecte a múltiplos provedores de ferramentas
+- Descubra dinamicamente as ferramentas disponíveis
+- Use nossa ferramenta personalizada de análise de sentimentos
+- Combine-a com outras capacidades como acesso ao sistema de arquivos e navegação na web
+
+Esta abordagem modular é o que torna o MCP tão poderoso para construir aplicações de IA flexíveis.
+
+## Bônus: Construir um Servidor MCP de Automação de Navegador com Playwright
+
+Como bônus, vamos explorar como usar o servidor MCP Playwright para automação de navegador com Tiny Agents. Isso demonstra a extensibilidade do ecossistema MCP além do nosso exemplo de análise de sentimentos.
+
+<Tip>
+
+Esta seção é baseada no [post do blog Tiny Agents](https://huggingface.co/blog/tiny-agents) e adaptada para o curso MCP.
+
+</Tip>
+
+Nesta seção, mostraremos como construir um agente que pode realizar tarefas de automação web como pesquisar, clicar e extrair informações de sites.
+
+```ts
+// playwright-agent.ts
+import { Agent } from "@huggingface/tiny-agents";
+
+const agent = new Agent({
+  provider: process.env.PROVIDER ?? "nebius",
+  model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+  apiKey: process.env.HF_TOKEN,
+  servers: [
+    {
+      command: "npx",
+      args: ["playwright-mcp"]
+    }
+  ],
+});
+
+await agent.run();
+```
+
+O servidor MCP Playwright expõe ferramentas que permitem que seu agente:
+
+1. Abra abas do navegador
+2. Navegue para URLs
+3. Clique em elementos
+4. Digite em formulários
+5. Extraia conteúdo de páginas web
+6. Tire capturas de tela
+
+Veja um exemplo de interação com nosso agente de automação de navegador:
+
+```
+Usuário: Pesquise por "tiny agents" no GitHub e colete os nomes dos 3 principais repositórios
+
+Agente: Vou pesquisar repositórios de "tiny agents" no GitHub.
+[O Agente abre o navegador, navega até o GitHub, realiza a pesquisa e extrai os nomes dos repositórios]
+
+Aqui estão os 3 principais repositórios (não reais) para "tiny agents":
+1. huggingface/tiny-agents
+2. modelcontextprotocol/tiny-agents-examples
+3. langchain/tiny-agents-js
+```
+
+Esta capacidade de automação de navegador pode ser combinada com outros servidores MCP para criar fluxos de trabalho poderosos—por exemplo, extraindo texto de uma página web e depois analisando-o com ferramentas personalizadas.
+
+## Como executar a demonstração completa
+
+Se você tem NodeJS (com `pnpm` ou `npm`), basta executar isto em um terminal:
+
+```bash
+npx @huggingface/mcp-client
+```
+
+ou se estiver usando `pnpm`:
+
+```bash
+pnpx @huggingface/mcp-client
+```
+
+Isso instala o pacote em uma pasta temporária e depois executa seu comando.
+
+Você verá seu Agente simples se conectar a múltiplos servidores MCP (executando localmente), carregando suas ferramentas (semelhante a como carregaria sua ferramenta de análise de sentimentos Gradio), e depois solicitando uma conversa.
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/use-filesystem.mp4" type="video/mp4">
+</video>
+
+Por padrão, nosso Agente de exemplo se conecta aos seguintes dois servidores MCP:
+
+- o servidor de sistema de arquivos [canônico](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem), que obtém acesso ao seu Desktop,
+- e o servidor [Playwright MCP](https://github.com/microsoft/playwright-mcp), que sabe como usar um navegador Chromium sandbox para você.
+
+> [!NOTE]
+> Nota: isso é um pouco contraintuitivo, mas atualmente, todos os servidores MCP no tiny agents são processos locais (embora servidores remotos estejam chegando em breve).
+
+Nossa entrada para este primeiro vídeo foi:
+
+> escreva um haiku sobre a comunidade Hugging Face e escreva-o em um arquivo chamado "hf.txt" no meu Desktop
+
+Agora vamos tentar este prompt que envolve navegação na Web:
+
+> faça uma Pesquisa Web por provedores de inferência HF no Brave Search e abra os 3 primeiros resultados
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/brave-search.mp4" type="video/mp4">
+</video>
+
+### Modelo e provedor padrão
+
+Em termos de par modelo/provedor, nosso Agente de exemplo usa por padrão:
+- ["Qwen/Qwen2.5-72B-Instruct"](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
+- executando no [Nebius](https://huggingface.co/docs/inference-providers/providers/nebius)
+
+Tudo isso é configurável através de variáveis de ambiente:
+
+```ts
+const agent = new Agent({
+	provider: process.env.PROVIDER ?? "nebius",
+	model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+	apiKey: process.env.HF_TOKEN,
+	servers: [
+		// Servidores padrão
+		{
+			command: "npx",
+			args: ["@modelcontextprotocol/servers", "filesystem"]
+		},
+		{
+			command: "npx",
+			args: ["playwright-mcp"]
+		},
+	],
+});
+```
+
+## Implementando um cliente MCP em cima do InferenceClient
+
+Agora que sabemos o que é uma ferramenta em LLMs recentes, vamos implementar o cliente MCP real que se comunicará com servidores MCP e outros servidores MCP.
+
+A documentação oficial em https://modelcontextprotocol.io/quickstart/client é bastante bem escrita. Você só precisa substituir qualquer menção ao SDK do cliente Anthropic por qualquer outro SDK de cliente compatível com OpenAI. (Há também um [llms.txt](https://modelcontextprotocol.io/llms-full.txt) que você pode alimentar no seu LLM de escolha para ajudá-lo a codificar).
+
+Como lembrete, usamos o `InferenceClient` do HF para nosso cliente de inferência.
+
+> [!TIP]
+> O arquivo de código completo `McpClient.ts` está [aqui](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/McpClient.ts) se você quiser acompanhar usando o código real 🤓
+
+Nossa classe `McpClient` tem:
+- um Cliente de Inferência (funciona com qualquer Provedor de Inferência, e `huggingface/inference` suporta endpoints remotos e locais)
+- um conjunto de sessões de cliente MCP, uma para cada servidor MCP conectado (isso nos permite conectar a múltiplos servidores)
+- e uma lista de ferramentas disponíveis que será preenchida a partir dos servidores conectados e apenas ligeiramente reformatada.
+
+```ts
+export class McpClient {
+	protected client: InferenceClient;
+	protected provider: string;
+	protected model: string;
+	private clients: Map<ToolName, Client> = new Map();
+	public readonly availableTools: ChatCompletionInputTool[] = [];
+
+	constructor({ provider, model, apiKey }: { provider: InferenceProvider; model: string; apiKey: string }) {
+		this.client = new InferenceClient(apiKey);
+		this.provider = provider;
+		this.model = model;
+	}
+	
+	// [...]
+}
+```
+
+Para se conectar a um servidor MCP, o SDK TypeScript oficial `@modelcontextprotocol/sdk/client` fornece uma classe `Client` com um método `listTools()`:
+
+```ts
+async addMcpServer(server: StdioServerParameters): Promise<void> {
+	const transport = new StdioClientTransport({
+		...server,
+		env: { ...server.env, PATH: process.env.PATH ?? "" },
+	});
+	const mcp = new Client({ name: "@huggingface/mcp-client", version: packageVersion });
+	await mcp.connect(transport);
+
+	const toolsResult = await mcp.listTools();
+	debug(
+		"Connected to server with tools:",
+		toolsResult.tools.map(({ name }) => name)
+	);
+
+	for (const tool of toolsResult.tools) {
+		this.clients.set(tool.name, mcp);
+	}
+
+	this.availableTools.push(
+		...toolsResult.tools.map((tool) => {
+			return {
+				type: "function",
+				function: {
+					name: tool.name,
+					description: tool.description,
+					parameters: tool.inputSchema,
+				},
+			} satisfies ChatCompletionInputTool;
+		})
+	);
+}
+```
+
+`StdioServerParameters` é uma interface do SDK MCP que permitirá que você facilmente inicie um processo local: como mencionamos anteriormente, atualmente, todos os servidores MCP são processos locais.
+
+### Como usar as ferramentas
+
+Usar nossa ferramenta de análise de sentimentos (ou qualquer outra ferramenta MCP) é simples. Você apenas passa `this.availableTools` para a conclusão de chat do seu LLM, além do seu array habitual de mensagens:
+
+```ts
+const stream = this.client.chatCompletionStream({
+	provider: this.provider,
+	model: this.model,
+	messages,
+	tools: this.availableTools,
+	tool_choice: "auto",
+});
+```
+
+`tool_choice: "auto"` é o parâmetro que você passa para o LLM gerar zero, uma ou múltiplas chamadas de ferramentas.
+
+Ao analisar ou transmitir a saída, o LLM gerará algumas chamadas de ferramentas (ou seja, um nome de função e alguns argumentos codificados em JSON), que você (como desenvolvedor) precisa computar. O SDK cliente MCP novamente facilita isso; ele tem um método `client.callTool()`:
+
+```ts
+const toolName = toolCall.function.name;
+const toolArgs = JSON.parse(toolCall.function.arguments);
+
+const toolMessage: ChatCompletionInputMessageTool = {
+	role: "tool",
+	tool_call_id: toolCall.id,
+	content: "",
+	name: toolName,
+};
+
+/// Obter a sessão apropriada para esta ferramenta
+const client = this.clients.get(toolName);
+if (client) {
+	const result = await client.callTool({ name: toolName, arguments: toolArgs });
+	toolMessage.content = result.content[0].text;
+} else {
+	toolMessage.content = `Error: No session found for tool: ${toolName}`;
+}
+```
+
+Se o LLM escolher usar uma ferramenta, este código automaticamente encaminhará a chamada para o servidor MCP, executará a análise e retornará o resultado ao LLM.
+
+Finalmente, você adicionará a mensagem de ferramenta resultante ao seu array `messages` e de volta ao LLM.
+
+## Nosso Agente de 50 linhas de código 🤯
+
+Agora que temos um cliente MCP capaz de se conectar a servidores MCP arbitrários para obter listas de ferramentas e capaz de injetá-las e analisá-las da inferência do LLM, bem... o que é um Agente?
+
+> Uma vez que você tem um cliente de inferência com um conjunto de ferramentas, então um Agente é apenas um loop while em cima dele.
+
+Em mais detalhes, um Agente é simplesmente uma combinação de:
+- um prompt de sistema
+- um cliente de inferência LLM
+- um cliente MCP para conectar um conjunto de Ferramentas a partir de vários servidores MCP
+- algum fluxo de controle básico (veja abaixo para o loop while)
+
+> [!TIP]
+> O arquivo de código completo `Agent.ts` está [aqui](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/Agent.ts).
+
+Nossa classe Agent simplesmente estende McpClient:
+
+```ts
+export class Agent extends McpClient {
+	private readonly servers: StdioServerParameters[];
+	protected messages: ChatCompletionInputMessage[];
+
+	constructor({
+		provider,
+		model,
+		apiKey,
+		servers,
+		prompt,
+	}: {
+		provider: InferenceProvider;
+		model: string;
+		apiKey: string;
+		servers: StdioServerParameters[];
+		prompt?: string;
+	}) {
+		super({ provider, model, apiKey });
+		this.servers = servers;
+		this.messages = [
+			{
+				role: "system",
+				content: prompt ?? DEFAULT_SYSTEM_PROMPT,
+			},
+		];
+	}
+}
+```
+
+Por padrão, usamos um prompt de sistema muito simples inspirado no compartilhado no [guia de prompting do GPT-4.1](https://cookbook.openai.com/examples/gpt4-1_prompting_guide).
+
+Mesmo que isso venha da OpenAI 😈, esta frase em particular se aplica a cada vez mais modelos, tanto fechados quanto abertos:
+
+> Incentivamos os desenvolvedores a usar exclusivamente o campo tools para passar ferramentas, em vez de injetar manualmente descrições de ferramentas em seu prompt e escrever um analisador separado para chamadas de ferramentas, como alguns relataram fazer no passado.
+
+O que quer dizer, não precisamos fornecer listas meticulosamente formatadas de exemplos de uso de ferramentas no prompt. O parâmetro `tools: this.availableTools` é suficiente, e o LLM saberá como usar as ferramentas do sistema de arquivos.
+
+Carregar as ferramentas no Agente é literalmente apenas conectar-se aos servidores MCP que queremos (em paralelo porque é tão fácil de fazer em JS):
+
+```ts
+async loadTools(): Promise<void> {
+	await Promise.all(this.servers.map((s) => this.addMcpServer(s)));
+}
+```
+
+Adicionamos duas ferramentas extras (fora do MCP) que podem ser usadas pelo LLM para o fluxo de controle do nosso Agente:
+
+```ts
+const taskCompletionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "task_complete",
+		description: "Call this tool when the task given by the user is complete",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const askQuestionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "ask_question",
+		description: "Ask a question to the user to get more info required to solve or clarify their problem.",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const exitLoopTools = [taskCompletionTool, askQuestionTool];
+```
+
+Ao chamar qualquer uma dessas ferramentas, o Agente quebrará seu loop e devolverá o controle ao usuário para nova entrada.
+
+### O loop while completo
+
+Contemplem nosso loop while completo.🎉
+
+A essência do loop principal do nosso Agente é que simplesmente iteramos com o LLM alternando entre chamadas de ferramentas e alimentando-o com os resultados das ferramentas, e fazemos isso **até que o LLM comece a responder com duas mensagens não-ferramentas consecutivas**.
+
+Este é o loop while completo:
+
+```ts
+let numOfTurns = 0;
+let nextTurnShouldCallTools = true;
+while (true) {
+	try {
+		yield* this.processSingleTurnWithTools(this.messages, {
+			exitLoopTools,
+			exitIfFirstChunkNoTool: numOfTurns > 0 && nextTurnShouldCallTools,
+			abortSignal: opts.abortSignal,
+		});
+	} catch (err) {
+		if (err instanceof Error && err.message === "AbortError") {
+			return;
+		}
+		throw err;
+	}
+	numOfTurns++;
+	const currentLast = this.messages.at(-1)!;
+	if (
+		currentLast.role === "tool" &&
+		currentLast.name &&
+		exitLoopTools.map((t) => t.function.name).includes(currentLast.name)
+	) {
+		return;
+	}
+	if (currentLast.role !== "tool" && numOfTurns > MAX_NUM_TURNS) {
+		return;
+	}
+	if (currentLast.role !== "tool" && nextTurnShouldCallTools) {
+		return;
+	}
+	if (currentLast.role === "tool") {
+		nextTurnShouldCallTools = false;
+	} else {
+		nextTurnShouldCallTools = true;
+	}
+}
+```
