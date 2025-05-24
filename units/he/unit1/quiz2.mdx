@@ -1,0 +1,125 @@
+# חידון 2: SDK של MCP
+
+בחן את הידע שלך ב-SDK של MCP ובפונקציונליות שלהם.
+
+### ש1: מהי המטרה העיקרית של ה-SDK של MCP?
+
+<Question
+  choices={[
+    {
+      text: "להגדיר את מפרט פרוטוקול ה-MCP",
+      explain: "ה-SDK מיישמים את הפרוטוקול, הם לא מגדירים אותו. המפרט הוא נפרד."
+    },
+    {
+      text: "להקל על יישום לקוחות ושרתי MCP",
+      explain: "נכון! SDK מפשטים את פרטי הפרוטוקול ברמה נמוכה.",
+      correct: true
+    },
+    {
+      text: "לספק ממשק חזותי לאינטראקציות MCP",
+      explain: "בעוד שכמה כלים עשויים להציע זאת (כמו MCP Inspector), זו לא המטרה העיקרית של ה-SDK עצמם."
+    },
+    {
+      text: "להחליף את הצורך בשפות תכנות",
+      explain: "SDK הם ספריות המשמשות בתוך שפות תכנות."
+    }
+  ]}
+/>
+
+### ש2: איזו מהפונקציונליות הבאות ה-SDK של MCP בדרך כלל מטפלים בה?
+
+<Question
+  choices={[
+    {
+      text: "אופטימיזציה של שרתי MCP",
+      explain: "זה מחוץ לתחום של ה-SDK של MCP, אשר מתמקדים ביישום פרוטוקול."
+    },
+    {
+      text: "הגדרת אלגוריתמי בינה מלאכותית חדשים",
+      explain: "זה מחוץ לתחום של ה-SDK של MCP, אשר מתמקדים ביישום פרוטוקול."
+    },
+    {
+      text: "סריאליזציה/דה-סריאליזציה של הודעות",
+      explain: "נכון! זוהי פונקציה ליבה לטיפול בהודעות JSON-RPC.",
+      correct: true
+    },
+    {
+      text: "אירוח מודלי שפה גדולים",
+      explain: "MCP מאפשר חיבור ל-LLM, אבל ה-SDK עצמם לא מארחים אותם."
+    }
+  ]}
+/>
+
+### ש3: לפי הטקסט שסופק, איזו חברה מתחזקת את ה-SDK הרשמי של פייתון ל-MCP?
+
+<Question
+  choices={[
+    {
+      text: "גוגל",
+      explain: "הטקסט מציין את Anthropic כמתחזק."
+    },
+    {
+      text: "Anthropic",
+      explain: "נכון! חומר הקורס מציין ש-Anthropic מתחזקת את ה-SDK של פייתון.",
+      correct: true
+    },
+    {
+      text: "מיקרוסופט",
+      explain: "מיקרוסופט מתחזקת את ה-SDK של C# לפי הטקסט."
+    },
+    {
+      text: "JetBrains",
+      explain: "JetBrains מתחזקת את ה-SDK של Kotlin לפי הטקסט."
+    }
+  ]}
+/>
+
+### ש4: באיזו פקודה משתמשים כדי להתחיל שרת פיתוח MCP באמצעות קובץ פייתון בשם `server.py`?
+
+<Question
+  choices={[
+    {
+      text: "python server.py run",
+      explain: "בעוד שאתה מריץ סקריפטי פייתון עם `python`, ל-MCP יש פקודת CLI ספציפית."
+    },
+    {
+      text: "mcp start server.py",
+      explain: "הפקודה היא `mcp dev`, לא `mcp start`."
+    },
+    {
+      text: "mcp dev server.py",
+      explain: "נכון! פקודה זו מאתחלת את שרת הפיתוח.",
+      correct: true
+    },
+    {
+      text: "serve mcp server.py",
+      explain: "זו לא פקודת ה-CLI הסטנדרטית של MCP המוצגת בחומר הקורס."
+    }
+  ]}
+/>
+
+### ש5: מהו תפקידו של JSON-RPC 2.0 ב-MCP?
+
+<Question
+  choices={[
+    {
+      text: "כמנגנון תעבורה עיקרי לתקשורת מרחוק",
+      explain: "HTTP+SSE או HTTP זרימתי הם מנגנוני תעבורה; JSON-RPC הוא פורמט ההודעה."
+    },
+    {
+      text: "כפורמט ההודעה לכל התקשורת בין לקוחות ושרתים",
+      explain: "נכון! MCP משתמש ב-JSON-RPC 2.0 למבנה הודעות.",
+      correct: true
+    },
+    {
+      text: "ככלי לניפוי שגיאות במודלי בינה מלאכותית",
+      explain: "בעוד שהטבע הקריא לאדם שלו עוזר בניפוי שגיאות בתקשורת, זה לא כלי לניפוי שגיאות למודלי בינה מלאכותית עצמם."
+    },
+    {
+      text: "כשיטה להגדרת יכולות בינה מלאכותית כמו כלים ומשאבים",
+      explain: "יכולות מוגדרות על ידי הסכמות שלהן; JSON-RPC משמש להפעלתן והחלפת נתונים."
+    }
+  ]}
+/>
+
+כל הכבוד על סיום החידון הזה 🥳! אם אתה צריך לסקור רכיבים כלשהם, קח את הזמן לבקר מחדש בפרק כדי לחזק את הידע שלך.
