@@ -81,7 +81,7 @@ from mcp.client.stdio import StdioServerParameters
 from smolagents import InferenceClientModel, CodeAgent, ToolCollection
 from smolagents.mcp_client import MCPClient
 
-
+mcp_client = None
 try:
     mcp_client = MCPClient(
         ## Try this working example on the hub:
