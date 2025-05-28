@@ -23,6 +23,7 @@ Now, we can import the necessary libraries and create a simple Gradio interface 
 
 ```python
 import gradio as gr
+import os
 
 from mcp.client.stdio import StdioServerParameters
 from smolagents import InferenceClientModel, CodeAgent, ToolCollection
@@ -39,9 +40,10 @@ tools = mcp_client.get_tools()
 ```
 
 Now that we have the tools, we can create a simple agent that uses them to answer questions. We'll just use a simple `InferenceClientModel` and the default model from `smolagents` for now.
+Please create an access token on your Hugging Face account, and set the access token with the environment variable  `HUGGINGFACE_API_TOKEN`.
 
 ```python
-model = InferenceClientModel()
+model = InferenceClientModel(token=os.getenv("HUGGINGFACE_API_TOKEN"))
 agent = CodeAgent(tools=[*tools], model=model)
 ```
 
@@ -76,6 +78,7 @@ Here's the complete example of the MCP Client in Gradio:
 
 ```python
 import gradio as gr
+import os
 
 from mcp.client.stdio import StdioServerParameters
 from smolagents import InferenceClientModel, CodeAgent, ToolCollection
@@ -90,7 +93,7 @@ try:
     )
     tools = mcp_client.get_tools()
 
-    model = InferenceClientModel()
+    model = InferenceClientModel(token=os.getenv("HUGGINGFACE_API_TOKEN"))
     agent = CodeAgent(tools=[*tools], model=model)
 
     demo = gr.ChatInterface(
