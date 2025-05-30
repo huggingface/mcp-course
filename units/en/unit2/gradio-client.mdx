@@ -39,9 +39,10 @@ tools = mcp_client.get_tools()
 ```
 
 Now that we have the tools, we can create a simple agent that uses them to answer questions. We'll just use a simple `InferenceClientModel` and the default model from `smolagents` for now.
+It is important to pass your api_key to the InferenceClientModel. You can access the token from your huggingface account. [check here.](https://huggingface.co/docs/hub/en/security-tokens).
 
 ```python
-model = InferenceClientModel()
+model = InferenceClientModel(api_key = YOUR_API_TOKEN)
 agent = CodeAgent(tools=[*tools], model=model)
 ```
 
@@ -53,8 +54,7 @@ demo = gr.ChatInterface(
     type="messages",
     examples=["Prime factorization of 68"],
     title="Agent with MCP Tools",
-    description="This is a simple agent that uses MCP tools to answer questions.",
-    messages=[],
+    description="This is a simple agent that uses MCP tools to answer questions."
 )
 
 demo.launch()
