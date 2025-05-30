@@ -41,12 +41,17 @@
   - local: unit2/tiny-agents
     title: Building Tiny Agents with MCP and the Hugging Face Hub
 
-- title: "3. Use Case: Advanced MCP Development"
+- title: "3.1. Use Case: Build a Pull Request Agent on the Hub"
   sections:
-  - local: unit3/introduction
-    title: Coming Soon
-
-- title: "Bonus Units"
-  sections:
-  - local: unit4/introduction
-    title: Coming Soon
+  - local: unit3_1/introduction
+    title: Build a Pull Request Agent on the Hugging Face Hub
+  - local: unit3_1/setting-up-the-project
+    title: Setting up the Project
+  - local: unit3_1/creating-the-mcp-server
+    title: Creating the MCP Server
+  - local: unit3_1/mcp-client
+    title: MCP Client
+  - local: unit3_1/webhook-listener
+    title: Webhook Listener
+  - local: unit3_1/conclusion
+    title: Conclusion
