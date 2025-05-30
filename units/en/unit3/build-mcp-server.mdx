@@ -1,0 +1,144 @@
+# Module 1: Build MCP Server
+
+## Introduction
+
+In this module, you'll build your first MCP server for the PR Agent - a tool that helps developers create better pull requests by analyzing code changes and suggesting appropriate templates.
+
+## What You Will Learn
+
+- How to create a basic MCP server using FastMCP
+- Implementing MCP Tools for data retrieval and analysis  
+- Letting Claude make intelligent decisions based on raw data
+- Testing and validating your MCP server
+
+## Overview
+
+The PR Agent demonstrates a key principle of MCP development: instead of hard-coding logic and rules, we provide Claude with raw data and let it use its intelligence to make decisions. This module focuses on implementing three essential tools:
+
+1. **analyze_file_changes** - Retrieves git diff information and changed files
+2. **get_pr_templates** - Lists available PR templates
+3. **suggest_template** - Allows Claude to recommend the most appropriate template
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10 or higher
+- Git installed and a git repository to test with
+- uv package manager ([installation guide](https://docs.astral.sh/uv/getting-started/installation/))
+
+### Starter Code
+
+Navigate to the starter code directory:
+
+```bash
+cd projects/unit3/build-mcp-server/starter
+```
+
+Install dependencies:
+
+```bash
+uv sync --all-extras
+```
+
+### Your Task
+
+Open `server.py` and implement the three tools following the TODO comments. The starter code provides the basic structure - you need to:
+
+1. Implement `analyze_file_changes` to run git commands and return diff data
+2. Implement `get_pr_templates` to manage and return PR templates
+3. Implement `suggest_template` to map change types to templates
+
+### Design Philosophy
+
+Unlike traditional systems that categorize changes based on file extensions or rigid patterns, your implementation should:
+
+- Provide Claude with raw git data (diffs, file lists, statistics)
+- Let Claude analyze the actual code changes
+- Allow Claude to make intelligent template suggestions
+- Keep the logic simple - Claude handles the complexity
+
+## Testing Your Implementation
+
+### 1. Validate Your Code
+
+Run the validation script to check your implementation:
+
+```bash
+uv run python validate_starter.py
+```
+
+### 2. Run Unit Tests
+
+Test your implementation with the provided test suite:
+
+```bash
+uv run pytest test_server.py -v
+```
+
+### 3. Test with Claude Code
+
+Configure your server directly in Claude Code:
+
+```bash
+# Add the MCP server to Claude Code
+claude mcp add pr-agent -- uv --directory /absolute/path/to/starter run server.py
+
+# Verify the server is configured
+claude mcp list
+```
+
+Then:
+1. Make some changes in a git repository
+2. Ask Claude: "Can you analyze my changes and suggest a PR template?"
+3. Watch Claude use your tools to provide intelligent suggestions
+
+## Common Patterns
+
+### Tool Implementation Pattern
+
+```python
+@mcp.tool()
+async def tool_name(param1: str, param2: bool = True) -> str:
+    """Tool description for Claude.
+    
+    Args:
+        param1: Description of parameter
+        param2: Optional parameter with default
+    """
+    # Your implementation
+    result = {"key": "value"}
+    return json.dumps(result)
+```
+
+### Error Handling
+
+Always handle potential errors gracefully:
+
+```python
+try:
+    result = subprocess.run(["git", "diff"], capture_output=True, text=True)
+    return json.dumps({"output": result.stdout})
+except Exception as e:
+    return json.dumps({"error": str(e)})
+```
+
+## Troubleshooting
+
+- **Import errors**: Ensure you've run `uv sync`
+- **Git errors**: Make sure you're in a git repository
+- **No output**: MCP servers communicate via stdio - test with Claude Desktop
+- **JSON errors**: All tools must return valid JSON strings
+
+## Next Steps
+
+Once you've completed this module:
+1. Review the solution in `/projects/unit3/build-mcp-server/solution/`
+2. Compare your approach with the provided implementation
+3. Move on to Module 2 to integrate GitHub Actions monitoring
+
+## Additional Resources
+
+- [MCP Documentation](https://modelcontextprotocol.io/)
+- [FastMCP Guide](https://modelcontextprotocol.io/quickstart/server)
+- Solution walkthrough: `unit3/build-mcp-server-solution-walkthrough.md`

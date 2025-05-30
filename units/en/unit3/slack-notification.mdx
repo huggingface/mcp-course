@@ -1,0 +1,287 @@
+# Module 3: Slack Notification
+
+Welcome to the final module! You'll integrate Tools and Prompts to create a team notification system that sends formatted Slack messages about CI/CD events, demonstrating how all MCP primitives work together.
+
+## What You'll Build
+
+Building on Modules 1 and 2, you'll add:
+- **Slack webhook tool** for sending messages to your team channel
+- **Two notification prompts** that intelligently format CI events
+- **Complete integration** showing all MCP primitives working together
+
+## Learning Objectives
+
+By the end of this module, you'll understand:
+1. How to integrate external APIs with MCP Tools
+2. How to combine Tools and Prompts for complete workflows  
+3. How to format rich messages using Slack markdown
+4. How all MCP primitives work together in practice
+
+## Prerequisites
+
+- Completed Modules 1 and 2
+- A Slack workspace where you can add webhooks
+- Basic understanding of REST APIs
+
+## Key Concepts
+
+### MCP Integration Pattern
+
+This module demonstrates the complete workflow:
+1. **Events** → GitHub Actions webhook (from Module 2)
+2. **Prompts** → Format events into readable messages
+3. **Tools** → Send formatted messages to Slack
+4. **Result** → Professional team notifications
+
+### Slack Markdown Formatting
+
+You'll use Slack's markdown for rich messages:
+- `*bold text*` for emphasis
+- `_italic text_` for details
+- `` `code blocks` `` for technical info
+- `> quoted text` for summaries
+- Emoji: ✅ ❌ 🚀 ⚠️
+- Links: `<https://github.com/user/repo|Repository>`
+
+## Project Structure
+
+```
+slack-notification/
+├── starter/          # Your starting point
+│   ├── server.py     # Modules 1+2 code + TODOs
+│   ├── webhook_server.py  # From Module 2
+│   ├── pyproject.toml
+│   └── README.md
+└── solution/         # Complete implementation
+    ├── server.py     # Full Slack integration
+    ├── webhook_server.py
+    └── README.md
+```
+
+## Implementation Steps
+
+### Step 1: Set Up Slack Integration (10 min)
+
+1. Create a Slack webhook:
+   - Go to https://api.slack.com/apps
+   - Create new app → "From scratch"
+   - App Name: "MCP Course Notifications"
+   - Choose your workspace
+   - Go to "Features" → "Incoming Webhooks"
+   - Activate incoming webhooks
+   - Click "Add New Webhook to Workspace"
+   - Choose channel and authorize
+   - Copy the webhook URL
+
+2. Test webhook works:
+   ```bash
+   curl -X POST -H 'Content-type: application/json' \
+     --data '{"text":"Hello from MCP Course!"}' \
+     YOUR_WEBHOOK_URL
+   ```
+
+3. Set environment variable:
+   ```bash
+   export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+   ```
+
+   **⚠️ Security Note**: The webhook URL is a sensitive secret that grants permission to post messages to your Slack channel. Always:
+   - Store it as an environment variable, never hardcode it in your code
+   - Never commit webhook URLs to version control (add to .gitignore)
+   - Treat it like a password - anyone with this URL can send messages to your channel
+
+### Step 2: Add Slack Tool (15 min)
+
+Add this tool to your server.py:
+
+**`send_slack_notification`**:
+- Takes a message string parameter
+- Reads webhook URL from environment variable
+- Sends POST request to Slack webhook
+- Returns success/failure message
+- Handles basic error cases
+
+```python
+import os
+import requests
+from mcp.types import TextContent
+
+@mcp.tool()
+def send_slack_notification(message: str) -> str:
+    """Send a formatted notification to the team Slack channel."""
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+    if not webhook_url:
+        return "Error: SLACK_WEBHOOK_URL environment variable not set"
+    
+    try:
+        # TODO: Send POST request to webhook_url
+        # TODO: Include message in JSON payload
+        # TODO: Handle response and return status
+        pass
+    except Exception as e:
+        return f"Error sending message: {str(e)}"
+```
+
+### Step 3: Create Formatting Prompts (15 min)
+
+Implement two prompts that generate Slack-formatted messages:
+
+1. **`format_ci_failure_alert`**:
+   ```python
+   @mcp.prompt()
+   def format_ci_failure_alert() -> str:
+       """Create a Slack alert for CI/CD failures."""
+       return """Format this GitHub Actions failure as a Slack message:
+
+   Use this template:
+   ❌ *CI Failed* - [Repository Name]
+   
+   > Brief summary of what failed
+   
+   *Details:*
+   • Workflow: `workflow_name`
+   • Branch: `branch_name`
+   • Commit: `commit_hash`
+   
+   *Next Steps:*
+   • <PR_LINK|View Pull Request>
+   • <LOGS_LINK|Check Action Logs>
+   
+   Use Slack markdown formatting and keep it concise for quick team scanning."""
+   ```
+
+2. **`format_ci_success_summary`**:
+   ```python
+   @mcp.prompt()
+   def format_ci_success_summary() -> str:
+       """Create a Slack message celebrating successful deployments."""
+       return """Format this successful GitHub Actions run as a Slack message:
+
+   Use this template:
+   ✅ *Deployment Successful* - [Repository Name]
+   
+   > Brief summary of what was deployed
+   
+   *Changes:*
+   • Key feature or fix 1
+   • Key feature or fix 2
+   
+   *Links:*
+   • <PR_LINK|View Changes>
+   • <DEPLOY_LINK|Visit Site>
+   
+   Keep it celebratory but informative. Use Slack markdown formatting."""
+   ```
+
+### Step 4: Test Complete Workflow (10 min)
+
+1. Start all services:
+   ```bash
+   # Terminal 1: Start webhook server
+   python webhook_server.py
+   
+   # Terminal 2: Start MCP server
+   uv run server.py
+   
+   # Terminal 3: Start Cloudflare Tunnel  
+   cloudflared tunnel --url http://localhost:8080
+   ```
+
+2. Test with Claude Code:
+   - Configure GitHub webhook with tunnel URL
+   - Push changes to trigger GitHub Actions
+   - Ask Claude to use the formatting prompts
+   - Send formatted message using the Slack tool
+   - Verify professional notification appears in Slack
+
+### Step 5: Verify Integration (5 min)
+
+You can test your implementation without setting up a real GitHub repository! See `manual_test.md` for curl commands that simulate GitHub webhook events.
+
+**Quick Test Workflow:**
+1. Use curl to send fake GitHub events to your webhook server
+2. Ask Claude to check recent events and format them
+3. Send formatted messages to Slack
+4. Verify everything works end-to-end
+
+**Manual Testing Alternative:** For a complete testing experience without GitHub setup, follow the step-by-step curl commands in `manual_test.md`.
+
+## Example Workflow in Claude Code
+
+```
+User: "Check recent CI events and notify the team about any failures"
+
+Claude: 
+1. Uses get_recent_actions_events (from Module 2)
+2. Finds a workflow failure
+3. Uses format_ci_failure_alert prompt to create message
+4. Uses send_slack_notification tool to deliver it
+5. Reports back: "Sent failure alert to #dev-team channel"
+```
+
+## Expected Slack Message Output
+
+**Failure Alert:**
+```
+❌ *CI Failed* - mcp-course
+
+> Tests failed in Module 3 implementation
+
+*Details:*
+• Workflow: `CI`
+• Branch: `feature/slack-integration`
+• Commit: `abc123f`
+
+*Next Steps:*
+• <https://github.com/user/mcp-course/pull/42|View Pull Request>
+• <https://github.com/user/mcp-course/actions/runs/123|Check Action Logs>
+```
+
+**Success Summary:**
+```
+✅ *Deployment Successful* - mcp-course
+
+> Module 3 Slack integration deployed to staging
+
+*Changes:*
+• Added team notification system
+• Integrated MCP Tools and Prompts
+
+*Links:*
+• <https://github.com/user/mcp-course/pull/42|View Changes>
+• <https://staging.example.com|Visit Site>
+```
+
+## Common Issues
+
+### Webhook URL Issues
+- Verify the environment variable is set correctly
+- Test webhook directly with curl before integrating
+- Ensure Slack app has proper permissions
+
+### Message Formatting
+- Slack markdown differs from GitHub markdown
+- Test message formatting manually before automating
+- Handle special characters in commit messages properly
+
+### Network Errors
+- Add basic timeout handling to webhook requests
+- Return meaningful error messages from the tool
+- Check internet connectivity if requests fail
+
+## Key Takeaways
+
+You've now built a complete MCP workflow that demonstrates:
+- **Tools** for external API integration (Slack webhooks)
+- **Prompts** for intelligent message formatting
+- **Integration** of all MCP primitives working together
+- **Real-world application** that teams can actually use
+
+This shows the power of MCP for building practical development automation tools!
+
+## Additional Resources
+
+- [Slack Incoming Webhooks Documentation](https://api.slack.com/messaging/webhooks)
+- [Slack Message Formatting Guide](https://api.slack.com/reference/surfaces/formatting)
+- [MCP Tools Documentation](https://modelcontextprotocol.io/docs/concepts/tools)
+- [MCP Prompts Guide](https://modelcontextprotocol.io/docs/concepts/prompts)

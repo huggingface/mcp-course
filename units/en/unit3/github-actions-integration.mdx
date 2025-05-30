@@ -1,0 +1,183 @@
+# Module 2: GitHub Actions Integration
+
+Welcome to Module 2! In this module, you'll extend your PR Agent with webhook capabilities to monitor GitHub Actions and learn how to use MCP Prompts for standardized CI/CD workflows.
+
+## What You'll Build
+
+Building on Module 1, you'll add:
+- **Webhook server** to receive GitHub Actions events
+- **New tools** for monitoring CI/CD status
+- **MCP Prompts** that provide consistent workflow patterns
+- **Real-time integration** with your GitHub repository
+
+## Learning Objectives
+
+By the end of this module, you'll understand:
+1. How to run a webhook server alongside an MCP server
+2. How to receive and process GitHub webhooks
+3. How to create MCP Prompts for standardized workflows
+4. How to use Cloudflare Tunnel for local webhook testing
+
+## Prerequisites
+
+- Completed Module 1: Build MCP Server
+- Basic understanding of GitHub Actions
+- A GitHub repository with Actions enabled
+- Cloudflare Tunnel (cloudflared) installed
+
+## Key Concepts
+
+### MCP Prompts
+
+Prompts are reusable templates that guide Claude through complex workflows. Unlike Tools (which Claude calls automatically), Prompts are user-initiated and provide structured guidance.
+
+Example use cases:
+- Analyzing CI/CD results consistently
+- Creating standardized deployment summaries
+- Troubleshooting failures systematically
+
+### Webhook Integration
+
+Your MCP server will run two services:
+1. The MCP server (communicates with Claude)
+2. A webhook server on port 8080 (receives GitHub events)
+
+This allows Claude to react to real-time CI/CD events!
+
+## Project Structure
+
+```
+github-actions-integration/
+├── starter/          # Your starting point
+│   ├── server.py     # Module 1 code + TODOs
+│   ├── pyproject.toml
+│   └── README.md
+└── solution/         # Complete implementation
+    ├── server.py     # Full webhook + prompts
+    ├── pyproject.toml
+    └── README.md
+```
+
+## Implementation Steps
+
+### Step 1: Set Up and Run Webhook Server
+
+The starter code includes:
+- Module 1's implementation 
+- A complete webhook server (`webhook_server.py`)
+
+1. Install dependencies:
+   ```bash
+   uv sync
+   ```
+
+2. Start the webhook server (in a separate terminal):
+   ```bash
+   python webhook_server.py
+   ```
+
+This server will receive GitHub webhooks and store them in `github_events.json`.
+
+### Step 2: Connect to Event Storage
+
+Add the path to read webhook events:
+
+```python
+# File where webhook server stores events
+EVENTS_FILE = Path(__file__).parent / "github_events.json"
+```
+
+The webhook server handles all the HTTP details - you just need to read the JSON file!
+
+### Step 3: Add GitHub Actions Tools
+
+Implement two new tools:
+
+1. **`get_recent_actions_events`**: 
+   - Read from `EVENTS_FILE`
+   - Return the most recent events (up to limit)
+   - Return empty list if file doesn't exist
+
+2. **`get_workflow_status`**: 
+   - Read all events from file
+   - Filter for workflow_run events
+   - Group by workflow name and show latest status
+
+These tools let Claude analyze your CI/CD pipeline.
+
+### Step 4: Create MCP Prompts
+
+Implement four prompts that demonstrate different workflow patterns:
+
+1. **`analyze_ci_results`**: Comprehensive CI/CD analysis
+2. **`create_deployment_summary`**: Team-friendly updates
+3. **`generate_pr_status_report`**: Combined code + CI report
+4. **`troubleshoot_workflow_failure`**: Systematic debugging
+
+Each prompt should return a string with clear instructions for Claude to follow.
+
+### Step 5: Test with Cloudflare Tunnel
+
+1. Start your MCP server:
+   ```bash
+   uv run server.py
+   ```
+
+2. In another terminal, start Cloudflare Tunnel:
+   ```bash
+   cloudflared tunnel --url http://localhost:8080
+   ```
+
+3. Configure GitHub webhook with the tunnel URL
+
+4. Test with Claude Code using the prompts
+
+## Exercises
+
+### Exercise 1: Custom Workflow Prompt
+Create a new prompt that helps with PR reviews by combining:
+- Code changes from Module 1 tools
+- CI/CD status from Module 2 tools
+- A checklist format for reviewers
+
+### Exercise 2: Event Filtering
+Enhance `get_workflow_status` to:
+- Filter by workflow conclusion (success/failure)
+- Group by repository
+- Show time since last run
+
+### Exercise 3: Notification System
+Add a tool that:
+- Tracks which events have been "seen"
+- Highlights new failures
+- Suggests which team member to notify
+
+## Common Issues
+
+### Webhook Not Receiving Events
+- Ensure Cloudflare Tunnel is running
+- Check GitHub webhook settings (should show recent deliveries)
+- Verify the payload URL includes `/webhook/github`
+
+### Prompt Not Working
+- FastMCP prompts simply return strings
+- Make sure your function is decorated with `@mcp.prompt()`
+
+### Webhook Server Issues
+- Ensure webhook_server.py is running in a separate terminal
+- Check that port 8080 is free: `lsof -i :8080`
+- The events file will be created automatically when first event is received
+
+## Next Steps
+
+Once you've completed this module:
+1. Review the solution in `/projects/unit3/github-actions-integration/solution/`
+2. Experiment with different prompt patterns
+3. Try creating prompts for your team's specific workflows
+4. Move on to Module 3 for Hugging Face Hub integration
+
+## Additional Resources
+
+- [MCP Prompts Documentation](https://modelcontextprotocol.io/docs/concepts/prompts)
+- [GitHub Webhooks Guide](https://docs.github.com/en/developers/webhooks-and-events)
+- [Cloudflare Tunnel Documentation](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps)

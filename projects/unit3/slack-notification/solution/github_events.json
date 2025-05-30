@@ -1,0 +1,19 @@
+[
+  {
+    "timestamp": "2025-05-30T22:42:00.904997",
+    "event_type": "workflow_run",
+    "action": "completed",
+    "workflow_run": {
+      "name": "CI",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_number": 42,
+      "html_url": "https://github.com/test/repo/actions/runs/123",
+      "head_branch": "test",
+      "head_sha": "abc123"
+    },
+    "check_run": null,
+    "repository": null,
+    "sender": null
+  }
+]

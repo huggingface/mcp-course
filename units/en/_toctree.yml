@@ -41,12 +41,14 @@
   - local: unit2/tiny-agents
     title: Building Tiny Agents with MCP and the Hugging Face Hub
 
-- title: "3. Use Case: Advanced MCP Development"
+- title: "3. Advanced MCP Development: Custom Workflow Servers"
   sections:
   - local: unit3/introduction
-    title: Coming Soon
+    title: Building Custom Workflow Servers for Claude Code
+  - local: unit3/build-mcp-server
+    title: "Module 1: Build MCP Server"
+  - local: unit3/github-actions-integration
+    title: "Module 2: GitHub Actions Integration"
+  - local: unit3/slack-notification
+    title: "Module 3: Slack Notification"
 
-- title: "Bonus Units"
-  sections:
-  - local: unit4/introduction
-    title: Coming Soon
