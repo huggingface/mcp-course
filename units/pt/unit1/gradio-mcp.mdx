@@ -1,0 +1,154 @@
+# Integração do Gradio com MCP
+
+Agora que exploramos os conceitos fundamentais do protocolo MCP e como implementar Servidores e Clientes MCP, vamos facilitar um pouco as coisas usando o Gradio para criar um Servidor MCP!
+
+<Tip>
+
+Gradio é uma biblioteca Python popular para criar rapidamente interfaces web personalizáveis para modelos de aprendizado de máquina.
+
+</Tip>
+
+## Introdução ao Gradio
+
+O Gradio permite que desenvolvedores criem interfaces de usuário para seus modelos com apenas algumas linhas de código Python. É particularmente útil para:
+
+- Criar demonstrações e protótipos
+- Compartilhar modelos com usuários não técnicos
+- Testar e depurar o comportamento do modelo
+
+Com a adição do suporte ao MCP, o Gradio agora oferece uma maneira direta de expor as capacidades do modelo de IA através do protocolo MCP padronizado.
+
+Combinar o Gradio com o MCP permite criar interfaces amigáveis para humanos e ferramentas acessíveis por IA com código mínimo. Mas o melhor de tudo é que o Gradio já é amplamente utilizado pela comunidade de IA, então você pode usá-lo para compartilhar seus Servidores MCP com outras pessoas.
+
+## Pré-requisitos
+
+Para usar o Gradio com suporte ao MCP, você precisará instalar o Gradio com o extra MCP:
+
+```bash
+pip install "gradio[mcp]"
+```
+
+Você também precisará de uma aplicação LLM que suporte chamada de ferramentas usando o protocolo MCP, como o Cursor (conhecido como "MCP Hosts").
+
+## Criando um Servidor MCP com Gradio
+
+Vamos ver um exemplo básico de como criar um Servidor MCP usando Gradio:
+
+```python
+import gradio as gr
+
+def letter_counter(word: str, letter: str) -> int:
+    """
+    Count the number of occurrences of a letter in a word or text.
+
+    Args:
+        word (str): The input text to search through
+        letter (str): The letter to search for
+
+    Returns:
+        int: The number of times the letter appears in the text
+    """
+    word = word.lower()
+    letter = letter.lower()
+    count = word.count(letter)
+    return count
+
+# Create a standard Gradio interface
+demo = gr.Interface(
+    fn=letter_counter,
+    inputs=["textbox", "textbox"],
+    outputs="number",
+    title="Letter Counter",
+    description="Enter text and a letter to count how many times the letter appears in the text."
+)
+
+# Launch both the Gradio web interface and the MCP server
+if __name__ == "__main__":
+    demo.launch(mcp_server=True)
+```
+
+Com esta configuração, sua função de contador de letras agora está acessível através de:
+
+1. Uma interface web tradicional do Gradio para interação humana direta
+2. Um Servidor MCP que pode ser conectado a clientes compatíveis
+
+O servidor MCP estará acessível em:
+```
+http://your-server:port/gradio_api/mcp/sse
+```
+
+A aplicação em si ainda estará acessível e se parece com isto:
+
+![Servidor Gradio MCP](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/7.png)
+
+## Como Funciona nos Bastidores
+
+Quando você define `mcp_server=True` em `launch()`, várias coisas acontecem:
+
+1. As funções do Gradio são automaticamente convertidas em Ferramentas MCP
+2. Os componentes de entrada são mapeados para esquemas de argumentos de ferramentas
+3. Os componentes de saída determinam o formato da resposta
+4. O servidor Gradio passa a ouvir mensagens do protocolo MCP
+5. JSON-RPC sobre HTTP+SSE é configurado para comunicação cliente-servidor
+
+## Principais Características da Integração Gradio <> MCP
+
+1. **Conversão de Ferramentas**: Cada endpoint da API em seu aplicativo Gradio é automaticamente convertido em uma ferramenta MCP com nome, descrição e esquema de entrada correspondentes. Para visualizar as ferramentas e esquemas, visite `http://your-server:port/gradio_api/mcp/schema` ou acesse o link "View API" no rodapé do seu aplicativo Gradio, e depois clique em "MCP".
+
+2. **Suporte a Variáveis de Ambiente**: Existem duas maneiras de habilitar a funcionalidade do servidor MCP:
+- Usando o parâmetro `mcp_server` em `launch()`:
+  ```python
+  demo.launch(mcp_server=True)
+  ```
+- Usando variáveis de ambiente:
+  ```bash
+  export GRADIO_MCP_SERVER=True
+  ```
+
+3. **Manipulação de Arquivos**: O servidor lida automaticamente com conversões de dados de arquivos, incluindo:
+   - Conversão de strings codificadas em base64 para dados de arquivo
+   - Processamento de arquivos de imagem e retorno no formato correto
+   - Gerenciamento de armazenamento temporário de arquivos
+
+   É **fortemente** recomendado que imagens e arquivos de entrada sejam passados como URLs completas ("http://..." ou "https://..."), pois os Clientes MCP nem sempre lidam corretamente com arquivos locais.
+
+4. **Servidores MCP Hospedados no 🤗 Spaces**: Você pode publicar seu aplicativo Gradio gratuitamente no Hugging Face Spaces, o que permitirá ter um servidor MCP hospedado gratuitamente. Aqui está um exemplo de Space: https://huggingface.co/spaces/abidlabs/mcp-tools
+
+## Dicas de Solução de Problemas
+
+1. **Dicas de Tipo e Docstrings**: Certifique-se de fornecer dicas de tipo e docstrings válidas para suas funções. A docstring deve incluir um bloco "Args:" com nomes de parâmetros indentados.
+
+2. **Entradas de String**: Em caso de dúvida, aceite argumentos de entrada como `str` e converta-os para o tipo desejado dentro da função.
+
+3. **Suporte a SSE**: Alguns Hosts MCP não suportam Servidores MCP baseados em SSE. Nesses casos, você pode usar `mcp-remote`:
+   ```json
+   {
+     "mcpServers": {
+       "gradio": {
+         "command": "npx",
+         "args": [
+           "mcp-remote",
+           "http://your-server:port/gradio_api/mcp/sse"
+         ]
+       }
+     }
+   }
+   ```
+
+4. **Reiniciar**: Se encontrar problemas de conexão, tente reiniciar tanto seu Cliente MCP quanto seu Servidor MCP.
+
+## Compartilhe seu Servidor MCP
+
+Você pode compartilhar seu Servidor MCP publicando seu aplicativo Gradio no Hugging Face Spaces. O vídeo abaixo mostra como criar um Hugging Face Space.
+
+<Youtube id="3bSVKNKb_PY" />
+
+Agora, você pode compartilhar seu Servidor MCP com outras pessoas compartilhando seu Hugging Face Space.
+
+## Conclusão
+
+A integração do Gradio com o MCP fornece um ponto de entrada acessível para o ecossistema MCP. Ao aproveitar a simplicidade do Gradio e adicionar a padronização do MCP, os desenvolvedores podem criar rapidamente interfaces amigáveis para humanos e ferramentas acessíveis por IA com código mínimo.
+
+À medida que avançamos neste curso, exploraremos implementações mais sofisticadas do MCP, mas o Gradio oferece um excelente ponto de partida para entender e experimentar o protocolo.
+
+Na próxima unidade, mergulharemos mais profundamente na construção de aplicações MCP, focando na configuração de ambientes de desenvolvimento, explorando SDKs e implementando Servidores e Clientes MCP mais avançados.

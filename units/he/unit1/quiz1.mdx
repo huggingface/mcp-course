@@ -1,0 +1,125 @@
+# חידון 1: יסודות MCP
+
+בחן את הידע שלך במושגי הליבה של פרוטוקול הקשר המודל.
+
+### ש1: מהי המטרה העיקרית של פרוטוקול הקשר המודל (MCP)?
+
+<Question
+  choices={[
+    {
+      text: "להגביל את נתוני האימון של מודלי בינה מלאכותית",
+      explain: "MCP מטרתו להרחיב, לא להגביל, את ההקשרים אליהם מודלי בינה מלאכותית יכולים לגשת."
+    },
+    {
+      text: "לאפשר למודלי בינה מלאכותית להתחבר למקורות נתונים חיצוניים, כלים וסביבות",
+      explain: "נכון! המטרה העיקרית של MCP היא לאפשר יכולת פעולה הדדית.",
+      correct: true
+    },
+    {
+      text: "להחליף הנחיות בעת שימוש במודלי שפה גדולים",
+      explain: "MCP הוא פרוטוקול המשפר הנחיות, לא תחליף להן."
+    },
+    {
+      text: "ליצור שפת תכנות חדשה לבינה מלאכותית",
+      explain: "MCP הוא פרוטוקול, לא שפת תכנות."
+    }
+  ]}
+/>
+
+### ש2: איזו בעיה MCP מטרתו לפתור בעיקר?
+
+<Question
+  choices={[
+    {
+      text: "המחסור במודלי בינה מלאכותית",
+      explain: "MCP מתייחס לאתגרי אינטגרציה, לא לזמינות של מודלי בינה מלאכותית עצמם."
+    },
+    {
+      text: "העלות הגבוהה של אימון LLM",
+      explain: "בעוד ש-MCP יכול לשפר יעילות, המיקוד העיקרי שלו אינו בהפחתת עלויות אימון ישירות."
+    },
+    {
+      text: "בעיית האינטגרציה M×N",
+      explain: "נכון! MCP מסטנדרט חיבורים כדי למנוע אינטגרציות מותאמות אישית M×N.",
+      correct: true
+    },
+    {
+      text: "הקושי ביצירת אלגוריתמי בינה מלאכותית חדשים",
+      explain: "MCP מקל על שימוש באלגוריתמים וכלים קיימים, לא על יצירת חדשים מאפס."
+    }
+  ]}
+/>
+
+### ש3: איזה מהבאים הוא יתרון מרכזי של MCP?
+
+<Question
+  choices={[
+    {
+      text: "דיוק מופחת במודל בינה מלאכותית",
+      explain: "MCP מטרתו לשפר יכולות בינה מלאכותית, שבאופן אידיאלי צריך להוביל לדיוק משופר או שמור, לא מופחת."
+    },
+    {
+      text: "מורכבות מוגברת בפיתוח בינה מלאכותית",
+      explain: "MCP מטרתו לפשט אינטגרציה, ובכך להפחית מורכבות."
+    },
+    {
+      text: "סטנדרטיזציה ויכולת פעולה הדדית במערכת האקולוגית של בינה מלאכותית",
+      explain: "נכון! זוהי מטרה ויתרון עיקרי של MCP.",
+      correct: true
+    },
+    {
+      text: "בידוד של מודלי בינה מלאכותית ממערכות חיצוניות",
+      explain: "MCP מקדם חיבור ואינטראקציה, לא בידוד."
+    }
+  ]}
+/>
+
+### ש4: בטרמינולוגיה של MCP, מהו "מארח"?
+
+<Question
+  choices={[
+    {
+      text: "התוכנית החיצונית החושפת יכולות",
+      explain: "זה מתאר שרת MCP."
+    },
+    {
+      text: "יישום הבינה המלאכותית הפונה למשתמש",
+      explain: "נכון! המארח הוא היישום שמשתמשים מתקשרים איתו.",
+      correct: true
+    },
+    {
+      text: "מקור נתונים לקריאה בלבד",
+      explain: "זה מתאר סוג של יכולת MCP (משאב)."
+    },
+    {
+      text: "תבנית מוגדרת מראש לאינטראקציות",
+      explain: "זה מתאר סוג של יכולת MCP (הנחיה)."
+    }
+  ]}
+/>
+
+### ש5: למה מתייחס "בעיית האינטגרציה M×N" בהקשר של יישומי בינה מלאכותית?
+
+<Question
+  choices={[
+    {
+      text: "הקושי באימון M מודלים עם N מאגרי נתונים",
+      explain: "זה קשור לאימון מודלים, לא לבעיית האינטגרציה ש-MCP מטפל בה."
+    },
+    {
+      text: "האתגר בחיבור M יישומי בינה מלאכותית ל-N כלים חיצוניים ללא סטנדרט",
+      explain: "נכון! MCP מספק את הסטנדרט לפתרון מורכבות M*N זו.",
+      correct: true
+    },
+    {
+      text: "הבעיה בניהול M משתמשים על פני N יישומים",
+      explain: "זוהי בעיית ניהול משתמשים או זהות, לא המיקוד של MCP."
+    },
+    {
+      text: "המורכבות בפיתוח M תכונות עבור N מגזרי משתמשים שונים",
+      explain: "זה קשור לאסטרטגיית פיתוח מוצר, לא לאינטגרציית מערכת בדרך ש-MCP מגדיר."
+    }
+  ]}
+/>
+
+כל הכבוד על סיום החידון הזה 🥳! אם אתה צריך לסקור רכיבים כלשהם, קח את הזמן לבקר מחדש בפרק כדי לחזק את הידע שלך.
