@@ -1,6 +1,6 @@
 # Khóa Học Về Model Context Protocol (MCP)
 
-<div align="center"> <a href="README.md">🇺🇸 English</a> | <a href="README_vi.md">🇻🇳 Tiếng Việt</a> </div>
+<div align="center"> <a href="README.md">🇺🇸 English</a> | <a href="README_vi.md">🇻🇳 Tiếng Việt</a> | <a href="README_tr.md">🇹🇷 Türkçe</a> </div>
 
 ![1](https://github.com/user-attachments/assets/d26dcc5e-46cb-449e-aecb-49ece10d342a)
 
