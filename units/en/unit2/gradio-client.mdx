@@ -14,13 +14,13 @@ We'll connect to the MCP server we created in the previous section and use it to
 
 ### Connect to an example MCP Server
 
-Let's connect to an example MCP Server that is already running on Hugging Face. We'll use [this one](https://huggingface.co/spaces/abidlabs/mcp-tools2) for this example. It's a space that contains a collection of MCP tools.
+Let's connect to an example MCP Server that is already running on Hugging Face. We'll use [this one](https://huggingface.co/spaces/abidlabs/mcp-tools) for this example. It's a space that contains a collection of MCP tools.
 
 ```python
 from smolagents.mcp_client import MCPClient
 
 with MCPClient(
-    {"url": "https://abidlabs-mcp-tools2.hf.space/gradio_api/mcp/sse"}
+    {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
 ) as tools:
     # Tools from the remote server are available
     print("\n".join(f"{t.name}: {t.description}" for t in tools))
