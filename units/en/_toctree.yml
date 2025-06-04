@@ -38,6 +38,8 @@
     title: Building the Gradio MCP Server
   - local: unit2/clients
     title: Using MCP Clients with your application
+  - local: unit2/continue-client
+    title: Using MCP in the Your AI Coding Assitant
   - local: unit2/gradio-client
     title: Building an MCP Client with Gradio
   - local: unit2/tiny-agents
