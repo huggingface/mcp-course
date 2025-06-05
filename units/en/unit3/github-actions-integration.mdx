@@ -1,0 +1,250 @@
+# Module 2: GitHub Actions Integration
+
+## The Silent Failures Strike
+
+Week 2 at CodeCraft Studios. Your PR Agent from Module 1 is already helping developers write better pull requests - Sarah's latest PR had a clear description that saved Mike 20 minutes of investigation time. The team is thrilled!
+
+But then disaster strikes.
+
+A critical bug reaches production on Friday afternoon. The payment system is down, customers are complaining, and the team scrambles to investigate. After two stressful hours, they discover the root cause: a test failure in Tuesday's CI run that nobody noticed.
+
+"How did we miss this?" asks the team lead, scrolling through GitHub Actions. "The tests clearly failed, but with 47 repositories and dozens of daily commits, who has time to check every build?"
+
+The team realizes they need real-time visibility into their CI/CD pipeline, but manually checking GitHub Actions across all their projects isn't scalable. They need automation that watches for problems and alerts them immediately.
+
+**Your mission**: Extend your MCP server with webhook capabilities to monitor GitHub Actions and never let another failure slip through unnoticed.
+
+## What You'll Build
+
+This module bridges the gap between static file analysis (Module 1) and dynamic team notifications (Module 3). You'll add real-time capabilities that transform your PR Agent into a comprehensive development monitoring system.
+
+## What You'll Build
+
+Building on the foundation you created in Module 1, you'll add:
+- **Webhook server** to receive GitHub Actions events
+- **New tools** for monitoring CI/CD status
+- **MCP Prompts** that provide consistent workflow patterns
+- **Real-time integration** with your GitHub repository
+
+## Learning Objectives
+
+By the end of this module, you'll understand:
+1. How to run a webhook server alongside an MCP server
+2. How to receive and process GitHub webhooks
+3. How to create MCP Prompts for standardized workflows
+4. How to use Cloudflare Tunnel for local webhook testing
+
+## Prerequisites
+
+You'll build directly on your work from Module 1, so make sure you have:
+- **Completed Module 1: Build MCP Server** - You'll be extending that same codebase
+- **Basic understanding of GitHub Actions** - You should know what CI/CD workflows are
+- **A GitHub repository with Actions enabled** - Even a simple workflow file works fine
+- **Cloudflare Tunnel (cloudflared) installed** - This will expose your local webhook server to GitHub
+
+## Key Concepts
+
+### MCP Prompts
+
+Prompts are reusable templates that guide Claude through complex workflows. Unlike Tools (which Claude calls automatically), Prompts are user-initiated and provide structured guidance.
+
+Example use cases:
+- Analyzing CI/CD results consistently
+- Creating standardized deployment summaries
+- Troubleshooting failures systematically
+
+### Webhook Integration
+
+Your MCP server will run two services:
+1. The MCP server (communicates with Claude)
+2. A webhook server on port 8080 (receives GitHub events)
+
+This allows Claude to react to real-time CI/CD events!
+
+<Tip>
+
+**Architecture Insight**: Running separate services for MCP communication and webhook handling is a clean separation of concerns. The webhook server handles HTTP complexity while your MCP server focuses on data analysis and Claude integration.
+
+</Tip>
+
+## Project Structure
+
+```
+github-actions-integration/
+├── starter/          # Your starting point
+│   ├── server.py     # Module 1 code + TODOs
+│   ├── pyproject.toml
+│   └── README.md
+└── solution/         # Complete implementation
+    ├── server.py     # Full webhook + prompts
+    ├── pyproject.toml
+    └── README.md
+```
+
+## Implementation Steps
+
+### Step 1: Set Up and Run Webhook Server
+
+Unlike Module 1 where you worked with existing files, this module introduces real-time event handling. The starter code includes:
+- **Your Module 1 implementation** - All your existing PR analysis tools
+- **A complete webhook server** (`webhook_server.py`) - Ready to receive GitHub events
+
+1. Install dependencies (same as Module 1):
+   ```bash
+   uv sync
+   ```
+
+2. Start the webhook server (in a separate terminal):
+   ```bash
+   python webhook_server.py
+   ```
+
+This server will receive GitHub webhooks and store them in `github_events.json`.
+
+**How webhook event storage works:**
+- Each incoming GitHub webhook (push, pull request, workflow completion, etc.) is appended to the JSON file
+- Events are stored with timestamps, making it easy to find recent activity
+- The file acts as a simple event log that your MCP tools can read and analyze
+- No database required - everything is stored in a simple, readable JSON format
+
+### Step 2: Connect to Event Storage
+
+Now you'll connect your MCP server (from Module 1) to the webhook data. This is much simpler than handling HTTP requests directly - the webhook server does all the heavy lifting and stores events in a JSON file.
+
+Add the path to read webhook events:
+
+```python
+# File where webhook server stores events
+EVENTS_FILE = Path(__file__).parent / "github_events.json"
+```
+
+The webhook server handles all the HTTP details - you just need to read the JSON file! This separation of concerns keeps your MCP server focused on what it does best.
+
+<Tip>
+
+**Development Tip**: Working with files instead of HTTP requests makes testing much easier. You can manually add events to `github_events.json` to test your tools without setting up webhooks.
+
+</Tip>
+
+### Step 3: Add GitHub Actions Tools
+
+Just like in Module 1 where you created tools for file analysis, you'll now create tools for CI/CD analysis. These tools will work alongside your existing PR analysis tools, giving Claude a complete view of both code changes and build status.
+
+<Tip>
+**Note**: The starter code already includes the output limiting fix from Module 1, so you won't encounter token limit errors. Focus on the new concepts in this module!
+</Tip>
+
+Implement two new tools:
+
+1. **`get_recent_actions_events`**: 
+   - Read from `EVENTS_FILE`
+   - Return the most recent events (up to limit)
+   - Return empty list if file doesn't exist
+
+2. **`get_workflow_status`**: 
+   - Read all events from file
+   - Filter for workflow_run events
+   - Group by workflow name and show latest status
+
+These tools let Claude analyze your CI/CD pipeline.
+
+### Step 4: Create MCP Prompts
+
+Now you'll add your first MCP Prompts! Unlike Tools (which Claude calls automatically), Prompts are templates that help users interact with Claude consistently. Think of them as "conversation starters" that guide Claude through complex workflows.
+
+While Module 1 focused on Tools for data access, this module introduces Prompts for workflow guidance.
+
+Implement four prompts that demonstrate different workflow patterns:
+
+1. **`analyze_ci_results`**: Comprehensive CI/CD analysis
+2. **`create_deployment_summary`**: Team-friendly updates
+3. **`generate_pr_status_report`**: Combined code + CI report
+4. **`troubleshoot_workflow_failure`**: Systematic debugging
+
+Each prompt should return a string with clear instructions for Claude to follow.
+
+### Step 5: Test with Cloudflare Tunnel
+
+Now for the exciting part - testing your expanded MCP server with real GitHub events! You'll run multiple services together, just like in a real development environment.
+
+1. Start your MCP server (same command as Module 1):
+   ```bash
+   uv run server.py
+   ```
+
+2. In another terminal, start Cloudflare Tunnel:
+   ```bash
+   cloudflared tunnel --url http://localhost:8080
+   ```
+
+3. Configure GitHub webhook with the tunnel URL
+
+4. Test with Claude Code using the prompts
+
+## Exercises
+
+### Exercise 1: Custom Workflow Prompt
+Create a new prompt that helps with PR reviews by combining:
+- Code changes from Module 1 tools
+- CI/CD status from Module 2 tools
+- A checklist format for reviewers
+
+### Exercise 2: Event Filtering
+Enhance `get_workflow_status` to:
+- Filter by workflow conclusion (success/failure)
+- Group by repository
+- Show time since last run
+
+### Exercise 3: Notification System
+Add a tool that:
+- Tracks which events have been "seen"
+- Highlights new failures
+- Suggests which team member to notify
+
+## Common Issues
+
+### Webhook Not Receiving Events
+- Ensure Cloudflare Tunnel is running
+- Check GitHub webhook settings (should show recent deliveries)
+- Verify the payload URL includes `/webhook/github`
+
+### Prompt Not Working
+- FastMCP prompts simply return strings
+- Make sure your function is decorated with `@mcp.prompt()`
+
+### Webhook Server Issues
+- Ensure webhook_server.py is running in a separate terminal
+- Check that port 8080 is free: `lsof -i :8080`
+- The events file will be created automatically when first event is received
+
+## Next Steps
+
+Excellent work! You've successfully added real-time capabilities to your MCP server. You now have a system that can:
+
+- **Analyze code changes** (from Module 1) 
+- **Monitor CI/CD events in real-time** (from this module)
+- **Use MCP Prompts** to provide consistent workflow guidance
+- **Handle webhook events** through a clean file-based architecture
+
+### Key achievements in Module 2:
+- Built your first webhook integration
+- Learned MCP Prompts for workflow standardization  
+- Created tools that work with real-time data
+- Established patterns for event-driven automation
+
+### What to do next:
+1. **Review the solution** in `/projects/unit3/github-actions-integration/solution/` to see different implementation approaches
+2. **Experiment with your prompts** - try using them for different types of GitHub events
+3. **Test the integration** - combine your Module 1 file analysis tools with Module 2 event monitoring in a single conversation with Claude
+4. **Move on to Module 3** - where you'll complete the automation pipeline by adding team notifications through Slack integration
+
+Module 3 will bring everything together into a complete workflow that your team can actually use!
+
+### The story continues...
+Your monitoring system is working! CodeCraft Studios now catches CI/CD failures in real-time, and the team feels much more confident about their deployments. But next week brings a new challenge: information silos are causing duplicate work and missed opportunities. Module 3 will complete the automation system with intelligent team notifications that keep everyone in the loop.
+
+## Additional Resources
+
+- [MCP Prompts Documentation](https://modelcontextprotocol.io/docs/concepts/prompts)
+- [GitHub Webhooks Guide](https://docs.github.com/en/developers/webhooks-and-events)
+- [Cloudflare Tunnel Documentation](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps)

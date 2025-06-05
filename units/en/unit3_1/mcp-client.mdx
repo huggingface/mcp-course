@@ -1,0 +1,370 @@
+# MCP Client
+
+Now that we have our MCP server with tagging tools, we need to create a client that can interact with these tools. The MCP client serves as the bridge between our webhook handler and the MCP server, enabling our agent to use the Hub tagging functionality.
+
+For the sake of this project, we'll build both an API and a Gradio app. The API will be used to test the MCP server and the webhook listener, and the Gradio app will be used to test the MCP client with simulated webhook events.
+
+<Tip>
+
+For educational purposes, we will build the MCP Server and MCP Client in the same repo. In a real-world application, you would likely have a separate repo for the MCP Server and MCP Client. In fact, you might only build one of these components.
+
+</Tip>
+
+## Understanding the MCP Client Architecture
+
+In our application, the MCP client is integrated into the main FastAPI application (`app.py`). It creates and manages connections to our MCP server, providing a seamless interface for tool execution.
+
+![MCP Client Integration](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/app.png)
+
+## Agent-Based MCP Client
+
+We use the `huggingface_hub` Agent class that has built-in MCP support. This provides both language model capabilities and MCP tool integration in a single component.
+
+### 1. Agent Configuration
+
+Let's start by setting up the agent configuration and understanding each component:
+
+```python
+from huggingface_hub.inference._mcp.agent import Agent
+from typing import Optional, Literal
+
+# Configuration
+HF_TOKEN = os.getenv("HF_TOKEN")
+HF_MODEL = os.getenv("HF_MODEL", "microsoft/DialoGPT-medium")
+DEFAULT_PROVIDER: Literal["hf-inference"] = "hf-inference"
+
+# Global agent instance
+agent_instance: Optional[Agent] = None
+```
+
+We start with the necessary imports and configuration. The global `agent_instance` variable ensures we create the agent only once and reuse it across multiple requests. This is important for performance since agent initialization can be expensive.
+
+Now let's implement the function that creates and manages our agent:
+
+```python
+async def get_agent():
+    """Get or create Agent instance"""
+    print("🤖 get_agent() called...")
+    global agent_instance
+    if agent_instance is None and HF_TOKEN:
+        print("🔧 Creating new Agent instance...")
+        print(f"🔑 HF_TOKEN present: {bool(HF_TOKEN)}")
+        print(f"🤖 Model: {HF_MODEL}")
+        print(f"🔗 Provider: {DEFAULT_PROVIDER}")
+```
+
+The function starts by checking if we already have an agent instance. This singleton pattern prevents unnecessary recreations and ensures consistent state.
+
+Let's continue with the agent creation:
+
+```python
+        try:
+            agent_instance = Agent(
+                model=HF_MODEL,
+                provider=DEFAULT_PROVIDER,
+                api_key=HF_TOKEN,
+                servers=[
+                    {
+                        "type": "stdio",
+                        "config": {
+                            "command": "python",
+                            "args": ["mcp_server.py"],
+                            "cwd": ".",
+                            "env": {"HF_TOKEN": HF_TOKEN} if HF_TOKEN else {},
+                        },
+                    }
+                ],
+            )
+            print("✅ Agent instance created successfully")
+            print("🔧 Loading tools...")
+            await agent_instance.load_tools()
+            print("✅ Tools loaded successfully")
+        except Exception as e:
+            print(f"❌ Error creating/loading agent: {str(e)}")
+            agent_instance = None
+```
+
+This is where the important part happens! Let's break down the Agent configuration:
+
+**Agent Parameters:**
+- `model`: The language model that will reason about tool usage
+- `provider`: How to access the model (Hugging Face Inference Providers)
+- `api_key`: Hugging Face API key
+
+**MCP Server Connection:**
+- `type: "stdio"`: Connect to the MCP server via standard input/output
+- `command: "python"`: Run our MCP server as a Python subprocess
+- `args: ["mcp_server.py"]`: The script file to execute
+- `env`: Pass the HF_TOKEN to the server process
+
+<Tip>
+
+The `stdio` connection type means the agent starts your MCP server as a subprocess and communicates with it through standard input/output. This is perfect for development and single-machine deployments.
+
+</Tip>
+
+The `load_tools()` call is crucial - it discovers what tools are available from the MCP server and makes them accessible to the agent's reasoning engine.
+
+This completes our agent management function with proper error handling and logging.
+
+## Tool Discovery and Usage
+
+Once the agent is created and tools are loaded, it can automatically discover and use the MCP tools. This is where the real power of the Agent approach shines.
+
+### Available Tools
+
+The agent discovers our MCP tools automatically:
+- `get_current_tags(repo_id: str)` - Retrieve existing repository tags
+- `add_new_tag(repo_id: str, new_tag: str)` - Add new tag via pull request
+
+The agent doesn't just call these tools blindly - it reasons about when and how to use them based on the prompt you give it.
+
+### Tool Execution Example
+
+Here's how the agent intelligently uses tools:
+
+```python
+# Example of how the agent would use tools
+async def example_tool_usage():
+    agent = await get_agent()
+    
+    if agent:
+        # The agent can reason about which tools to use
+        response = await agent.run(
+            "Check the current tags for microsoft/DialoGPT-medium and add the tag 'conversational-ai' if it's not already present"
+        )
+        print(response)
+```
+
+Notice how we give the agent a natural language instruction, and it figures out:
+1. First call `get_current_tags` to see what tags exist
+2. Check if `conversational-ai` is already there
+3. If not, call `add_new_tag` to add it
+4. Provide a summary of what it did
+
+This is much more intelligent than calling tools directly!
+
+## Integration with Webhook Processing
+
+Now let's see how the MCP client integrates into our webhook processing pipeline. This is where everything comes together.
+
+### 1. Tag Extraction and Processing
+
+Here's the main function that processes webhook events and uses our MCP agent:
+
+```python
+async def process_webhook_comment(webhook_data: Dict[str, Any]):
+    """Process webhook to detect and add tags"""
+    print("🏷️ Starting process_webhook_comment...")
+
+    try:
+        comment_content = webhook_data["comment"]["content"]
+        discussion_title = webhook_data["discussion"]["title"]
+        repo_name = webhook_data["repo"]["name"]
+        
+        # Extract potential tags from the comment and discussion title
+        comment_tags = extract_tags_from_text(comment_content)
+        title_tags = extract_tags_from_text(discussion_title)
+        all_tags = list(set(comment_tags + title_tags))
+
+        print(f"🔍 All unique tags: {all_tags}")
+
+        if not all_tags:
+            return ["No recognizable tags found in the discussion."]
+```
+
+This first part extracts and combines tags from both the comment content and discussion title. We use a set to deduplicate any tags that appear in both places.
+
+<Tip>
+
+Processing both the comment and discussion title increases our chances of catching relevant tags. Users might mention tags in the title like "Missing pytorch tag" or in comments like "This needs #transformers".
+
+</Tip>
+
+Next, we get our agent and process each tag:
+
+```python
+        # Get agent instance
+        agent = await get_agent()
+        if not agent:
+            return ["Error: Agent not configured (missing HF_TOKEN)"]
+
+        # Process each tag
+        result_messages = []
+        for tag in all_tags:
+            try:
+                # Use agent to process the tag
+                prompt = f"""
+                For the repository '{repo_name}', check if the tag '{tag}' already exists.
+                If it doesn't exist, add it via a pull request.
+                
+                Repository: {repo_name}
+                Tag to check/add: {tag}
+                """
+                
+                print(f"🤖 Processing tag '{tag}' for repo '{repo_name}'")
+                response = await agent.run(prompt)
+                
+                # Parse agent response for success/failure
+                if "success" in response.lower():
+                    result_messages.append(f"✅ Tag '{tag}' processed successfully")
+                else:
+                    result_messages.append(f"⚠️ Issue with tag '{tag}': {response}")
+                    
+            except Exception as e:
+                error_msg = f"❌ Error processing tag '{tag}': {str(e)}"
+                print(error_msg)
+                result_messages.append(error_msg)
+
+        return result_messages
+```
+
+The key insight here is that we give the agent a clear, structured prompt for each tag. The agent then:
+1. Understands it needs to check the current tags first
+2. Compares with the new tag we want to add
+3. Creates a pull request if needed
+4. Returns a summary of its actions
+
+This approach handles the complexity of tool orchestration automatically.
+
+### 2. Tag Extraction Logic
+
+Let's examine the tag extraction logic that feeds into our MCP processing:
+
+```python
+import re
+from typing import List
+
+# Recognized ML/AI tags for validation
+RECOGNIZED_TAGS = {
+    "pytorch", "tensorflow", "jax", "transformers", "diffusers",
+    "text-generation", "text-classification", "question-answering",
+    "text-to-image", "image-classification", "object-detection",
+    "fill-mask", "token-classification", "translation", "summarization",
+    "feature-extraction", "sentence-similarity", "zero-shot-classification",
+    "image-to-text", "automatic-speech-recognition", "audio-classification",
+    "voice-activity-detection", "depth-estimation", "image-segmentation",
+    "video-classification", "reinforcement-learning", "tabular-classification",
+    "tabular-regression", "time-series-forecasting", "graph-ml", "robotics",
+    "computer-vision", "nlp", "cv", "multimodal",
+}
+```
+
+This curated list of recognized tags helps us focus on relevant ML/AI tags and avoid adding inappropriate tags to repositories.
+
+Now the extraction function itself:
+
+```python
+def extract_tags_from_text(text: str) -> List[str]:
+    """Extract potential tags from discussion text"""
+    text_lower = text.lower()
+    explicit_tags = []
+
+    # Pattern 1: "tag: something" or "tags: something"
+    tag_pattern = r"tags?:\s*([a-zA-Z0-9-_,\s]+)"
+    matches = re.findall(tag_pattern, text_lower)
+    for match in matches:
+        tags = [tag.strip() for tag in match.split(",")]
+        explicit_tags.extend(tags)
+
+    # Pattern 2: "#hashtag" style
+    hashtag_pattern = r"#([a-zA-Z0-9-_]+)"
+    hashtag_matches = re.findall(hashtag_pattern, text_lower)
+    explicit_tags.extend(hashtag_matches)
+
+    # Pattern 3: Look for recognized tags mentioned in natural text
+    mentioned_tags = []
+    for tag in RECOGNIZED_TAGS:
+        if tag in text_lower:
+            mentioned_tags.append(tag)
+
+    # Combine and deduplicate
+    all_tags = list(set(explicit_tags + mentioned_tags))
+
+    # Filter to only include recognized tags or explicitly mentioned ones
+    valid_tags = []
+    for tag in all_tags:
+        if tag in RECOGNIZED_TAGS or tag in explicit_tags:
+            valid_tags.append(tag)
+
+    return valid_tags
+```
+
+This function uses multiple strategies to extract tags:
+
+1. **Explicit patterns**: "tags: pytorch, transformers" or "tag: nlp"
+2. **Hashtags**: "#pytorch #nlp"
+3. **Natural mentions**: "This transformers model does text-generation"
+
+The validation step ensures we only suggest appropriate tags, preventing spam or irrelevant tags from being added.
+
+
+## Performance Considerations
+
+When building production MCP clients, performance is critical for maintaining responsive webhook processing. Let's look at some of the considerations we've made.
+
+### 1. Agent Singleton Pattern
+
+The agent is created once and reused to avoid:
+- Repeated MCP server startup overhead
+- Tool loading delays
+- Connection establishment costs
+
+This pattern is essential for webhook handlers that need to respond quickly.
+
+### 2. Async Processing
+
+All MCP operations are async to:
+- Handle multiple webhook requests concurrently
+- Avoid blocking the main FastAPI thread
+- Provide responsive webhook responses
+
+The async nature allows your webhook handler to accept new requests while processing tags in the background.
+
+### 3. Background Task Processing
+
+FastAPI has a built in `BackgroundTasks` class that can be used to run tasks in the background. This is useful for running long running tasks without blocking the main thread.
+
+```python
+from fastapi import BackgroundTasks
+
+@app.post("/webhook")
+async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
+    """Handle webhook and process in background"""
+    
+    # Validate webhook quickly
+    if request.headers.get("X-Webhook-Secret") != WEBHOOK_SECRET:
+        return {"error": "Invalid secret"}
+    
+    webhook_data = await request.json()
+    
+    # Process in background to return quickly
+    background_tasks.add_task(process_webhook_comment, webhook_data)
+    
+    return {"status": "accepted"}
+```
+
+This pattern ensures webhook responses are fast (under 1 second) while allowing complex tag processing to happen in the background.
+
+<Tip>
+
+Webhook endpoints should respond within 10 seconds or the platform may consider them timed out. Using background tasks ensures you can always respond quickly while handling complex processing asynchronously.
+
+</Tip>
+
+## Next Steps
+
+With our MCP client implemented, we can now:
+
+1. **Implement the Webhook Listener** - Create the FastAPI endpoint that receives Hub events
+2. **Integrate Everything** - Connect webhooks, client, and server into a complete system
+3. **Add Testing Interface** - Create a Gradio interface for development and monitoring
+4. **Deploy and Test** - Validate the complete system in production
+
+In the next section, we'll implement the webhook listener that will trigger our MCP-powered tagging agent.
+
+<Tip>
+
+The Agent class from `huggingface_hub` provides both MCP tool integration and language model reasoning, making it perfect for building intelligent automation workflows like our PR agent.
+
+</Tip> 
