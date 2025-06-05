@@ -152,9 +152,17 @@ server.prompt(
 const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
+
+Sau khi đã triển khai máy chủ của mình, bạn có thể khởi chạy nó bằng cách chạy script server.
+
+```bash
+mcp dev server.py
+```
+
 </details>
 
 ```javascript
+// index.mjs
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -217,14 +225,14 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-</hfoption>
-</hfoptions>
-
 Sau khi đã triển khai máy chủ của mình, bạn có thể khởi chạy nó bằng cách chạy script server.
 
 ```bash
-mcp dev server.py
+npx @modelcontextprotocol/inspector node ./index.mjs
 ```
+
+</hfoption>
+</hfoptions>
 
 Lệnh này sẽ khởi tạo một máy chủ phát triển chạy file `server.py` và ghi lại output sau:
 

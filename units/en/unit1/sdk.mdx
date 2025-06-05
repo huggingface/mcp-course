@@ -50,12 +50,19 @@ def weather_report(location: str) -> str:
 if __name__ == "__main__":
     mcp.run()
 
+Once you have your server implemented, you can start it by running the server script.
+
+```bash
+mcp dev server.py
+```
+
 ```
 
 </hfoption>
 <hfoption id="javascript">
 
 ```javascript
+// index.mjs
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -118,14 +125,14 @@ const transport = new StdioServerTransport();
 await server.connect(transport);
 ```
 
-</hfoption>
-</hfoptions>
-
 Once you have your server implemented, you can start it by running the server script.
 
 ```bash
-mcp dev server.py
+npx @modelcontextprotocol/inspector node ./index.mjs
 ```
+
+</hfoption>
+</hfoptions>
 
 This will initialize a development server running the file `server.py`. And log the following output:
 
