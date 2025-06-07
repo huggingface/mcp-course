@@ -1,0 +1,125 @@
+# Quiz 1: MCP 基础测试
+
+测试你对 Model Context Protocol 核心概念的理解
+
+### Q1: Model Context Protocol (MCP) 的主要目的是什么？
+
+<Question
+  choices={[
+    {
+      text: "限制 AI 模型的训练数据",
+      explain: "MCP 旨在扩展而非限制 AI 模型可访问的上下文"
+    },
+    {
+      text: "使 AI 模型能够连接外部数据源、工具和环境",
+      explain: "正确！MCP 的主要目标是促进互操作性",
+      correct: true
+    },
+    {
+      text: "替代大型语言模型中的 prompting 方法",
+      explain: "MCP 是增强 prompting 的协议，而非替代方案"
+    },
+    {
+      text: "创建新的 AI 编程语言",
+      explain: "MCP 是协议而非编程语言"
+    }
+  ]}
+/>
+
+### Q2: MCP 主要解决什么问题？
+
+<Question
+  choices={[
+    {
+      text: "AI 模型数量不足",
+      explain: "MCP 解决的是集成挑战，而非模型可用性问题"
+    },
+    {
+      text: "训练大语言模型的高成本",
+      explain: "虽然 MCP 可以提高效率，但其主要关注点并非直接降低训练成本"
+    },
+    {
+      text: "M×N 集成问题",
+      explain: "正确！MCP 通过标准化连接来避免 M×N 的定制集成",
+      correct: true
+    },
+    {
+      text: "创建新 AI 算法的困难",
+      explain: "MCP 旨在利用现有算法和工具，而非从头创建新算法"
+    }
+  ]}
+/>
+
+### Q3: MCP 的关键优势是什么？
+
+<Question
+  choices={[
+    {
+      text: "降低 AI 模型准确率",
+      explain: "MCP 旨在增强 AI 能力，应该保持或提升准确率而非降低"
+    },
+    {
+      text: "增加 AI 开发复杂度",
+      explain: "MCP 旨在简化集成从而降低复杂度"
+    },
+    {
+      text: "实现 AI 生态系统的标准化和互操作性",
+      explain: "正确！这是 MCP 的主要目标和优势",
+      correct: true
+    },
+    {
+      text: "隔离 AI 模型与外部系统",
+      explain: "MCP 促进连接和交互而非隔离"
+    }
+  ]}
+/>
+
+### Q4: 在 MCP 术语中，什么是 Host？
+
+<Question
+  choices={[
+    {
+      text: "对外暴露能力的外部程序",
+      explain: "这描述的是 MCP Server"
+    },
+    {
+      text: "用户直接交互的 AI 应用",
+      explain: "正确！Host 是用户直接交互的应用",
+      correct: true
+    },
+    {
+      text: "只读数据源",
+      explain: "这描述的是 MCP Capability (Resource) 类型"
+    },
+    {
+      text: "预定义的交互模板",
+      explain: "这描述的是 MCP Capability (Prompt) 类型"
+    }
+  ]}
+/>
+
+### Q5: M×N 集成问题在 AI 应用中指什么？
+
+<Question
+  choices={[
+    {
+      text: "用 N 个数据集训练 M 个模型的困难",
+      explain: "这与模型训练相关，而非 MCP 解决的集成问题"
+    },
+    {
+      text: "在缺乏标准的情况下连接 M 个 AI 应用到 N 个外部工具的挑战",
+      explain: "正确！MCP 通过标准解决这种 M*N 复杂度",
+      correct: true
+    },
+    {
+      text: "跨 N 个应用管理 M 个用户的问题",
+      explain: "这是用户管理/身份问题，非 MCP 关注点"
+    },
+    {
+      text: "为 N 个用户群体开发 M 个功能的复杂度",
+      explain: "这属于产品开发策略，非 MCP 定义的系统集成问题"
+    }
+  ]}
+/>
+
+恭喜完成测试 🥳！如需复习任何内容，建议重新学习本章节巩固知识。
