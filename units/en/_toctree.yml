@@ -11,16 +11,24 @@
     title: Key Concepts and Terminology
   - local: unit1/architectural-components
     title: Architectural Components
+  - local: unit1/quiz1
+    title: Quiz 1 - MCP Fundamentals
   - local: unit1/communication-protocol
     title: The Communication Protocol
   - local: unit1/capabilities
     title: Understanding MCP Capabilities
   - local: unit1/sdk
     title: MCP SDK
+  - local: unit1/quiz2
+    title: Quiz 2 - MCP SDK
   - local: unit1/mcp-clients
     title: MCP Clients
   - local: unit1/gradio-mcp
     title: Gradio MCP Integration
+  - local: unit1/unit1-recap
+    title: Unit 1 Recap
+  - local: unit1/certificate
+    title: Get your certificate!
 
 - title: "2. Use Case: End-to-End MCP Application"
   sections:
@@ -33,7 +41,7 @@
   - local: unit2/gradio-client
     title: Building an MCP Client with Gradio
   - local: unit2/tiny-agents
-    title: Building a Tiny Agent with TypeScript
+    title: Building Tiny Agents with MCP and the Hugging Face Hub
 
 - title: "3. Use Case: Advanced MCP Development"
   sections:

@@ -1,0 +1,66 @@
+# Xây Dựng Ứng Dụng MCP Đầu Cuối
+
+Chào mừng các bạn đến với Chương 2 của Khóa học MCP!
+
+Trong chương này, chúng ta sẽ xây dựng một ứng dụng MCP hoàn chỉnh từ đầu, tập trung vào việc tạo Server với Gradio và kết nối nó với nhiều Client. Cách tiếp cận thực hành này sẽ giúp bạn có được kinh nghiệm thực tế với toàn bộ hệ sinh thái MCP.
+
+<Tip>
+
+Trong chương này, chúng ta sẽ xây dựng một Server và Client MCP đơn giản bằng Gradio và HuggingFace Hub. Ở chương tiếp theo, chúng ta sẽ phát triển một Server phức tạp hơn để giải quyết các bài toán thực tế.
+
+</Tip>
+
+## Những Nội Dung Bạn Sẽ Học
+
+Trong chương này, các bạn sẽ:
+
+- Tạo Server MCP sử dụng tính năng hỗ trợ MCP tích hợp của Gradio
+- Xây dựng công cụ phân tích cảm xúc có thể được sử dụng bởi các Mô hình AI
+- Kết nối với Server bằng các cách triển khai Client khác nhau:
+  - Client dựa trên HuggingFace.js
+  - Client SmolAgents dành cho Python
+- Triển khai Server MCP lên Hugging Face Spaces
+- Kiểm tra và gỡ lỗi toàn bộ hệ thống
+
+Kết thúc chương này, bạn sẽ có một ứng dụng MCP hoạt động thể hiện được sức mạnh và tính linh hoạt của giao thức này.
+
+## Điều Kiện Tiên Quyết
+
+Trước khi bắt đầu chương này, hãy đảm bảo bạn:
+
+- Đã hoàn thành Chương 1 hoặc hiểu cơ bản về các khái niệm MCP
+- Thành thạo cả Python và JavaScript/TypeScript
+- Hiểu cơ bản về API và kiến trúc Client-Server
+- Có môi trường phát triển với:
+  - Python 3.10+
+  - Node.js 18+
+  - Tài khoản Hugging Face (để triển khai)
+
+## Dự Án End-to-End Của Chúng Ta
+
+Chúng ta sẽ xây dựng ứng dụng phân tích cảm xúc bao gồm 3 phần chính: Server, Client và phần triển khai.
+
+![sentiment analysis application](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit2/1.png)
+
+### Phía Server
+
+- Sử dụng Gradio để tạo giao diện web và Server MCP qua `gr.Interface`
+- Triển khai công cụ phân tích cảm xúc bằng TextBlob
+- Cung cấp công cụ qua cả giao thức HTTP và MCP
+
+### Phía Client
+
+- Triển khai Client HuggingFace.js
+- Hoặc tạo Client Python smolagents
+- Minh họa cách sử dụng cùng một Server với các cách triển khai Client khác nhau
+
+### Triển Khai
+
+- Đưa Server lên Hugging Face Spaces
+- Cấu hình các Client để làm việc với Server đã triển khai
+
+## Hãy Bắt Đầu Nào!
+
+## Hãy Bắt Đầu Nào!
+
+Bạn đã sẵn sàng xây dựng ứng dụng MCP đầu cuối đầu tiên chưa? Hãy bắt đầu bằng cách thiết lập môi trường phát triển và tạo máy chủ MCP Gradio của chúng ta.

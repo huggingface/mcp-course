@@ -26,7 +26,9 @@ pip install "gradio[mcp]" textblob
 
 ## Creating the Server
 
-Create a new file called `server.py` with the following code:
+> Hugging face spaces needs an app.py file to build the space. So the name of the python file has to be app.py 
+
+Create a new file called `app.py` with the following code:
 
 ```python
 import gradio as gr
@@ -94,7 +96,7 @@ Let's break down the key components:
 Start the server by running:
 
 ```bash
-python server.py
+python app.py
 ```
 
 You should see output indicating that both the web interface and MCP server are running. The web interface will be available at `http://localhost:7860`, and the MCP server at `http://localhost:7860/gradio_api/mcp/sse`.
@@ -166,7 +168,7 @@ textblob
 3. Push your code to the Space:
 ```bash
 git init
-git add server.py requirements.txt
+git add app.py requirements.txt
 git commit -m "Initial commit"
 git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/mcp-sentiment
 git push -u origin main

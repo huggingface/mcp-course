@@ -1,0 +1,279 @@
+# MCP SDK
+
+Giao Thức Ngữ Cảnh Mô Hình (MCP) cung cấp SDK chính thức cho cả JavaScript, Python và các ngôn ngữ khác. Điều này giúp việc triển khai Client và Server MCP trong ứng dụng của bạn trở nên dễ dàng. Các SDK này xử lý các chi tiết giao thức cấp thấp, cho phép bạn tập trung vào việc xây dựng chức năng ứng dụng.
+
+## Tổng quan về SDK
+
+Cả hai SDK đều cung cấp chức năng cốt lõi tương tự, tuân theo đặc tả giao thức MCP mà chúng ta đã thảo luận trước đó. Chúng xử lý:
+
+- Giao tiếp ở cấp độ giao thức
+- Đăng ký và khám phá tính năng
+- Tuần tự hóa/giải tuần tự hóa tin nhắn
+- Quản lý kết nối
+- Xử lý lỗi
+
+## Triển khai các thành phần cốt lõi
+
+Hãy cùng khám phá cách triển khai từng thành phần cốt lõi (Tools, Resources, và Prompts) bằng cả hai SDK.
+
+<hfoptions id="server-implementation">
+<hfoption id="python">
+
+<Youtube id="exzrb5QNUis" />
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```python
+from mcp.server.fastmcp import FastMCP
+
+# Tạo Server MCP
+mcp = FastMCP("Dịch vụ Thời tiết")
+
+
+@mcp.tool()
+def get_weather(location: str) -> str:
+    """Nhận thông tin thời tiết hiện tại ở một địa điểm cụ thể."""
+    return f"Weather in {location}: Sunny, 72°F"
+
+
+@mcp.resource("weather://{location}")
+def weather_resource(location: str) -> str:
+    """Cung cấp dữ liệu thời tiết dưới dạng tài nguyên."""
+    return f"Weather data for {location}: Sunny, 72°F"
+
+
+@mcp.prompt()
+def weather_report(location: str) -> str:
+    """Tạo lời nhắc báo cáo thời tiết."""
+    return f"""You are a weather reporter. Weather report for {location}?"""
+
+
+# Chạy Server
+if __name__ == "__main__":
+    mcp.run()
+```
+</details>
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+# Create an MCP server
+mcp = FastMCP("Weather Service")
+
+
+@mcp.tool()
+def get_weather(location: str) -> str:
+    """Get the current weather for a specified location."""
+    return f"Weather in {location}: Sunny, 72°F"
+
+
+@mcp.resource("weather://{location}")
+def weather_resource(location: str) -> str:
+    """Provide weather data as a resource."""
+    return f"Weather data for {location}: Sunny, 72°F"
+
+
+@mcp.prompt()
+def weather_report(location: str) -> str:
+    """Create a weather report prompt."""
+    return f"""You are a weather reporter. Weather report for {location}?"""
+
+
+# Run the server
+if __name__ == "__main__":
+    mcp.run()
+
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```javascript
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// Tạo Server MCP
+const server = new McpServer({
+    name: "Dịch vụ Thời tiết",
+    version: "1.0.0"
+});
+
+// Triển khai công cụ
+server.tool("get_weather",
+    { location: z.string() },
+    async ({ location }) => ({
+        content: [{
+            type: "text",
+            text: `Weather in ${location}: Sunny, 72°F`
+        }]
+    })
+);
+
+// Triển khai tài nguyên
+server.resource(
+    "weather",
+    new ResourceTemplate("weather://{location}", { list: undefined }),
+    async (uri, { location }) => ({
+        contents: [{
+            uri: uri.href,
+            text: `Weather data for ${location}: Sunny, 72°F`
+        }]
+    })
+);
+
+// Triển khai prompt
+server.prompt(
+    "weather_report",
+    { location: z.string() },
+    async ({ location }) => ({
+        messages: [
+            {
+                role: "assistant",
+                content: {
+                    type: "text",
+                    text: "You are a weather reporter."
+                }
+            },
+            {
+                role: "user",
+                content: {
+                    type: "text",
+                    text: `Weather report for ${location}?`
+                }
+            }
+        ]
+    })
+);
+
+// Chạy server
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+</details>
+
+```javascript
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// Create an MCP server
+const server = new McpServer({
+    name: "Weather Service",
+    version: "1.0.0"
+});
+
+// Tool implementation
+server.tool("get_weather",
+    { location: z.string() },
+    async ({ location }) => ({
+        content: [{
+            type: "text",
+            text: `Weather in ${location}: Sunny, 72°F`
+        }]
+    })
+);
+
+// Resource implementation
+server.resource(
+    "weather",
+    new ResourceTemplate("weather://{location}", { list: undefined }),
+    async (uri, { location }) => ({
+        contents: [{
+            uri: uri.href,
+            text: `Weather data for ${location}: Sunny, 72°F`
+        }]
+    })
+);
+
+// Prompt implementation
+server.prompt(
+    "weather_report",
+    { location: z.string() },
+    async ({ location }) => ({
+        messages: [
+            {
+                role: "assistant",
+                content: {
+                    type: "text",
+                    text: "You are a weather reporter."
+                }
+            },
+            {
+                role: "user",
+                content: {
+                    type: "text",
+                    text: `Weather report for ${location}?`
+                }
+            }
+        ]
+    })
+);
+
+// Run the server
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+</hfoption>
+</hfoptions>
+
+Sau khi đã triển khai máy chủ của mình, bạn có thể khởi chạy nó bằng cách chạy script server.
+
+```bash
+mcp dev server.py
+```
+
+Lệnh này sẽ khởi tạo một máy chủ phát triển chạy file `server.py` và ghi lại output sau:
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```
+Starting MCP inspector...
+⚙️ Proxy server listening on port 6277
+Spawned stdio transport
+Connected MCP client to backing server transport
+Created web app transport
+Set up MCP proxy
+🔍 MCP Inspector is up and running at http://127.0.0.1:6274 🚀
+```
+</details>
+```bash
+Starting MCP inspector...
+⚙️ Proxy server listening on port 6277
+Spawned stdio transport
+Connected MCP client to backing server transport
+Created web app transport
+Set up MCP proxy
+🔍 MCP Inspector is up and running at http://127.0.0.1:6274 🚀
+```
+
+Bạn có thể mở MCP Inspector tại [http://127.0.0.1:6274](http://127.0.0.1:6274) để xem các tính năng của máy chủ và tương tác với chúng.
+
+Bạn sẽ thấy các tính năng của máy chủ và khả năng gọi chúng thông qua giao diện người dùng.
+
+![MCP Inspector](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/6.png)
+
+## Bộ SDK MCP
+
+MCP được thiết kế để độc lập với ngôn ngữ lập trình, và hiện có các SDK chính thức cho nhiều ngôn ngữ phổ biến:
+
+| Ngôn ngữ | Kho lưu trữ | Người bảo trì | Trạng thái |
+|----------|------------|---------------|--------|
+| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | Anthropic | Hoạt động |
+| Python | [github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | Anthropic | Hoạt động |
+| Java | [github.com/modelcontextprotocol/java-sdk](https://github.com/modelcontextprotocol/java-sdk) | Spring AI (VMware) | Hoạt động |
+| Kotlin | [github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk) | JetBrains | Hoạt động |
+| C# | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk) | Microsoft | Hoạt động (Xem trước) |
+| Swift | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk) | loopwork-ai | Hoạt động |
+| Rust | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk) | Anthropic/Cộng đồng | Hoạt động |
+
+Các SDK này cung cấp các abstraction đặc thù cho từng ngôn ngữ, giúp đơn giản hóa việc làm việc với giao thức MCP, cho phép bạn tập trung vào việc triển khai logic cốt lõi của máy chủ hoặc máy khách thay vì xử lý các chi tiết giao thức cấp thấp.
+
+## Bước tiếp theo
+
+Chúng ta mới chỉ chạm vào bề mặt của những gì có thể làm với MCP nhưng bạn đã có một máy chủ cơ bản đang chạy. Thực tế, bạn cũng đã kết nối với nó bằng MCP Client trên trình duyệt.
+
+Trong phần tiếp theo, chúng ta sẽ xem cách kết nối với máy chủ từ một LLM.

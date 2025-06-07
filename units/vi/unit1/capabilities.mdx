@@ -1,0 +1,377 @@
+# Hiểu về Khả năng của MCP
+
+Các MCP Server cung cấp nhiều khả năng khác nhau cho Client thông qua giao thức truyền thông. Những khả năng này được chia thành bốn loại chính, mỗi loại có đặc điểm và trường hợp sử dụng riêng. Hãy cùng khám phá các nguyên thủy cốt lõi tạo nền tảng cho chức năng của MCP.
+
+<Tip>
+
+Trong phần này, chúng ta sẽ xem các ví dụ dưới dạng hàm độc lập với framework trong mỗi ngôn ngữ. Mục đích là tập trung vào khái niệm và cách chúng phối hợp với nhau, thay vì sự phức tạp của bất kỳ framework cụ thể nào.
+
+Trong các chương tiếp theo, chúng ta sẽ xem cách triển khai các khái niệm này trong mã cụ thể của MCP.
+
+</Tip>
+
+## Công cụ (Tools)
+
+Công cụ là các hàm hoặc hành động có thể thực thi mà mô hình AI có thể gọi thông qua giao thức MCP.
+
+- **Kiểm soát**: Công cụ thường **được kiểm soát bởi mô hình** (model-controlled), nghĩa là mô hình AI (LLM) quyết định khi nào gọi chúng dựa trên yêu cầu và ngữ cảnh của người dùng.
+- **An toàn**: Do khả năng thực hiện các hành động có tác dụng phụ, việc thực thi công cụ có thể nguy hiểm. Vì vậy chúng thường yêu cầu sự chấp thuận rõ ràng từ người dùng.
+- **Trường hợp sử dụng**: Gửi tin nhắn, tạo ticket, truy vấn API, thực hiện tính toán.
+
+**Ví dụ**: Một công cụ thời tiết lấy dữ liệu thời tiết hiện tại cho một địa điểm:
+
+<hfoptions id="tool-example">
+<hfoption id="python">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+
+```python
+def get_weather(location: str) -> dict:
+    """Nhận thông tin thời tiết hiện tại ở một địa điểm cụ thể."""
+    # Connect to weather API and fetch data
+    return {
+        "temperature": 72,
+        "conditions": "Sunny",
+        "humidity": 45
+    }
+```
+</details>
+
+```python
+def get_weather(location: str) -> dict:
+    """Get the current weather for a specified location."""
+    # Connect to weather API and fetch data
+    return {
+        "temperature": 72,
+        "conditions": "Sunny",
+        "humidity": 45
+    }
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+
+```javascript
+function getWeather(location) {
+    // Kết nối đến API thời tiết và lấy dữ liệu
+    return {
+        temperature: 72,
+        conditions: 'Sunny',
+        humidity: 45
+    };
+}
+```
+</details>
+
+```javascript
+function getWeather(location) {
+    // Connect to weather API and fetch data
+    return {
+        temperature: 72,
+        conditions: 'Sunny',
+        humidity: 45
+    };
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## Tài nguyên (Resources)
+
+Tài nguyên cung cấp quyền truy cập chỉ đọc (read-only) vào các nguồn dữ liệu, cho phép mô hình AI truy xuất ngữ cảnh mà không cần thực thi logic phức tạp.
+
+- **Kiểm soát**: Tài nguyên **được kiểm soát bởi ứng dụng** (application-controlled), nghĩa là ứng dụng Host thường quyết định khi nào truy cập chúng.
+- **Bản chất**: Được thiết kế để truy xuất dữ liệu với tính toán tối thiểu, tương tự các endpoint GET trong REST API.
+- **An toàn**: Vì chỉ đọc nên chúng thường ít rủi ro bảo mật hơn so với Công cụ.
+- **Trường hợp sử dụng**: Truy cập nội dung file, lấy bản ghi cơ sở dữ liệu, đọc thông tin cấu hình.
+
+**Ví dụ**: Một tài nguyên cung cấp quyền truy cập vào nội dung file:
+
+<hfoptions id="resource-example">
+<hfoption id="python">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+
+```python
+def read_file(file_path: str) -> str:
+    """Đọc nội dung của file tại đường dẫn được chỉ định."""
+    with open(file_path, 'r') as f:
+        return f.read()
+```
+</details>
+
+```python
+def read_file(file_path: str) -> str:
+    """Read the contents of a file at the specified path."""
+    with open(file_path, 'r') as f:
+        return f.read()
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+
+```javascript
+function readFile(filePath) {
+    // Sử dụng fs.readFile để đọc nội dung file
+    const fs = require('fs');
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(data);
+        });
+    });
+}
+```
+</details>
+
+```javascript
+function readFile(filePath) {
+    // Using fs.readFile to read file contents
+    const fs = require('fs');
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(data);
+        });
+    });
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## Lời nhắc
+
+Lời nhắc (Prompts) là các mẫu hoặc quy trình làm việc được định nghĩa trước nhằm hướng dẫn tương tác giữa người dùng, Mô hình AI và khả năng của Server.
+
+- **Kiểm soát**: Lời nhắc **do người dùng kiểm soát**, thường được hiển thị dưới dạng các tùy chọn trong giao diện ứng dụng Host.
+- **Mục đích**: Chúng cấu trúc các tương tác để tối ưu hóa việc sử dụng Công cụ và Tài nguyên sẵn có.
+- **Lựa chọn**: Người dùng thường chọn một lời nhắc trước khi Mô hình AI bắt đầu xử lý, thiết lập ngữ cảnh cho tương tác.
+- **Trường hợp sử dụng**: Quy trình làm việc phổ biến, mẫu tác vụ chuyên biệt, tương tác có hướng dẫn.
+
+**Ví dụ**: Mẫu lời nhắc để tạo đánh giá mã nguồn:
+
+<hfoptions id="prompt-example">
+<hfoption id="python">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+
+```python
+def code_review(code: str, language: str) -> list:
+    """Tạo đánh giá mã nguồn cho đoạn code được cung cấp."""
+    return [
+        {
+            "role": "system",
+            "content": f"You are a code reviewer examining {language} code. Provide a detailed review highlighting best practices, potential issues, and suggestions for improvement."
+        },
+        {
+            "role": "user",
+            "content": f"Please review this {language} code:\n\n```{language}\n{code}\n```"
+        }
+    ]
+```
+</details>
+
+```python
+def code_review(code: str, language: str) -> list:
+    """Generate a code review for the provided code snippet."""
+    return [
+        {
+            "role": "system",
+            "content": f"You are a code reviewer examining {language} code. Provide a detailed review highlighting best practices, potential issues, and suggestions for improvement."
+        },
+        {
+            "role": "user",
+            "content": f"Please review this {language} code:\n\n```{language}\n{code}\n```"
+        }
+    ]
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+
+```javascript
+function codeReview(code, language) {
+    return [
+        {
+            role: 'system',
+            content: `You are a code reviewer examining ${language} code. Provide a detailed review highlighting best practices, potential issues, and suggestions for improvement.`
+        },
+        {
+            role: 'user',
+            content: `Please review this ${language} code:\n\n\`\`\`${language}\n${code}\n\`\`\``
+        }
+    ];
+}
+```
+</details>
+
+```javascript
+function codeReview(code, language) {
+    return [
+        {
+            role: 'system',
+            content: `You are a code reviewer examining ${language} code. Provide a detailed review highlighting best practices, potential issues, and suggestions for improvement.`
+        },
+        {
+            role: 'user',
+            content: `Please review this ${language} code:\n\n\`\`\`${language}\n${code}\n\`\`\``
+        }
+    ];
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## Lấy mẫu (Sampling)
+
+Lấy mẫu cho phép Server yêu cầu Client (cụ thể là ứng dụng Host) thực hiện các tương tác LLM.
+
+- **Kiểm soát**: Lấy mẫu **do Server khởi xướng** nhưng cần sự hỗ trợ từ Client/Host.
+- **Mục đích**: Kích hoạt các hành vi tự chủ từ Server và các tương tác đệ quy/đa bước tiềm năng.
+- **An toàn**: Giống như Công cụ, các thao tác lấy mẫu thường yêu cầu sự chấp thuận của người dùng.
+- **Trường hợp sử dụng**: Các tác vụ đa bước phức tạp, quy trình làm việc của agent tự động, quá trình tương tác.
+
+**Ví dụ**: Server có thể yêu cầu Client phân tích dữ liệu đã xử lý:
+
+<hfoptions id="sampling-example">
+<hfoption id="python">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```python
+def request_sampling(messages, system_prompt=None, include_context="none"):
+    """Yêu cầu lấy mẫu LLM từ máy khách."""
+    # Trong triển khai thực tế, phần này sẽ gửi yêu cầu đến máy khách
+    return {
+        "role": "assistant",
+        "content": "Analysis of the provided data..."
+    }
+```
+</details>
+
+```python
+def request_sampling(messages, system_prompt=None, include_context="none"):
+    """Request LLM sampling from the client."""
+    # In a real implementation, this would send a request to the client
+    return {
+        "role": "assistant",
+        "content": "Analysis of the provided data..."
+    }
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```javascript
+function requestSampling(messages, systemPrompt = null, includeContext = 'none') {
+    // Trong triển khai thực tế, phần này sẽ gửi yêu cầu đến máy khách
+    return {
+        role: 'assistant',
+        content: 'Analysis of the provided data...'
+    };
+}
+
+function handleSamplingRequest(request) {
+    const { messages, systemPrompt, includeContext } = request;
+    // Trong triển khai thực tế, phần này sẽ xử lý yêu cầu và trả về phản hồi
+    return {
+        role: 'assistant',
+        content: 'Response to the sampling request...'
+    };
+}
+```
+</details>
+
+```javascript
+function requestSampling(messages, systemPrompt = null, includeContext = 'none') {
+    // In a real implementation, this would send a request to the client
+    return {
+        role: 'assistant',
+        content: 'Analysis of the provided data...'
+    };
+}
+
+function handleSamplingRequest(request) {
+    const { messages, systemPrompt, includeContext } = request;
+    // In a real implementation, this would process the request and return a response
+    return {
+        role: 'assistant',
+        content: 'Response to the sampling request...'
+    };
+}
+```
+
+</hfoption>
+</hfoptions>
+
+Quy trình lấy mẫu (sampling) diễn ra theo các bước sau:
+1. Server gửi yêu cầu `sampling/createMessage` đến client
+2. Client xem xét và có thể chỉnh sửa yêu cầu này
+3. Client lấy mẫu từ một LLM
+4. Client kiểm tra kết quả hoàn thiện
+5. Client trả kết quả về cho server
+
+<Tip>
+
+Thiết kế human-in-the-loop (có sự tham gia của con người trong vòng lặp) này đảm bảo người dùng duy trì quyền kiểm soát những gì LLM nhìn thấy và tạo ra. Khi triển khai sampling, điều quan trọng là phải cung cấp các lời nhắc rõ ràng, được cấu trúc tốt và bao gồm ngữ cảnh liên quan.
+
+</Tip>
+
+## Cách Các Khả Năng Phối Hợp
+
+Hãy cùng xem cách các khả năng này phối hợp với nhau để tạo ra các tương tác phức tạp. Trong bảng dưới đây, chúng ta đã liệt kê các khả năng, đối tượng kiểm soát, hướng kiểm soát và một số chi tiết khác.
+
+| Khả năng    | Được kiểm soát bởi | Hướng     | Tác dụng phụ       | Cần phê duyệt | Trường hợp sử dụng điển hình       |
+|------------|-------------------|-----------|--------------------|---------------|-----------------------------------|
+| Tools      | Mô hình (LLM)     | Client → Server | Có (có thể)       | Có            | Hành động, gọi API, thao tác dữ liệu |
+| Resources  | Ứng dụng          | Client → Server | Không (chỉ đọc)   | Thường không  | Truy xuất dữ liệu, thu thập ngữ cảnh |
+| Prompts    | Người dùng        | Server → Client | Không              | Không (do người dùng chọn) | Quy trình làm việc có hướng dẫn, mẫu chuyên biệt |
+| Sampling   | Server            | Server → Client → Server | Gián tiếp | Có            | Tác vụ nhiều bước, hành vi agentic |
+
+Các khả năng này được thiết kế để bổ trợ cho nhau theo những cách sau:
+
+1. Người dùng có thể chọn **Prompt** để bắt đầu quy trình làm việc chuyên biệt
+2. Prompt có thể bao gồm ngữ cảnh từ **Tài nguyên**
+3. Trong quá trình xử lý, mô hình AI có thể gọi **Công cụ** để thực hiện hành động cụ thể
+4. Với các thao tác phức tạp, Server có thể sử dụng **Sampling** để yêu cầu xử lý LLM bổ sung
+
+Sự phân biệt giữa chúng tạo ra cấu trúc rõ ràng cho các tương tác MCP, cho phép các mô hình AI truy cập thông tin, thực hiện hành động và tham gia vào các quy trình làm việc phức tạp trong khi vẫn duy trì các ranh giới kiểm soát phù hợp.
+
+## Quá Trình Khám Phá
+
+Một tính năng chính của MCP là khả năng khám phá động. Khi Client kết nối với Server, nó có thể truy vấn các Tools, Resources và Prompts khả dụng thông qua các phương thức danh sách cụ thể:
+
+- `tools/list`: Khám phá Tools khả dụng
+- `resources/list`: Khám phá Resources khả dụng
+- `prompts/list`: Khám phá Prompts khả dụng
+
+Cơ chế khám phá động này cho phép Client thích ứng với các khả năng cụ thể mà mỗi Server cung cấp mà không cần biết trước về chức năng của Server.
+
+## Kết Luận
+
+Hiểu rõ các yếu tố cốt lõi này là điều cần thiết để làm việc hiệu quả với MCP. Bằng cách cung cấp các loại khả năng riêng biệt với ranh giới kiểm soát rõ ràng, MCP cho phép các tương tác mạnh mẽ giữa mô hình AI và hệ thống bên ngoài trong khi vẫn duy trì các cơ chế an toàn và kiểm soát phù hợp.
+
+Trong phần tiếp theo, chúng ta sẽ khám phá cách Gradio tích hợp với MCP để cung cấp các giao diện dễ sử dụng cho các khả năng này.

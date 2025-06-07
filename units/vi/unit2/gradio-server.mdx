@@ -1,0 +1,228 @@
+# Xây dựng Gradio MCP Server
+
+Trong phần này, chúng ta sẽ tạo một MCP server phân tích cảm xúc bằng Gradio. Server này sẽ cung cấp công cụ phân tích cảm xúc cho cả người dùng qua giao diện web và các mô hình AI thông qua giao thức MCP.
+
+## Giới thiệu tích hợp Gradio MCP
+
+Gradio cung cấp cách đơn giản để tạo MCP server bằng việc tự động chuyển đổi các hàm Python thành MCP Tools. Khi bạn đặt `mcp_server=True` trong `launch()`, Gradio sẽ:
+
+1. Tự động chuyển đổi các hàm thành MCP Tools
+2. Ánh xạ các thành phần đầu vào sang schema tham số công cụ
+3. Xác định định dạng phản hồi từ các thành phần đầu ra
+4. Thiết lập JSON-RPC qua HTTP+SSE cho giao tiếp client-server
+5. Tạo cả giao diện web và endpoint MCP server
+
+## Thiết lập dự án
+
+Đầu tiên, hãy tạo thư mục mới cho dự án và cài đặt các phụ thuộc cần thiết:
+
+```bash
+mkdir mcp-sentiment
+cd mcp-sentiment
+python -m venv venv
+source venv/bin/activate  # Trên Windows: venv\Scripts\activate
+pip install "gradio[mcp]" textblob
+```
+
+## Tạo Server
+
+Tạo một tệp mới có tên `server.py` với mã sau:
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```python
+import gradio as gr
+from textblob import TextBlob
+
+def sentiment_analysis(text: str) -> dict:
+    """
+    Phân tích cảm xúc của văn bản được cung cấp.
+
+    Args:
+        text (str): Văn bản cần phân tích
+
+    Returns:
+        dict: Từ điển chứa thông tin về độ phân cực, tính chủ quan và đánh giá
+    """
+    blob = TextBlob(text)
+    sentiment = blob.sentiment
+    
+    return {
+        "polarity": round(sentiment.polarity, 2),  # -1 (tiêu cực) đến 1 (tích cực)
+        "subjectivity": round(sentiment.subjectivity, 2),  # 0 (khách quan) đến 1 (chủ quan)
+        "assessment": "positive" if sentiment.polarity > 0 else "negative" if sentiment.polarity < 0 else "neutral"
+    }
+
+# Tạo giao diện Gradio
+demo = gr.Interface(
+    fn=sentiment_analysis,
+    inputs=gr.Textbox(placeholder="Nhập văn bản để phân tích..."),
+    outputs=gr.JSON(),
+    title="Phân Tích Cảm Xúc Văn Bản",
+    description="Phân tích cảm xúc văn bản sử dụng TextBlob"
+)
+
+# Khởi chạy giao diện và Server MCP
+if __name__ == "__main__":
+    demo.launch(mcp_server=True)
+```
+</details>
+
+```python
+import gradio as gr
+from textblob import TextBlob
+
+def sentiment_analysis(text: str) -> dict:
+    """
+    Analyze the sentiment of the given text.
+
+    Args:
+        text (str): The text to analyze
+
+    Returns:
+        dict: A dictionary containing polarity, subjectivity, and assessment
+    """
+    blob = TextBlob(text)
+    sentiment = blob.sentiment
+    
+    return {
+        "polarity": round(sentiment.polarity, 2),  # -1 (negative) to 1 (positive)
+        "subjectivity": round(sentiment.subjectivity, 2),  # 0 (objective) to 1 (subjective)
+        "assessment": "positive" if sentiment.polarity > 0 else "negative" if sentiment.polarity < 0 else "neutral"
+    }
+
+# Create the Gradio interface
+demo = gr.Interface(
+    fn=sentiment_analysis,
+    inputs=gr.Textbox(placeholder="Enter text to analyze..."),
+    outputs=gr.JSON(),
+    title="Text Sentiment Analysis",
+    description="Analyze the sentiment of text using TextBlob"
+)
+
+# Launch the interface and MCP server
+if __name__ == "__main__":
+    demo.launch(mcp_server=True)
+```
+
+## Hiểu về Mã
+
+Hãy cùng phân tích các thành phần chính:
+
+1. **Định nghĩa Hàm**:
+   - Hàm `sentiment_analysis` nhận đầu vào là văn bản và trả về một từ điển
+   - Sử dụng TextBlob để phân tích cảm xúc
+   - Docstring rất quan trọng vì giúp Gradio tạo lược đồ công cụ MCP
+   - Gợi ý kiểu dữ liệu (`str` và `dict`) giúp xác định lược đồ đầu vào/đầu ra
+
+2. **Giao diện Gradio**:
+   - `gr.Interface` tạo cả giao diện web và Server MCP
+   - Hàm được hiển thị như một công cụ MCP tự động
+   - Các thành phần đầu vào và đầu ra xác định lược đồ công cụ
+   - Thành phần đầu ra JSON đảm bảo tuần tự hóa đúng cách
+
+3. **Server MCP**:
+   - Thiết lập `mcp_server=True` kích hoạt Server MCP
+   - Server sẽ có sẵn tại `http://localhost:7860/gradio_api/mcp/sse`
+   - Bạn cũng có thể kích hoạt bằng biến môi trường:
+     ```bash
+     export GRADIO_MCP_SERVER=True
+     ```
+
+## Chạy Server
+
+Khởi động Server bằng cách chạy:
+
+```bash
+python server.py
+```
+
+Bạn sẽ thấy đầu ra cho biết cả giao diện web và Server MCP đang chạy. Giao diện web sẽ có sẵn tại `http://localhost:7860`, và Server MCP tại `http://localhost:7860/gradio_api/mcp/sse`.
+
+## Kiểm tra Server
+
+Bạn có thể kiểm tra Server bằng hai cách:
+
+1. **Giao diện Web**:
+   - Mở `http://localhost:7860` trong trình duyệt
+   - Nhập văn bản và nhấp "Submit"
+   - Bạn sẽ thấy kết quả phân tích cảm xúc
+
+2. **Lược đồ MCP**:
+   - Truy cập `http://localhost:7860/gradio_api/mcp/schema`
+   - Hiển thị lược đồ công cụ MCP mà các Client sẽ sử dụng
+   - Bạn cũng có thể tìm thấy liên kết này trong phần "View API" ở chân trang ứng dụng Gradio
+
+## Mẹo Xử lý Sự cố
+
+1. **Gợi ý Kiểu dữ liệu và Docstring**:
+   - Luôn cung cấp gợi ý kiểu dữ liệu cho tham số hàm và giá trị trả về
+   - Bao gồm docstring với khối "Args:" cho mỗi tham số
+   - Điều này giúp Gradio tạo lược đồ công cụ MCP chính xác
+
+2. **Đầu vào Chuỗi**:
+   - Khi không chắc chắn, hãy chấp nhận đối số đầu vào dưới dạng `str`
+   - Chuyển đổi chúng sang kiểu mong muốn bên trong hàm
+   - Cung cấp khả năng tương thích tốt hơn với các Client MCP
+
+3. **Hỗ trợ SSE**:
+   - Một số Client MCP không hỗ trợ Server MCP dựa trên SSE
+   - Trong trường hợp đó, sử dụng `mcp-remote`:
+     ```json
+     {
+       "mcpServers": {
+         "gradio": {
+           "command": "npx",
+           "args": [
+             "mcp-remote",
+             "http://localhost:7860/gradio_api/mcp/sse"
+           ]
+         }
+       }
+     }
+     ```
+
+4. **Sự cố Kết nối**:
+   - Nếu gặp vấn đề kết nối, thử khởi động lại cả Client và Server
+   - Kiểm tra xem Server đang chạy và có thể truy cập được không
+   - Xác nhận rằng lược đồ MCP có sẵn tại URL mong đợi
+
+## Triển khai lên Hugging Face Spaces
+
+Để làm cho Server của bạn có sẵn cho người khác, bạn có thể triển khai lên Hugging Face Spaces:
+
+1. Tạo một Space mới trên Hugging Face:
+   - Truy cập huggingface.co/spaces
+   - Nhấp "Create new Space"
+   - Chọn "Gradio" làm SDK
+   - Đặt tên cho Space của bạn (ví dụ: "mcp-sentiment")
+
+2. Tạo tệp `requirements.txt`:
+```txt
+gradio[mcp]
+textblob
+```
+
+3. Đẩy mã của bạn lên Space:
+```bash
+git init
+git add server.py requirements.txt
+git commit -m "Initial commit"
+git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/mcp-sentiment
+git push -u origin main
+```
+
+Server MCP của các bạn giờ đã có thể truy cập tại:
+```
+https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse
+```
+
+## Bước tiếp theo
+
+Giờ khi đã có Server MCP đang chạy, chúng ta sẽ tạo các Client để tương tác với nó. Trong các phần tiếp theo, chúng ta sẽ:
+
+1. Tạo một Client dựa trên HuggingFace.js lấy cảm hứng từ Tiny Agents
+2. Triển khai một Client Python dựa trên SmolAgents
+3. Kiểm tra cả hai Client với Server đã triển khai
+
+Hãy cùng chuyển sang phần xây dựng Client đầu tiên nào!

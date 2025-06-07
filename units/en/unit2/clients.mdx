@@ -78,3 +78,59 @@ Create a new file called `config.json` with the following configuration:
 
 This configuration allows your UI client to communicate with the Gradio MCP server using the MCP protocol, enabling seamless integration between your frontend and the MCP service.
 
+## Configuring a MCP Client within Cursor IDE
+
+Cursor provides built-in MCP support, allowing you to connect your deployed MCP servers directly to your development environment.
+
+### Configuration
+
+Open Cursor settings (`Ctrl + Shift + J` / `Cmd + Shift + J`) → **MCP** tab → **Add new global MCP server**:
+
+**macOS:**
+```json
+{
+  "mcpServers": {
+    "sentiment-analysis": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "mcp-remote", 
+        "https://YOURUSENAME-mcp-sentiment.hf.space/gradio_api/mcp/sse", 
+        "--transport", 
+        "sse-only"
+      ]
+    }
+  }
+}
+```
+
+**Windows:**
+```json
+{
+  "mcpServers": {
+    "sentiment-analysis": {
+      "command": "cmd",
+      "args": [
+        "/c", 
+        "npx", 
+        "-y", 
+        "mcp-remote", 
+        "https://YOURUSENAME-mcp-sentiment.hf.space/gradio_api/mcp/sse", 
+        "--transport", 
+        "sse-only"
+      ]
+    }
+  }
+}
+```
+
+### Why We Use mcp-remote
+
+Most MCP clients, including Cursor, currently only support local servers via stdio transport and don't yet support remote servers with OAuth authentication. The `mcp-remote` tool serves as a bridge solution that:
+
+- Runs locally on your machine
+- Forwards requests from Cursor to the remote MCP server
+- Uses the familiar configuration file format
+
+Once configured, you can ask Cursor to use your sentiment analysis tool for tasks like analyzing code comments, user feedback, or pull request descriptions.
+

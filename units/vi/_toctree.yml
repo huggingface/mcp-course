@@ -1,0 +1,46 @@
+- title: "0. Chào mừng đến với Khóa học MCP"
+  sections:
+  - local: unit0/introduction
+    title: Chào mừng đến với Khóa học MCP
+    
+- title: "1. Giới thiệu về Giao Thức Ngữ Cảnh Mô Hình (MCP)"
+  sections:
+  - local: unit1/introduction
+    title: Giới thiệu về Giao Thức Ngữ Cảnh Mô Hình (MCP)
+  - local: unit1/key-concepts
+    title: Khái niệm và Thuật ngữ chính
+  - local: unit1/architectural-components
+    title: Các thành phần kiến trúc
+  - local: unit1/communication-protocol
+    title: Giao thức truyền thông
+  - local: unit1/capabilities
+    title: Hiểu về khả năng của MCP
+  - local: unit1/sdk
+    title: MCP SDK
+  - local: unit1/mcp-clients
+    title: MCP Clients
+  - local: unit1/gradio-mcp
+    title: Tích hợp Gradio với MCP
+
+- title: "2. Trường hợp sử dụng: Ứng dụng MCP đầu cuối"
+  sections:
+  - local: unit2/introduction
+    title: Giới thiệu về Xây dựng Ứng dụng MCP
+  - local: unit2/gradio-server
+    title: Xây dựng Máy chủ Gradio MCP
+  - local: unit2/clients
+    title: Sử dụng MCP Clients với ứng dụng của bạn
+  - local: unit2/gradio-client
+    title: Xây dựng MCP Clients bằng Gradio
+  - local: unit2/tiny-agents
+    title: Xây dựng Tiny Agent với TypeScript
+
+- title: "3. Trường hợp sử dụng: Phát triển MCP Nâng cao"
+  sections:
+  - local: unit3/introduction
+    title: Sắp ra mắt
+
+- title: "Các chương bổ trợ"
+  sections:
+  - local: unit4/introduction
+    title: Sắp ra mắt

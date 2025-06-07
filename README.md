@@ -1,5 +1,7 @@
 # The Model Context Protocol (MCP) Course
 
+<div align="center"> <a href="README.md">🇺🇸 English</a> | <a href="README_vi.md">🇻🇳 Tiếng Việt</a> </div>
+
 ![1](https://github.com/user-attachments/assets/d26dcc5e-46cb-449e-aecb-49ece10d342a)
 
 If you like the course, **don't hesitate to ⭐ star this repository**. This helps us to **make the course more visible 🤗**.
@@ -19,6 +21,8 @@ You can access the course here 👉 [Coming Soon]
 | 0       | Welcome to the Course                               | Welcome, guidelines, necessary tools, and course overview.                                              |
 | 1       | Introduction to Model Context Protocol              | Definition of MCP, key concepts, and its role in connecting AI models with external data and tools.     |
 | 2       | Building with MCP: Practical Development            | Learn to implement MCP clients and servers using available SDKs and frameworks.                         |
+| 3       | MCP Protocol Deep Dive                            | Explore advanced MCP features, architecture, and real-world integration patterns|
+| 4       | Bonus Units & Collaborations                    | Special topics, partner libraries, and community-driven projects.|
 
 ## Prerequisites
 
@@ -44,10 +48,10 @@ To cite this repository in publications:
 
 ```
 @misc{mcp-course,
-  author = {Your Name},
+  author = Burtenshaw, Ben,
   title = {The Model Context Protocol Course},
   year = {2025},
-  howpublished = {\url{https://github.com/yourusername/mcp-course}},
+  howpublished = {\url{https://github.com/huggingface/mcp-course}},
   note = {GitHub repository},
 }
-``` 
+```

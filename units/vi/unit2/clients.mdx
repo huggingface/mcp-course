@@ -1,0 +1,79 @@
+# Xây dựng MCP Clients
+
+Trong phần này, chúng ta sẽ tạo các client có thể tương tác với MCP server bằng các ngôn ngữ lập trình khác nhau. Chúng ta sẽ triển khai cả client JavaScript sử dụng HuggingFace.js và client Python sử dụng smolagents.
+
+## Cấu hình MCP Clients
+
+Việc triển khai hiệu quả MCP servers và clients yêu cầu cấu hình phù hợp. Đặc tả MCP vẫn đang phát triển, vì vậy các phương pháp cấu hình có thể thay đổi. Chúng ta sẽ tập trung vào các best practice hiện tại về cấu hình.
+
+### Cấu hình Files của MCP
+
+Các MCP hosts sử dụng configuration files để quản lý kết nối server. Những files này xác định các servers nào có sẵn và cách kết nối đến chúng.
+
+Các configuration files rất đơn giản, dễ hiểu và thống nhất giữa các MCP hosts chính.
+
+#### Cấu trúc `mcp.json`
+
+File cấu hình chuẩn cho MCP có tên `mcp.json`. Đây là cấu trúc cơ bản:
+
+```json
+{
+  "servers": [
+    {
+      "name": "MCP Server",
+      "transport": {
+        "type": "sse",
+        "url": "http://localhost:7860/gradio_api/mcp/sse"
+      }
+    }
+  ]
+}
+```
+
+Trong ví dụ này, chúng ta có một server được cấu hình sử dụng SSE transport, kết nối đến Gradio server local chạy trên cổng 7860.
+
+<Tip>
+
+Chúng ta đã kết nối đến ứng dụng Gradio qua giao thức SSE vì giả định rằng ứng dụng gradio đang chạy trên một Server từ xa. Tuy nhiên nếu bạn muốn kết nối đến script local, `stdio` transport thay vì `sse` transport là lựa chọn tốt hơn.
+
+</Tip>
+
+#### Cấu hình cho HTTP+SSE Transport
+
+Với các servers từ xa sử dụng HTTP+SSE transport, cấu hình bao gồm URL của server:
+
+```json
+{
+  "servers": [
+    {
+      "name": "Remote MCP Server",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/gradio_api/mcp/sse"
+      }
+    }
+  ]
+}
+```
+
+Cấu hình này cho phép UI client của bạn giao tiếp với Gradio MCP server sử dụng MCP protocol, giúp tích hợp liền mạch giữa frontend và dịch vụ MCP.
+
+## Cấu hình UI MCP Client
+
+Khi làm việc với Gradio MCP servers, bạn có thể cấu hình UI client để kết nối đến server sử dụng MCP protocol. Cách thiết lập như sau:
+
+### Cấu hình cơ bản
+
+Tạo file mới tên `config.json` với cấu hình sau:
+
+```json
+{
+  "mcpServers": {
+    "mcp": {
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+Cấu hình này cho phép UI client của bạn giao tiếp với Gradio MCP server sử dụng MCP protocol, giúp tích hợp liền mạch giữa frontend và dịch vụ MCP.

@@ -27,19 +27,19 @@ from mcp.server.fastmcp import FastMCP
 # Create an MCP server
 mcp = FastMCP("Weather Service")
 
-
+# Tool implementation
 @mcp.tool()
 def get_weather(location: str) -> str:
     """Get the current weather for a specified location."""
     return f"Weather in {location}: Sunny, 72°F"
 
-
+# Resource implementation
 @mcp.resource("weather://{location}")
 def weather_resource(location: str) -> str:
     """Provide weather data as a resource."""
     return f"Weather data for {location}: Sunny, 72°F"
 
-
+# Prompt implementation
 @mcp.prompt()
 def weather_report(location: str) -> str:
     """Create a weather report prompt."""
@@ -158,6 +158,7 @@ MCP is designed to be language-agnostic, and there are official SDKs available f
 | C# | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk) | Microsoft | Active (Preview) |
 | Swift | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk) | loopwork-ai | Active |
 | Rust | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk) | Anthropic/Community | Active |
+| Dart | [https://github.com/leehack/mcp_dart](https://github.com/leehack/mcp_dart) | Flutter Community | Active |
 
 These SDKs provide language-specific abstractions that simplify working with the MCP protocol, allowing you to focus on implementing the core logic of your servers or clients rather than dealing with low-level protocol details.
 

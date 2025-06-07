@@ -1,0 +1,475 @@
+# Tiny Agents: Một agent chạy bằng MCP chỉ với 50 dòng mã
+
+Sau khi đã xây dựng các máy chủ MCP bằng Gradio, giờ chúng ta sẽ khám phá sâu hơn về máy khách MCP. Phần này phát triển từ dự án thử nghiệm [Tiny Agents](https://huggingface.co/blog/tiny-agents) - minh họa cách triển khai máy khách MCP siêu đơn giản có thể kết nối với các dịch vụ như máy chủ phân tích cảm xúc Gradio của chúng ta.
+
+Trong bài thực hành ngắn này, chúng mình sẽ hướng dẫn các bạn cách triển khai máy khách MCP bằng TypeScript (JS) có thể giao tiếp với bất kỳ máy chủ MCP nào, bao gồm cả máy chủ phân tích cảm xúc dựa trên Gradio đã xây dựng ở phần trước. Bạn sẽ thấy MCP chuẩn hóa cách các agent tương tác với công cụ như thế nào, giúp phát triển AI Agent trở nên đơn giản hơn đáng kể.
+
+![meme](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/thumbnail.jpg)
+<figcaption>Ảnh được cung cấp bởi https://x.com/adamdotdev</figcaption>
+
+Chúng ta sẽ chỉ cách kết nối tiny agent của bạn với các máy chủ MCP chạy trên Gradio, cho phép nó tận dụng cả công cụ phân tích cảm xúc tùy chỉnh của bạn lẫn các công cụ có sẵn khác.
+
+## Cách chạy bản demo hoàn chỉnh
+
+Nếu đã cài NodeJS (với `pnpm` hoặc `npm`), chỉ cần chạy lệnh sau trong terminal:
+
+```bash
+npx @huggingface/mcp-client
+```
+
+hoặc nếu dùng `pnpm`:
+
+```bash
+pnpx @huggingface/mcp-client
+```
+
+Lệnh này sẽ cài đặt gói vào thư mục tạm rồi thực thi lệnh của nó.
+
+Bạn sẽ thấy Agent đơn giản của mình kết nối với nhiều máy chủ MCP (chạy local), tải các công cụ của chúng (tương tự cách nó tải công cụ phân tích cảm xúc Gradio của bạn), sau đó nhắc bạn bắt đầu hội thoại.
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/use-filesystem.mp4" type="video/mp4">
+</video>
+
+Mặc định, ví dụ của chúng ta kết nối với hai máy chủ MCP:
+
+- Máy chủ ["hệ thống file" chuẩn](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem) - có quyền truy cập vào Desktop của bạn
+- Máy chủ [Playwright MCP](https://github.com/microsoft/playwright-mcp) - biết cách dùng trình duyệt Chromium trong môi trường sandbox
+
+Bạn có thể dễ dàng thêm máy chủ phân tích cảm xúc Gradio của mình vào danh sách này như chúng ta sẽ minh họa sau.
+
+> [!NOTE]
+> Lưu ý: Hiện tại tất cả máy chủ MCP trong tiny agents đều là các tiến trình local (dù các máy chủ từ xa sẽ sớm được hỗ trợ). Điều này không bao gồm máy chủ Gradio của chúng ta chạy trên localhost:7860.
+
+Đầu vào cho video đầu tiên là:
+
+> write a haiku about the Hugging Face community and write it to a file named "hf.txt" on my Desktop
+
+Giờ thử prompt liên quan đến duyệt Web:
+
+> do a Web Search for HF inference providers on Brave Search and open the first 3 results
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/brave-search.mp4" type="video/mp4">
+</video>
+
+Với công cụ phân tích cảm xúc Gradio đã kết nối, chúng ta có thể hỏi tương tự:
+> analyze the sentiment of this review: "I absolutely loved the product, it exceeded all my expectations!"
+
+### Mô hình và nhà cung cấp mặc định
+
+Về cặp mô hình/nhà cung cấp, Agent mẫu của chúng ta mặc định dùng:
+- ["Qwen/Qwen2.5-72B-Instruct"](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
+- chạy trên [Nebius](https://huggingface.co/docs/inference-providers/providers/nebius)
+
+Tất cả cài đặt này đều có thể tùy chỉnh qua biến môi trường! Ở đây, chúng ta cũng sẽ hướng dẫn cách thêm máy chủ Gradio MCP của mình:
+
+```ts
+const agent = new Agent({
+	provider: process.env.PROVIDER ?? "nebius",
+	model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+	apiKey: process.env.HF_TOKEN,
+	servers: [
+		// Các máy chủ mặc định
+		{
+			command: "npx",
+			args: ["@modelcontextprotocol/servers", "filesystem"]
+		},
+		{
+			command: "npx",
+			args: ["playwright-mcp"]
+		},
+		// Máy chủ phân tích cảm xúc Gradio của chúng ta
+		{
+			command: "npx",
+			args: [
+				"mcp-remote",
+				"http://localhost:7860/gradio_api/mcp/sse"
+			]
+		}
+	],
+});
+```
+
+<Tip>
+
+Chúng ta kết nối tới máy chủ MCP dựa trên Gradio thông qua gói [`mcp-remote`](https://www.npmjs.com/package/mcp-remote).
+
+</Tip>
+
+
+## Nền tảng cho điều này: hỗ trợ gọi công cụ native trong LLMs
+
+Điều giúp kết nối các máy chủ MCP Gradio với Tiny Agent của chúng ta là các LLM (cả closed và open) gần đây đã được huấn luyện để gọi hàm (function calling), hay còn gọi là sử dụng công cụ. Chính khả năng này hỗ trợ tích hợp của chúng ta với công cụ phân tích cảm xúc mà chúng ta đã xây dựng bằng Gradio.
+
+Một công cụ được định nghĩa bởi tên, mô tả và biểu diễn JSONSchema của các tham số - giống hệt cách chúng ta định nghĩa hàm phân tích cảm xúc trong máy chủ Gradio. Hãy xem một ví dụ đơn giản:
+
+<details>
+<summary>Bấm để xem bản dịch tiếng Việt</summary>
+```ts
+const weatherTool = {
+	type: "function",
+	function: {
+		name: "get_weather",
+		description: "Nhận nhiệt độ hiện tại cho một địa điểm cụ thể.",
+		parameters: {
+			type: "object",
+			properties: {
+				location: {
+					type: "string",
+					description: "Thành phố và quốc gia, ví dụ: Hà Nội, Việt Nam",
+				},
+			},
+		},
+	},
+};
+```
+</details>
+
+```ts
+const weatherTool = {
+	type: "function",
+	function: {
+		name: "get_weather",
+		description: "Get current temperature for a given location.",
+		parameters: {
+			type: "object",
+			properties: {
+				location: {
+					type: "string",
+					description: "City and country e.g. Bogotá, Colombia",
+				},
+			},
+		},
+	},
+};
+```
+
+Công cụ phân tích cảm xúc Gradio của chúng ta sẽ có cấu trúc tương tự, với `text` làm tham số đầu vào thay vì `location`.
+
+Tài liệu chính thức mà mình sẽ liên kết ở đây là [tài liệu function calling của OpenAI](https://platform.openai.com/docs/guides/function-calling?api-mode=chat). (Đúng vậy... OpenAI gần như định nghĩa các tiêu chuẩn LLM cho cả cộng đồng 😅).
+
+Các inference engine cho phép bạn truyền một danh sách công cụ khi gọi LLM, và LLM có thể tự do gọi không, một hoặc nhiều công cụ trong số đó.
+Là một developer, bạn chạy các công cụ và đưa kết quả của chúng trở lại LLM để tiếp tục quá trình sinh kết quả.
+
+> Lưu ý rằng ở backend (ở cấp độ inference engine), các công cụ đơn giản được truyền vào mô hình trong một `chat_template` được định dạng đặc biệt, giống như bất kỳ tin nhắn nào khác, sau đó được phân tích từ phản hồi (sử dụng các token đặc biệt của mô hình) để hiển thị dưới dạng các lệnh gọi công cụ.
+
+## Triển khai MCP client trên InferenceClient
+
+Giờ chúng ta đã biết tool là gì trong các LLM hiện đại, hãy cùng triển khai MCP client thực tế để giao tiếp với Gradio server và các MCP server khác.
+
+Tài liệu chính thức tại https://modelcontextprotocol.io/quickstart/client khá chi tiết. Bạn chỉ cần thay thế mọi đề cập đến SDK client Anthropic bằng bất kỳ SDK client tương thích OpenAI nào khác. (Có một file [llms.txt](https://modelcontextprotocol.io/llms-full.txt) bạn có thể dùng để huấn luyện LLM của mình hỗ trợ viết code).
+
+Nhắc lại, chúng ta dùng `InferenceClient` của HF cho inference client.
+
+> [!TIP]
+> File code hoàn chỉnh `McpClient.ts` có tại [đây](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/McpClient.ts) nếu bạn muốn xem code thực tế 🤓
+
+Lớp `McpClient` của chúng ta có:
+- Một Inference Client (hoạt động với mọi Nhà cung cấp Inference, và `huggingface/inference` hỗ trợ cả endpoint từ xa lẫn local)
+- Một tập hợp các phiên MCP client, mỗi phiên cho một MCP server được kết nối (cho phép kết nối đến nhiều server, bao gồm cả Gradio server của chúng ta)
+- Danh sách các tool khả dụng sẽ được điền từ các server đã kết nối và định dạng lại một chút.
+
+```ts
+export class McpClient {
+	protected client: InferenceClient;
+	protected provider: string;
+	protected model: string;
+	private clients: Map<ToolName, Client> = new Map();
+	public readonly availableTools: ChatCompletionInputTool[] = [];
+
+	constructor({ provider, model, apiKey }: { provider: InferenceProvider; model: string; apiKey: string }) {
+		this.client = new InferenceClient(apiKey);
+		this.provider = provider;
+		this.model = model;
+	}
+	
+	// [...]
+}
+```
+
+Để kết nối đến MCP server (như Gradio server phân tích cảm xúc của chúng ta), SDK TypeScript chính thức `@modelcontextprotocol/sdk/client` cung cấp lớp `Client` với phương thức `listTools()`:
+
+```ts
+async addMcpServer(server: StdioServerParameters): Promise<void> {
+	const transport = new StdioClientTransport({
+		...server,
+		env: { ...server.env, PATH: process.env.PATH ?? "" },
+	});
+	const mcp = new Client({ name: "@huggingface/mcp-client", version: packageVersion });
+	await mcp.connect(transport);
+
+	const toolsResult = await mcp.listTools();
+	debug(
+		"Connected to server with tools:",
+		toolsResult.tools.map(({ name }) => name)
+	);
+
+	for (const tool of toolsResult.tools) {
+		this.clients.set(tool.name, mcp);
+	}
+
+	this.availableTools.push(
+		...toolsResult.tools.map((tool) => {
+			return {
+				type: "function",
+				function: {
+					name: tool.name,
+					description: tool.description,
+					parameters: tool.inputSchema,
+				},
+			} satisfies ChatCompletionInputTool;
+		})
+	);
+}
+```
+
+`StdioServerParameters` là một interface từ MCP SDK giúp bạn dễ dàng tạo một process local: như đã đề cập, hiện tại tất cả MCP server đều là các process local, bao gồm cả Gradio server của chúng ta (dù chúng ta truy cập qua HTTP).
+
+Với mỗi MCP server được kết nối (bao gồm Gradio server phân tích cảm xúc), chúng ta định dạng lại danh sách tool của nó và thêm vào `this.availableTools`.
+
+### Cách sử dụng các công cụ
+
+Sử dụng công cụ phân tích cảm xúc của chúng ta (hoặc bất kỳ công cụ MCP nào khác) rất đơn giản. Bạn chỉ cần truyền `this.availableTools` vào LLM chat-completion, cùng với mảng messages thông thường:
+
+```ts
+const stream = this.client.chatCompletionStream({
+	provider: this.provider,
+	model: this.model,
+	messages,
+	tools: this.availableTools,
+	tool_choice: "auto",
+});
+```
+
+`tool_choice: "auto"` là tham số bạn truyền để LLM có thể tạo ra không, một hoặc nhiều lệnh gọi công cụ.
+
+Khi phân tích hoặc stream kết quả, LLM sẽ tạo ra các lệnh gọi công cụ (ví dụ: tên hàm và các đối số được mã hóa JSON) mà bạn (với tư cách là nhà phát triển) cần xử lý. SDK MCP Client một lần nữa giúp việc này trở nên dễ dàng; nó có phương thức `client.callTool()`:
+
+```ts
+const toolName = toolCall.function.name;
+const toolArgs = JSON.parse(toolCall.function.arguments);
+
+const toolMessage: ChatCompletionInputMessageTool = {
+	role: "tool",
+	tool_call_id: toolCall.id,
+	content: "",
+	name: toolName,
+};
+
+/// Lấy session phù hợp cho công cụ này
+const client = this.clients.get(toolName);
+if (client) {
+	const result = await client.callTool({ name: toolName, arguments: toolArgs });
+	toolMessage.content = result.content[0].text;
+} else {
+	toolMessage.content = `Error: No session found for tool: ${toolName}`;
+}
+```
+
+Nếu LLM chọn sử dụng công cụ phân tích cảm xúc của chúng ta, đoạn code này sẽ tự động định tuyến lệnh gọi đến Gradio server của chúng ta, thực thi phân tích và trả về kết quả cho LLM.
+
+Cuối cùng, bạn sẽ thêm message công cụ kết quả vào mảng `messages` và đưa ngược lại vào LLM.
+
+## Agent 50-dòng-code của chúng ta 🤯
+
+Giờ đây khi đã có MCP client có khả năng kết nối đến các MCP server tùy ý (bao gồm cả Gradio sentiment analysis server) để lấy danh sách công cụ và chèn chúng vào LLM inference, vậy... Agent là gì?
+
+> Khi bạn đã có một inference client với một bộ công cụ, thì Agent chỉ đơn giản là một vòng lặp while bao quanh nó.
+
+Cụ thể hơn, Agent là sự kết hợp của:
+- một system prompt
+- một LLM Inference client
+- một MCP client để kết nối các công cụ từ nhiều MCP server (bao gồm Gradio server của chúng ta)
+- một số luồng điều khiển cơ bản (xem vòng lặp while bên dưới)
+
+> [!TIP]
+> File code hoàn chỉnh `Agent.ts` có tại [đây](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/Agent.ts).
+
+Lớp Agent của chúng ta đơn giản kế thừa từ McpClient:
+
+```ts
+export class Agent extends McpClient {
+	private readonly servers: StdioServerParameters[];
+	protected messages: ChatCompletionInputMessage[];
+
+	constructor({
+		provider,
+		model,
+		apiKey,
+		servers,
+		prompt,
+	}: {
+		provider: InferenceProvider;
+		model: string;
+		apiKey: string;
+		servers: StdioServerParameters[];
+		prompt?: string;
+	}) {
+		super({ provider, model, apiKey });
+		this.servers = servers;
+		this.messages = [
+			{
+				role: "system",
+				content: prompt ?? DEFAULT_SYSTEM_PROMPT,
+			},
+		];
+	}
+}
+```
+
+Mặc định, chúng ta sử dụng system prompt đơn giản lấy cảm hứng từ [hướng dẫn prompt GPT-4.1](https://cookbook.openai.com/examples/gpt4-1_prompting_guide).
+
+Mặc dù điều này đến từ OpenAI 😈, nhưng câu này đặc biệt áp dụng cho ngày càng nhiều mô hình, cả đóng và mở:
+
+> Chúng tôi khuyến khích nhà phát triển chỉ sử dụng trường tools để truyền công cụ, thay vì thủ công chèn mô tả công cụ vào prompt và viết parser riêng cho lệnh gọi công cụ như một số đã làm trước đây.
+
+Nghĩa là chúng ta không cần cung cấp danh sách ví dụ về cách sử dụng công cụ được định dạng kỹ lưỡng trong prompt. Tham số `tools: this.availableTools` là đủ, và LLM sẽ biết cách sử dụng cả công cụ hệ thống file và công cụ phân tích cảm xúc Gradio của chúng ta.
+
+Việc tải công cụ lên Agent đơn giản chỉ là kết nối đến các MCP server mong muốn (song song vì rất dễ thực hiện trong JS):
+
+```ts
+async loadTools(): Promise<void> {
+	await Promise.all(this.servers.map((s) => this.addMcpServer(s)));
+}
+```
+
+Chúng ta thêm hai công cụ bổ sung (ngoài MCP) mà LLM có thể sử dụng cho luồng điều khiển của Agent:
+
+```ts
+const taskCompletionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "task_complete",
+		description: "Call this tool when the task given by the user is complete",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const askQuestionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "ask_question",
+		description: "Ask a question to the user to get more info required to solve or clarify their problem.",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const exitLoopTools = [taskCompletionTool, askQuestionTool];
+```
+
+Khi gọi bất kỳ công cụ nào trong số này, Agent sẽ ngắt vòng lặp và trả lại quyền kiểm soát cho người dùng để có dữ liệu đầu vào mới.
+
+### Vòng lặp while hoàn chỉnh
+
+Hãy xem vòng lặp while hoàn chỉnh của chúng tôi.🎉
+
+Điểm mấu chốt của vòng lặp while chính của Agent là chúng tôi chỉ lặp lại với LLM luân phiên giữa việc gọi công cụ và cung cấp cho nó kết quả công cụ, và chúng tôi làm như vậy **cho đến khi LLM bắt đầu phản hồi bằng hai thông báo không phải công cụ liên tiếp**.
+
+Đây là vòng lặp while hoàn chỉnh:
+
+```ts
+let numOfTurns = 0;
+let nextTurnShouldCallTools = true;
+while (true) {
+	try {
+		yield* this.processSingleTurnWithTools(this.messages, {
+			exitLoopTools,
+			exitIfFirstChunkNoTool: numOfTurns > 0 && nextTurnShouldCallTools,
+			abortSignal: opts.abortSignal,
+		});
+	} catch (err) {
+		if (err instanceof Error && err.message === "AbortError") {
+			return;
+		}
+		throw err;
+	}
+	numOfTurns++;
+	const currentLast = this.messages.at(-1)!;
+	if (
+		currentLast.role === "tool" &&
+		currentLast.name &&
+		exitLoopTools.map((t) => t.function.name).includes(currentLast.name)
+	) {
+		return;
+	}
+	if (currentLast.role !== "tool" && numOfTurns > MAX_NUM_TURNS) {
+		return;
+	}
+	if (currentLast.role !== "tool" && nextTurnShouldCallTools) {
+		return;
+	}
+	if (currentLast.role === "tool") {
+		nextTurnShouldCallTools = false;
+	} else {
+		nextTurnShouldCallTools = true;
+	}
+}
+```
+
+## Kết nối Tiny Agents với Gradio MCP Servers
+
+Giờ thì chúng ta đã hiểu về cả Tiny Agents và Gradio MCP servers, hãy xem cách chúng hoạt động cùng nhau nhé! Điểm tuyệt vời của MCP là nó cung cấp cách chuẩn hóa để các agent tương tác với bất kỳ server nào tương thích MCP, bao gồm cả máy chủ phân tích cảm xúc (sentiment analysis) dựa trên Gradio của chúng ta.
+
+### Sử dụng Gradio Server với Tiny Agents
+
+Để kết nối Tiny Agent của chúng ta với máy chủ phân tích cảm xúc Gradio đã xây dựng trước đó, chúng ta chỉ cần thêm nó vào danh sách servers. Dưới đây là cách chúng ta có thể điều chỉnh cấu hình agent:
+
+```ts
+const agent = new Agent({
+    provider: process.env.PROVIDER ?? "nebius",
+    model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+    apiKey: process.env.HF_TOKEN,
+    servers: [
+        // ... existing servers ...
+        {
+            command: "npx",
+            args: [
+                "mcp-remote",
+                "http://localhost:7860/gradio_api/mcp/sse"  // Your Gradio MCP server
+            ]
+        }
+    ],
+});
+```
+
+Giờ đây agent của chúng ta đã có thể sử dụng công cụ phân tích cảm xúc cùng với các công cụ khác! Ví dụ, nó có thể:
+1. Đọc văn bản từ file bằng filesystem server
+2. Phân tích cảm xúc bằng Gradio server của chúng ta
+3. Ghi kết quả trở lại file
+
+### Ví dụ tương tác
+
+Đây là ví dụ về cuộc hội thoại với agent:
+
+```
+User: Read the file "feedback.txt" from my Desktop and analyze its sentiment
+
+Agent: I'll help you analyze the sentiment of the feedback file. Let me break this down into steps:
+
+1. First, I'll read the file using the filesystem tool
+2. Then, I'll analyze its sentiment using the sentiment analysis tool
+3. Finally, I'll write the results to a new file
+
+[Agent tiến hành sử dụng các công cụ và cung cấp phân tích]
+```
+
+### Lưu ý khi triển khai
+
+Khi triển khai Gradio MCP server của bạn lên Hugging Face Spaces, bạn cần cập nhật URL server trong cấu hình agent để trỏ tới space đã triển khai:
+
+```ts
+{
+    command: "npx",
+    args: [
+        "mcp-remote",
+        "https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse"
+    ]
+}
+```
+
+Cách này cho phép agent của bạn sử dụng công cụ phân tích cảm xúc từ bất kỳ đâu, không chỉ trên local!

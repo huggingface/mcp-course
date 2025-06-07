@@ -12,6 +12,14 @@ In this section, you will:
 * Discover how to use Hugging Face's MCP Client implementation
 * See practical examples of MCP Client usage
 
+<Tip>
+
+In this page we're going to show examples of how to set up MCP Clients in a few different ways using the JSON notation. For now, we will use *examples* like `path/to/server.py` to represent the path to the MCP Server. In the next unit, we'll implement this with real MCP Servers.  
+
+For now, focus on understanding the MCP Client notation. We'll implement the MCP Servers in the next unit.
+
+</Tip>
+
 ## Understanding MCP Clients
 
 MCP Clients are crucial components that act as the bridge between AI applications (Hosts) and external capabilities provided by MCP Servers. Think of the Host as your main application (like an AI assistant or IDE) and the Client as a specialized module within that Host responsible for handling MCP communications.
@@ -52,6 +60,8 @@ Fortunately, the configuration files are very simple, easy to understand, and co
 
 The standard configuration file for MCP is named `mcp.json`. Here's the basic structure:
 
+This is the basic structure of the `mcp.json` can be passed to applications like Claude Desktop, Cursor, or VS Code.
+
 ```json
 {
   "servers": [
@@ -80,7 +90,7 @@ For local servers using stdio transport, the configuration includes the command 
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/file_explorer_server.py"]
+        "args": ["/path/to/file_explorer_server.py"] // This is an example, we'll use a real server in the next unit
       }
     }
   ]
@@ -162,7 +172,7 @@ The corresponding configuration in `mcp.json` would look like this:
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/github_server.py"],
+        "args": ["/path/to/github_server.py"], // This is an example, we'll use a real server in the next unit
         "env": {
           "GITHUB_TOKEN": "your_github_token"
         }
@@ -188,7 +198,7 @@ In this scenario, we have a local server that is a Python script which could be 
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/file_explorer_server.py"]
+        "args": ["/path/to/file_explorer_server.py"] // This is an example, we'll use a real server in the next unit
       }
     }
   ]
@@ -206,7 +216,7 @@ In this scenario, we have a remote server that is a weather API.
       "name": "Weather API",
       "transport": {
         "type": "sse",
-        "url": "https://example.com/mcp-server"
+        "url": "https://example.com/mcp-server" // This is an example, we'll use a real server in the next unit
       }
     }
   ]
@@ -217,120 +227,125 @@ Proper configuration is essential for successfully deploying MCP integrations. B
 
 In the next section, we'll explore the ecosystem of MCP servers available on Hugging Face Hub and how to publish your own servers there. 
 
-## Code Clients
+## Tiny Agents Clients
 
-You can also use the MCP Client in within code so that the tools are available to the LLM. Let's explore some examples in `smolagents`.
+Now, let's explore how to use MCP Clients within code.
 
-First, let's explore our weather server from the previous page. In `smolagents`, we can use the `ToolCollection` class to automatically discover and register tools from an MCP server. This is done by passing the `StdioServerParameters` or `SSEServerParameters` to the `ToolCollection.from_mcp` method. We can then print the tools to the console.
+You can also use tiny agents as MCP Clients to connect directly to MCP servers from your code. Tiny agents provide a simple way to create AI agents that can use tools from MCP servers.
 
-```python
-from smolagents import ToolCollection, CodeAgent
-from mcp.client.stdio import StdioServerParameters
+Tiny Agent can run MCP servers with a command line environment. To do this, we will need to install `npm` and run the server with `npx`. **We'll need these for both Python and JavaScript.**
 
-server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+Let's install `npx` with `npm`. If you don't have `npm` installed, check out the [npm documentation](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 
-with ToolCollection.from_mcp(
-    server_parameters, trust_remote_code=True
-) as tools:
-    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+### Setup
 
+First, we will need to install `npx` if you don't have it installed. You can do this with the following command:
+
+```bash
+# install npx
+npm install -g npx
 ```
 
-<details>
-<summary>
-Output
-</summary>
+Then, we will need to install the huggingface_hub package with the MCP support. This will allow us to run MCP servers and clients.
 
-```sh
-Weather API: Get the weather in a specific location
-
+```bash
+pip install "huggingface_hub[mcp]>=0.32.0"
 ```
 
-</details>
+Then, we will need to log in to the Hugging Face Hub to access the MCP servers. You can do this with the `huggingface-cli` command line tool. You will need a [login token](https://huggingface.co/docs/huggingface_hub/v0.32.3/en/quick-start#authentication) to do this.
 
-We can also connect to an MCP server that is hosted on a remote machine. In this case, we need to pass the `SSEServerParameters` to the `ToolCollection.from_mcp` method. 
-
-```python
-from smolagents.mcp_client import MCPClient
-
-with MCPClient(
-    {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
-) as tools:
-    # Tools from the remote server are available
-    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+```bash
+huggingface-cli login
 ```
 
-<details>
-<summary>
-Output
-</summary>
+<hfoptions id="language">
+<hfoption id="python">
 
-```sh
-prime_factors: Compute the prime factorization of a positive integer.
-generate_cheetah_image: Generate a cheetah image.
-image_orientation: Returns whether image is portrait or landscape.
-sepia: Apply a sepia filter to the input image.
+### Connecting to MCP Servers
+
+Now, let's create an agent configuration file `agent.json`.
+
+```json
+{
+    "model": "Qwen/Qwen2.5-72B-Instruct",
+    "provider": "nebius",
+    "servers": [
+        {
+            "type": "stdio",
+            "config": {
+                "command": "npx",
+                "args": ["@playwright/mcp@latest"]
+            }
+        }
+    ]
+}
 ```
 
-</details>
+In this configuration, we are using the `@playwright/mcp` MCP server. This is a MCP server that can control a browser with Playwright.
 
-Now, let's see how we can use the MCP Client in a code agent. 
+Now you can run the agent:
 
-```python
-from smolagents import ToolCollection, CodeAgent
-from mcp.client.stdio import StdioServerParameters
-from smolagents import CodeAgent, InferenceClientModel
+```bash
+tiny-agents run agent.json
+```
+</hfoption>
+<hfoption id="javascript">
 
-model = InferenceClientModel()
+First, install the tiny agents package with [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
 
-server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
-
-with ToolCollection.from_mcp(
-    server_parameters, trust_remote_code=True
-) as tool_collection:
-    agent = CodeAgent(tools=[*tool_collection.tools], model=model)
-    agent.run("What's the weather in Tokyo?")
-
+```bash
+npm install @huggingface/tiny-agents
 ```
 
-<details>
-<summary>
-Output
-</summary>
+### Connecting to MCP Servers
 
-```sh
-The weather in Tokyo is sunny with a temperature of 20 degrees Celsius.
+Make an agent project directory and create an `agent.json` file.
+
+```bash
+mkdir my-agent
+touch my-agent/agent.json
 ```
 
-</details>
+Create an agent configuration file at `my-agent/agent.json`:
 
-We can also connect to an MCP packages. Here's an example of connecting to the `pubmedmcp` package.
-
-```python
-from smolagents import ToolCollection, CodeAgent
-from mcp import StdioServerParameters
-
-server_parameters = StdioServerParameters(
-    command="uv",
-    args=["--quiet", "pubmedmcp@0.1.3"],
-    env={"UV_PYTHON": "3.12", **os.environ},
-)
-
-with ToolCollection.from_mcp(server_parameters, trust_remote_code=True) as tool_collection:
-    agent = CodeAgent(tools=[*tool_collection.tools], add_base_tools=True)
-    agent.run("Please find a remedy for hangover.")
+```json
+{
+	"model": "Qwen/Qwen2.5-72B-Instruct",
+	"provider": "nebius",
+	"servers": [
+		{
+			"type": "stdio",
+			"config": {
+				"command": "npx",
+				"args": ["@playwright/mcp@latest"]
+			}
+		}
+	]
+}
 ```
 
-<details>
-<summary>
-Output
-</summary>
+Now you can run the agent:
 
-```sh
-The remedy for hangover is to drink water.
+```bash
+npx @huggingface/tiny-agents run ./my-agent
 ```
 
-</details>
+</hfoption>
+</hfoptions>
+
+In the video below, we run the agent and ask it to open a new tab in the browser.
+
+The following example shows a web-browsing agent configured to use the [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) model via Nebius inference provider, and it comes equipped with a playwright MCP server, which lets it use a web browser! The agent config is loaded specifying [its path in the `tiny-agents/tiny-agents`](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser) Hugging Face dataset.
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/python-tiny-agents/web_browser_agent.mp4" type="video/mp4">
+</video>
+
+When you run the agent, you'll see it load, listing the tools it has discovered from its connected MCP servers. Then, it's ready for your prompts!
+
+Prompt used in this demo:
+
+> do a Web Search for HF inference providers on Brave Search and open the first result and then give me the list of the inference providers supported on Hugging Face 
 
 ## Next Steps
 
