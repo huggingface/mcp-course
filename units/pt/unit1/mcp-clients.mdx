@@ -1,0 +1,342 @@
+# Clientes MCP
+
+Agora que temos um entendimento básico do Protocolo de Contexto de Modelo, podemos explorar o papel essencial dos Clientes MCP no ecossistema do Protocolo de Contexto de Modelo.
+
+Nesta parte da Unidade 1, exploraremos o papel essencial dos Clientes MCP no ecossistema do Protocolo de Contexto de Modelo.
+
+Nesta seção, você irá:
+
+* Entender o que são os Clientes MCP e seu papel na arquitetura MCP
+* Aprender sobre as principais responsabilidades dos Clientes MCP
+* Explorar as principais implementações de Clientes MCP
+* Descobrir como usar a implementação do Cliente MCP do Hugging Face
+* Ver exemplos práticos de uso do Cliente MCP
+
+## Entendendo os Clientes MCP
+
+Os Clientes MCP são componentes cruciais que atuam como ponte entre aplicações de IA (Hosts) e capacidades externas fornecidas por Servidores MCP. Pense no Host como sua aplicação principal (como um assistente de IA ou IDE) e no Cliente como um módulo especializado dentro desse Host responsável por lidar com as comunicações MCP.
+
+## Cliente de Interface do Usuário
+
+Vamos começar explorando os clientes de interface do usuário que estão disponíveis para o MCP.
+
+### Clientes de Interface de Chat
+
+O Claude Desktop da Anthropic se destaca como um dos Clientes MCP mais proeminentes, fornecendo integração com vários Servidores MCP.
+
+### Clientes de Desenvolvimento Interativo
+
+A implementação do Cliente MCP do Cursor permite assistência de codificação com IA através da integração direta com recursos de edição de código. Ele suporta múltiplas conexões com Servidores MCP e fornece invocação de ferramentas em tempo real durante a codificação, tornando-o uma ferramenta poderosa para desenvolvedores.
+
+Continue.dev é outro exemplo de cliente de desenvolvimento interativo que suporta MCP e se conecta a um servidor MCP a partir do VS Code.
+
+## Configurando Clientes MCP
+
+Agora que abordamos o núcleo do protocolo MCP, vamos ver como configurar seus servidores e clientes MCP.
+
+A implantação eficaz de servidores e clientes MCP requer configuração adequada.
+
+<Tip>
+
+A especificação MCP ainda está evoluindo, então os métodos de configuração estão sujeitos a evolução. Vamos nos concentrar nas melhores práticas atuais para configuração.
+
+</Tip>
+
+### Arquivos de Configuração MCP
+
+Os hosts MCP usam arquivos de configuração para gerenciar conexões de servidor. Esses arquivos definem quais servidores estão disponíveis e como se conectar a eles.
+
+Felizmente, os arquivos de configuração são muito simples, fáceis de entender e consistentes entre os principais hosts MCP.
+
+#### Estrutura do `mcp.json`
+
+O arquivo de configuração padrão para MCP é chamado `mcp.json`. Aqui está a estrutura básica:
+
+```json
+{
+  "servers": [
+    {
+      "name": "Server Name",
+      "transport": {
+        "type": "stdio|sse",
+        // Transport-specific configuration
+      }
+    }
+  ]
+}
+```
+
+Neste exemplo, temos um único servidor com um nome e um tipo de transporte. O tipo de transporte é `stdio` ou `sse`.
+
+#### Configuração para Transporte stdio
+
+Para servidores locais usando transporte stdio, a configuração inclui o comando e argumentos para iniciar o processo do servidor:
+
+```json
+{
+  "servers": [
+    {
+      "name": "File Explorer",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+Aqui, temos um servidor chamado "File Explorer" que é um script local.
+
+#### Configuração para Transporte HTTP+SSE
+
+Para servidores remotos usando transporte HTTP+SSE, a configuração inclui a URL do servidor:
+
+```json
+{
+  "servers": [
+    {
+      "name": "Remote API Server",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+#### Variáveis de Ambiente na Configuração
+
+Variáveis de ambiente podem ser passadas para processos do servidor usando o campo `env`. Veja como acessá-las no código do seu servidor:
+
+<hfoptions id="env-variables">
+<hfoption id="python">
+
+Em Python, usamos o módulo `os` para acessar variáveis de ambiente:
+
+```python
+import os
+
+# Access environment variables
+github_token = os.environ.get("GITHUB_TOKEN")
+if not github_token:
+    raise ValueError("GITHUB_TOKEN environment variable is required")
+
+# Use the token in your server code
+def make_github_request():
+    headers = {"Authorization": f"Bearer {github_token}"}
+    # ... rest of your code
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+Em JavaScript, usamos o objeto `process.env` para acessar variáveis de ambiente:
+
+```javascript
+// Access environment variables
+const githubToken = process.env.GITHUB_TOKEN;
+if (!githubToken) {
+    throw new Error("GITHUB_TOKEN environment variable is required");
+}
+
+// Use the token in your server code
+function makeGithubRequest() {
+    const headers = { "Authorization": `Bearer ${githubToken}` };
+    // ... rest of your code
+}
+```
+
+</hfoption>
+</hfoptions>
+
+A configuração correspondente em `mcp.json` seria assim:
+
+```json
+{
+  "servers": [
+    {
+      "name": "GitHub API",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/github_server.py"],
+        "env": {
+          "GITHUB_TOKEN": "your_github_token"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Exemplos de Configuração
+
+Vamos ver alguns cenários de configuração do mundo real:
+
+#### Cenário 1: Configuração de Servidor Local
+
+Neste cenário, temos um servidor local que é um script Python que poderia ser um explorador de arquivos ou um editor de código.
+
+```json
+{
+  "servers": [
+    {
+      "name": "File Explorer",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+#### Cenário 2: Configuração de Servidor Remoto
+
+Neste cenário, temos um servidor remoto que é uma API de clima.
+
+```json
+{
+  "servers": [
+    {
+      "name": "Weather API",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+A configuração adequada é essencial para implantar integrações MCP com sucesso. Ao entender esses aspectos, você pode criar conexões robustas e confiáveis entre aplicações de IA e capacidades externas.
+
+Na próxima seção, exploraremos o ecossistema de servidores MCP disponíveis no Hugging Face Hub e como publicar seus próprios servidores lá.
+
+## Clientes de Código
+
+Você também pode usar o Cliente MCP dentro do código para que as ferramentas estejam disponíveis para o LLM. Vamos explorar alguns exemplos em `smolagents`.
+
+Primeiro, vamos explorar nosso servidor de clima da página anterior. Em `smolagents`, podemos usar a classe `ToolCollection` para descobrir e registrar automaticamente ferramentas de um servidor MCP. Isso é feito passando o `StdioServerParameters` ou `SSEServerParameters` para o método `ToolCollection.from_mcp`. Em seguida, podemos imprimir as ferramentas no console.
+
+```python
+from smolagents import ToolCollection
+from mcp.client.stdio import StdioServerParameters
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tools:
+    print("\n".join(f"{tool.name}: {tool.description}" for tool in tools.tools))
+
+```
+
+<details>
+<summary>
+Saída
+</summary>
+
+```sh
+get_weather: Get the current weather for a specified location.
+
+```
+
+</details>
+
+Também podemos nos conectar a um servidor MCP que está hospedado em uma máquina remota. Nesse caso, precisamos passar o `SSEServerParameters` para a classe `MCPClient`.
+
+```python
+from smolagents.mcp_client import MCPClient
+
+with MCPClient(
+    {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
+) as tools:
+    # Tools from the remote server are available
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+```
+
+<details>
+<summary>
+Saída
+</summary>
+
+```sh
+prime_factors: Compute the prime factorization of a positive integer.
+generate_cheetah_image: Generate a cheetah image.
+image_orientation: Returns whether image is portrait or landscape.
+sepia: Apply a sepia filter to the input image.
+```
+
+</details>
+
+Agora, vamos ver como podemos usar o Cliente MCP em um agente de código.
+
+```python
+from smolagents import InferenceClientModel, CodeAgent, ToolCollection
+from mcp.client.stdio import StdioServerParameters
+
+model = InferenceClientModel()
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], model=model)
+    agent.run("What's the weather in Tokyo?")
+
+```
+
+<details>
+<summary>
+Saída
+</summary>
+
+```sh
+The weather in Tokyo is sunny with a temperature of 20 degrees Celsius.
+```
+
+</details>
+
+Também podemos nos conectar a um pacote MCP. Aqui está um exemplo de conexão com o pacote `pubmedmcp`.
+
+```python
+import os
+from smolagents import ToolCollection, CodeAgent
+from mcp import StdioServerParameters
+
+server_parameters = StdioServerParameters(
+    command="uv",
+    args=["--quiet", "pubmedmcp@0.1.3"],
+    env={"UV_PYTHON": "3.12", **os.environ},
+)
+
+with ToolCollection.from_mcp(server_parameters, trust_remote_code=True) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], add_base_tools=True)
+    agent.run("Please find a remedy for hangover.")
+```
+
+<details>
+<summary>
+Saída
+</summary>
+
+```sh
+The remedy for hangover is to drink water.
+```
+
+</details>
+
+## Próximos Passos
+
+Agora que você entende os Clientes MCP, está pronto para:
+* Explorar implementações específicas de Servidores MCP
+* Aprender sobre a criação de Clientes MCP personalizados
+* Mergulhar em padrões avançados de integração MCP
+
+Vamos continuar nossa jornada pelo mundo do Protocolo de Contexto de Modelo!

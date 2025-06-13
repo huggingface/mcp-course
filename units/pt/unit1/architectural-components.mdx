@@ -1,0 +1,85 @@
+# Componentes Arquiteturais do MCP
+
+Na seção anterior, discutimos os conceitos-chave e terminologia do MCP. Agora, vamos nos aprofundar nos componentes arquiteturais que compõem o ecossistema MCP.
+
+## Host, Cliente e Servidor
+
+O Model Context Protocol (MCP) é construído sobre uma arquitetura cliente-servidor que permite comunicação estruturada entre modelos de IA e sistemas externos.
+
+![Arquitetura MCP](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/4.png)
+
+A arquitetura MCP consiste em três componentes principais, cada um com papéis e responsabilidades bem definidos: Host, Cliente e Servidor. Tocamos nestes na seção anterior, mas vamos nos aprofundar em cada componente e suas responsabilidades.
+
+### Host
+
+O **Host** é a aplicação de IA voltada para o usuário com a qual os usuários finais interagem diretamente.
+
+Exemplos incluem:
+- Aplicações de Chat de IA como OpenAI ChatGPT ou Anthropic's Claude Desktop
+- IDEs aprimoradas por IA como Cursor, ou integrações a ferramentas como Continue.dev
+- Agentes de IA personalizados e aplicações construídas em bibliotecas como LangChain ou smolagents
+
+As responsabilidades do Host incluem:
+- Gerenciar interações e permissões do usuário
+- Iniciar conexões aos Servidores MCP via Clientes MCP
+- Orquestrar o fluxo geral entre solicitações do usuário, processamento LLM e ferramentas externas
+- Renderizar resultados de volta aos usuários em um formato coerente
+
+Na maioria dos casos, os usuários selecionarão sua aplicação host baseado em suas necessidades e preferências. Por exemplo, um desenvolvedor pode escolher Cursor por suas poderosas capacidades de edição de código, enquanto especialistas de domínio podem usar aplicações personalizadas construídas em smolagents.
+
+### Cliente
+
+O **Cliente** é um componente dentro da aplicação Host que gerencia comunicação com um Servidor MCP específico. Características principais incluem:
+
+- Cada Cliente mantém uma conexão 1:1 com um único Servidor
+- Lida com os detalhes de nível de protocolo da comunicação MCP
+- Atua como intermediário entre a lógica do Host e o Servidor externo
+
+### Servidor
+
+O **Servidor** é um programa ou serviço externo que expõe capacidades aos modelos de IA via protocolo MCP. Servidores:
+
+- Fornecem acesso a ferramentas específicas externas, fontes de dados ou serviços
+- Atuam como wrappers leves em torno de funcionalidade existente
+- Podem executar localmente (na mesma máquina que o Host) ou remotamente (através de uma rede)
+- Expõem suas capacidades em um formato padronizado que Clientes podem descobrir e usar
+
+## Fluxo de Comunicação
+
+Vamos examinar como esses componentes interagem em um fluxo de trabalho MCP típico:
+
+<Tip>
+
+Na próxima seção, nos aprofundaremos no protocolo de comunicação que permite esses componentes com exemplos práticos.
+
+</Tip>
+
+1. **Interação do Usuário**: O usuário interage com a aplicação **Host**, expressando uma intenção ou consulta.
+
+2. **Processamento do Host**: O **Host** processa a entrada do usuário, potencialmente usando um LLM para entender a solicitação e determinar quais capacidades externas podem ser necessárias.
+
+3. **Conexão do Cliente**: O **Host** direciona seu componente **Cliente** para se conectar ao(s) Servidor(es) apropriado(s).
+
+4. **Descoberta de Capacidades**: O **Cliente** consulta o **Servidor** para descobrir quais capacidades (Ferramentas, Recursos, Prompts) ele oferece.
+
+5. **Invocação de Capacidades**: Baseado nas necessidades do usuário ou determinação do LLM, o Host instrui o **Cliente** a invocar capacidades específicas do **Servidor**.
+
+6. **Execução do Servidor**: O **Servidor** executa a funcionalidade solicitada e retorna resultados ao **Cliente**.
+
+7. **Integração de Resultados**: O **Cliente** retransmite esses resultados de volta ao **Host**, que os incorpora no contexto para o LLM ou os apresenta diretamente ao usuário.
+
+Uma vantagem chave desta arquitetura é sua modularidade. Um único **Host** pode se conectar a múltiplos **Servidores** simultaneamente via diferentes **Clientes**. Novos **Servidores** podem ser adicionados ao ecossistema sem exigir mudanças nos **Hosts** existentes. Capacidades podem ser facilmente compostas através de diferentes **Servidores**.
+
+<Tip>
+
+Como discutimos na seção anterior, esta modularidade transforma o problema tradicional de integração M×N (M aplicações de IA se conectando a N ferramentas/serviços) em um problema mais gerenciável M+N, onde cada Host e Servidor precisa implementar o padrão MCP apenas uma vez.
+
+</Tip>
+
+A arquitetura pode parecer simples, mas seu poder reside na padronização do protocolo de comunicação e na clara separação de responsabilidades entre componentes. Este design permite um ecossistema coeso onde modelos de IA podem se conectar perfeitamente com uma gama sempre crescente de ferramentas externas e fontes de dados.
+
+## Conclusão
+
+Esses padrões de interação são guiados por vários princípios-chave que moldam o design e evolução do MCP. O protocolo enfatiza **padronização** fornecendo um protocolo universal para conectividade de IA, mantendo **simplicidade** mantendo o protocolo central direto, mas permitindo recursos avançados. **Segurança** é priorizada exigindo aprovação explícita do usuário para operações sensíveis, e discoverabilidade permite descoberta dinâmica de capacidades. O protocolo é construído com **extensibilidade** em mente, suportando evolução através de versionamento e negociação de capacidades, e garante **interoperabilidade** através de diferentes implementações e ambientes.
+
+Na próxima seção, exploraremos o protocolo de comunicação que permite esses componentes trabalharem juntos efetivamente.

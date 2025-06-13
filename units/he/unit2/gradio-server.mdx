@@ -1,0 +1,190 @@
+# בניית שרת MCP של Gradio
+
+בסעיף זה, ניצור את שרת ה-MCP לניתוח רגשות שלנו באמצעות Gradio. שרת זה יחשוף כלי לניתוח רגשות שיכול לשמש הן משתמשים אנושיים דרך ממשק אינטרנט והן מודלי בינה מלאכותית דרך פרוטוקול ה-MCP.
+
+## מבוא לאינטגרציית MCP של Gradio
+
+Gradio מספק דרך פשוטה ליצירת שרתי MCP על ידי המרה אוטומטית של פונקציות Python שלך לכלי MCP. כאשר אתה מגדיר `mcp_server=True` ב-`launch()`, Gradio:
+
+1. ממיר אוטומטית את הפונקציות שלך לכלי MCP
+2. ממפה רכיבי קלט לסכימות ארגומנטים של הכלי
+3. קובע פורמטים של תגובות מרכיבי פלט
+4. מגדיר JSON-RPC מעל HTTP+SSE לתקשורת לקוח-שרת
+5. יוצר גם ממשק אינטרנט וגם נקודת קצה של שרת MCP
+
+## הגדרת הפרויקט
+
+ראשית, בואו ניצור ספרייה חדשה לפרויקט שלנו ונגדיר את התלויות הנדרשות:
+
+```bash
+mkdir mcp-sentiment
+cd mcp-sentiment
+python -m venv venv
+source venv/bin/activate  # בווינדוס: venv\Scripts\activate
+pip install "gradio[mcp]" textblob
+```
+
+## יצירת השרת
+
+> Hugging face spaces צריך קובץ app.py כדי לבנות את המרחב. אז שם קובץ ה-python חייב להיות app.py 
+
+צור קובץ חדש בשם `app.py` עם הקוד הבא:
+
+```python
+import gradio as gr
+from textblob import TextBlob
+
+def sentiment_analysis(text: str) -> dict:
+    """
+    נתח את הרגש של הטקסט הנתון.
+
+    Args:
+        text (str): הטקסט לניתוח
+
+    Returns:
+        dict: מילון המכיל קוטביות, סובייקטיביות והערכה
+    """
+    blob = TextBlob(text)
+    sentiment = blob.sentiment
+    
+    return {
+        "polarity": round(sentiment.polarity, 2),  # -1 (שלילי) עד 1 (חיובי)
+        "subjectivity": round(sentiment.subjectivity, 2),  # 0 (אובייקטיבי) עד 1 (סובייקטיבי)
+        "assessment": "positive" if sentiment.polarity > 0 else "negative" if sentiment.polarity < 0 else "neutral"
+    }
+
+# יצירת ממשק Gradio
+demo = gr.Interface(
+    fn=sentiment_analysis,
+    inputs=gr.Textbox(placeholder="הזן טקסט לניתוח..."),
+    outputs=gr.JSON(),
+    title="ניתוח רגשות טקסט",
+    description="ניתוח הרגש של טקסט באמצעות TextBlob"
+)
+
+# הפעלת הממשק ושרת ה-MCP
+if __name__ == "__main__":
+    demo.launch(mcp_server=True)
+```
+
+## הבנת הקוד
+
+בואו נפרק את הרכיבים העיקריים:
+
+1. **הגדרת פונקציה**:
+   - הפונקציה `sentiment_analysis` מקבלת קלט טקסט ומחזירה מילון
+   - היא משתמשת ב-TextBlob לניתוח הרגש
+   - ה-docstring הוא קריטי כי הוא עוזר ל-Gradio לייצר את סכימת כלי ה-MCP
+   - רמזי טיפוס (`str` ו-`dict`) עוזרים להגדיר את סכימת הקלט/פלט
+
+2. **ממשק Gradio**:
+   - `gr.Interface` יוצר גם את ממשק המשתמש וגם את שרת ה-MCP
+   - הפונקציה חשופה כלי MCP באופן אוטומטי
+   - רכיבי קלט ופלט מגדירים את הסכימה של הכלי
+   - רכיב הפלט JSON מבטיח סריאליזציה נכונה
+
+3. **שרת MCP**:
+   - הגדרת `mcp_server=True` מפעילה את שרת ה-MCP
+   - השרת יהיה זמין בכתובת `http://localhost:7860/gradio_api/mcp/sse`
+   - אתה יכול גם להפעיל אותו באמצעות משתנה סביבה:
+     ```bash
+     export GRADIO_MCP_SERVER=True
+     ```
+
+## הפעלת השרת
+
+התחל את השרת על ידי הרצת:
+
+```bash
+python app.py
+```
+
+אתה אמור לראות פלט המציין שגם ממשק האינטרנט וגם שרת ה-MCP פועלים. ממשק האינטרנט יהיה זמין בכתובת `http://localhost:7860`, ושרת ה-MCP בכתובת `http://localhost:7860/gradio_api/mcp/sse`.
+
+## בדיקת השרת
+
+אתה יכול לבדוק את השרת בשתי דרכים:
+
+1. **ממשק אינטרנט**:
+   - פתח את `http://localhost:7860` בדפדפן שלך
+   - הזן טקסט כלשהו ולחץ על "Submit"
+   - אתה אמור לראות את תוצאות ניתוח הרגש
+
+2. **סכימת MCP**:
+   - בקר בכתובת `http://localhost:7860/gradio_api/mcp/schema`
+   - זה מציג את סכימת כלי ה-MCP שבה ישתמשו לקוחות
+   - אתה יכול גם למצוא זאת בקישור "View API" בתחתית יישום ה-Gradio שלך
+
+## טיפים לפתרון בעיות
+
+1. **רמזי טיפוס ו-Docstrings**:
+   - תמיד ספק רמזי טיפוס לפרמטרים וערכי החזרה של הפונקציה שלך
+   - כלול docstring עם בלוק "Args:" עבור כל פרמטר
+   - זה עוזר ל-Gradio לייצר סכימות כלי MCP מדויקות
+
+2. **קלטי מחרוזת**:
+   - כאשר יש ספק, קבל ארגומנטי קלט כ-`str`
+   - המר אותם לסוג הרצוי בתוך הפונקציה
+   - זה מספק תאימות טובה יותר עם לקוחות MCP
+
+3. **תמיכת SSE**:
+   - חלק מלקוחות MCP אינם תומכים בשרתי MCP מבוססי SSE
+   - במקרים אלה, השתמש ב-`mcp-remote`:
+     ```json
+     {
+       "mcpServers": {
+         "gradio": {
+           "command": "npx",
+           "args": [
+             "mcp-remote",
+             "http://localhost:7860/gradio_api/mcp/sse"
+           ]
+         }
+       }
+     }
+     ```
+
+4. **בעיות חיבור**:
+   - אם אתה נתקל בבעיות חיבור, נסה להפעיל מחדש גם את הלקוח וגם את השרת
+   - בדוק שהשרת פועל ונגיש
+   - ודא שסכימת ה-MCP זמינה בכתובת ה-URL הצפויה
+
+## פריסה ל-Hugging Face Spaces
+
+כדי להפוך את השרת שלך זמין לאחרים, אתה יכול לפרוס אותו ל-Hugging Face Spaces:
+
+1. צור Space חדש ב-Hugging Face:
+   - לך ל-huggingface.co/spaces
+   - לחץ על "Create new Space"
+   - בחר "Gradio" כ-SDK
+   - תן שם ל-space שלך (לדוגמה, "mcp-sentiment")
+
+2. צור קובץ `requirements.txt`:
+```txt
+gradio[mcp]
+textblob
+```
+
+3. דחוף את הקוד שלך ל-Space:
+```bash
+git init
+git add app.py requirements.txt
+git commit -m "Initial commit"
+git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/mcp-sentiment
+git push -u origin main
+```
+
+שרת ה-MCP שלך יהיה כעת זמין בכתובת:
+```
+https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse
+```
+
+## הצעדים הבאים
+
+עכשיו שיש לנו את שרת ה-MCP פועל, ניצור לקוחות כדי לתקשר איתו. בסעיפים הבאים, אנחנו:
+
+1. ניצור לקוח מבוסס HuggingFace.js בהשראת Tiny Agents
+2. נממש לקוח Python מבוסס SmolAgents
+3. נבדוק את שני הלקוחות עם השרת שפרסנו
+
+בואו נמשיך לבניית הלקוח הראשון שלנו!
