@@ -49,6 +49,7 @@ def weather_report(location: str) -> str:
 # Run the server
 if __name__ == "__main__":
     mcp.run()
+```
 
 Once you have your server implemented, you can start it by running the server script.
 
@@ -56,68 +57,70 @@ Once you have your server implemented, you can start it by running the server sc
 mcp dev server.py
 ```
 
-```
-
 </hfoption>
 <hfoption id="javascript">
 
 ```javascript
 // index.mjs
-import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  McpServer,
+  ResourceTemplate,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
 // Create an MCP server
 const server = new McpServer({
-    name: "Weather Service",
-    version: "1.0.0"
+  name: "Weather Service",
+  version: "1.0.0",
 });
 
 // Tool implementation
-server.tool("get_weather",
-    { location: z.string() },
-    async ({ location }) => ({
-        content: [{
-            type: "text",
-            text: `Weather in ${location}: Sunny, 72°F`
-        }]
-    })
-);
+server.tool("get_weather", { location: z.string() }, async ({ location }) => ({
+  content: [
+    {
+      type: "text",
+      text: `Weather in ${location}: Sunny, 72°F`,
+    },
+  ],
+}));
 
 // Resource implementation
 server.resource(
-    "weather",
-    new ResourceTemplate("weather://{location}", { list: undefined }),
-    async (uri, { location }) => ({
-        contents: [{
-            uri: uri.href,
-            text: `Weather data for ${location}: Sunny, 72°F`
-        }]
-    })
+  "weather",
+  new ResourceTemplate("weather://{location}", { list: undefined }),
+  async (uri, { location }) => ({
+    contents: [
+      {
+        uri: uri.href,
+        text: `Weather data for ${location}: Sunny, 72°F`,
+      },
+    ],
+  })
 );
 
 // Prompt implementation
 server.prompt(
-    "weather_report",
-    { location: z.string() },
-    async ({ location }) => ({
-        messages: [
-            {
-                role: "assistant",
-                content: {
-                    type: "text",
-                    text: "You are a weather reporter."
-                }
-            },
-            {
-                role: "user",
-                content: {
-                    type: "text",
-                    text: `Weather report for ${location}?`
-                }
-            }
-        ]
-    })
+  "weather_report",
+  { location: z.string() },
+  async ({ location }) => ({
+    messages: [
+      {
+        role: "assistant",
+        content: {
+          type: "text",
+          text: "You are a weather reporter.",
+        },
+      },
+      {
+        role: "user",
+        content: {
+          type: "text",
+          text: `Weather report for ${location}?`,
+        },
+      },
+    ],
+  })
 );
 
 // Run the server
@@ -156,16 +159,16 @@ You'll see the server's capabilities and the ability to call them via the UI.
 
 MCP is designed to be language-agnostic, and there are official SDKs available for several popular programming languages:
 
-| Language | Repository | Maintainer(s) | Status |
-|----------|------------|---------------|--------|
-| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | Anthropic | Active |
-| Python | [github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | Anthropic | Active |
-| Java | [github.com/modelcontextprotocol/java-sdk](https://github.com/modelcontextprotocol/java-sdk) | Spring AI (VMware) | Active |
-| Kotlin | [github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk) | JetBrains | Active |
-| C# | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk) | Microsoft | Active (Preview) |
-| Swift | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk) | loopwork-ai | Active |
-| Rust | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk) | Anthropic/Community | Active |
-| Dart | [https://github.com/leehack/mcp_dart](https://github.com/leehack/mcp_dart) | Flutter Community | Active |
+| Language   | Repository                                                                                               | Maintainer(s)       | Status           |
+| ---------- | -------------------------------------------------------------------------------------------------------- | ------------------- | ---------------- |
+| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | Anthropic           | Active           |
+| Python     | [github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk)         | Anthropic           | Active           |
+| Java       | [github.com/modelcontextprotocol/java-sdk](https://github.com/modelcontextprotocol/java-sdk)             | Spring AI (VMware)  | Active           |
+| Kotlin     | [github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk)         | JetBrains           | Active           |
+| C#         | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk)         | Microsoft           | Active (Preview) |
+| Swift      | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk)           | loopwork-ai         | Active           |
+| Rust       | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk)             | Anthropic/Community | Active           |
+| Dart       | [https://github.com/leehack/mcp_dart](https://github.com/leehack/mcp_dart)                               | Flutter Community   | Active           |
 
 These SDKs provide language-specific abstractions that simplify working with the MCP protocol, allowing you to focus on implementing the core logic of your servers or clients rather than dealing with low-level protocol details.
 
