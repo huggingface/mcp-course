@@ -1,0 +1,33 @@
+name: Test Webhook Server
+
+on:
+  push:
+    branches: [ my-solution ]
+  workflow_dispatch:
+
+jobs:
+  test-webhook:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Test webhook endpoint
+      run: |
+        curl -X POST https://seller-similar-delivering-postcards.trycloudflare.com/webhook/github \
+          -H "Content-Type: application/json" \
+          -H "X-GitHub-Event: workflow_run" \
+          -d '{
+            "action": "completed",
+            "workflow_run": {
+              "id": 123456,
+              "name": "Test Workflow",
+              "status": "completed",
+              "conclusion": "success",
+              "html_url": "https://github.com/example/repo/actions/runs/123456",
+              "created_at": "2024-06-17T14:00:00Z"
+            },
+            "repository": {
+              "full_name": "example/repo"
+            },
+            "sender": {
+              "login": "test-user"
+            }
+          }' 
