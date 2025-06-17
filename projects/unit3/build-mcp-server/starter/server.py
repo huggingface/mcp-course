@@ -11,6 +11,7 @@ import subprocess
 from pathlib import Path
 import os
 import sys
+from github import Github
 
 from mcp.server.fastmcp import FastMCP
 load_dotenv()
@@ -164,6 +165,43 @@ async def suggest_template(changes_summary: str, change_type: str) -> str:
     }
     
     return json.dumps(suggestion, indent=2)
+
+
+@mcp.tool()
+async def create_github_pull_request(
+    repo_name: str,
+    title: str,
+    body: str,
+    head_branch: str,
+    base_branch: str = "main"
+) -> str:
+    """Creates a pull request on GitHub.
+    
+    Args:
+        repo_name: Repository name in format "owner/repo"
+        title: PR title
+        body: PR description
+        head_branch: Source branch
+        base_branch: Target branch (default: main)
+    """
+    github_token = os.getenv('GITHUB_TOKEN')
+    if not github_token:
+        return json.dumps({"error": "GitHub Token not found. Please set GITHUB_TOKEN environment variable."})
+
+    try:
+        g = Github(github_token)
+        repo = g.get_repo(repo_name)
+        
+        pr = repo.create_pull(
+            title=title,
+            body=body,
+            head=head_branch,
+            base=base_branch
+        )
+        
+        return json.dumps({"success": True, "pr_url": pr.html_url, "pr_number": pr.number}, indent=2)
+    except Exception as e:
+        return json.dumps({"error": f"Failed to create PR: {e}"}, indent=2)
 
 
 @mcp.tool()
