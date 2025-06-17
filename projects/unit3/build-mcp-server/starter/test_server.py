@@ -46,10 +46,9 @@ class TestAnalyzeFileChanges:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(stdout="", stderr="")
             
-            result = await analyze_file_changes()
+            result = await analyze_file_changes(working_dir=Path.cwd().as_posix())
             
             assert isinstance(result, str), "Should return a string"
-            # Should be valid JSON
             data = json.loads(result)
             assert isinstance(data, dict), "Should return a JSON object"
     
@@ -59,18 +58,14 @@ class TestAnalyzeFileChanges:
         with patch('subprocess.run') as mock_run:
             mock_run.return_value = MagicMock(stdout="M\tfile1.py\n", stderr="")
             
-            result = await analyze_file_changes()
+            result = await analyze_file_changes(working_dir=Path.cwd().as_posix())
             data = json.loads(result)
             
-            # For starter code, accept error messages; for full implementation, expect data
-            is_implemented = not ("error" in data and "Not implemented" in str(data.get("error", "")))
-            if is_implemented:
-                # Check for some expected fields (flexible to allow different implementations)
-                assert any(key in data for key in ["files_changed", "files", "changes", "diff"]), \
-                    "Result should include file change information"
-            else:
-                # Starter code - just verify it returns something structured
-                assert isinstance(data, dict), "Should return a JSON object even if not implemented"
+            # Check for specific expected fields
+            assert "changed_files" in data, "Result should include 'changed_files' key"
+            assert "diff" in data, "Result should include 'diff' key"
+            assert "truncated" in data, "Result should include 'truncated' key"
+            assert "diff_line_count" in data, "Result should include 'diff_line_count' key"
 
 
 @pytest.mark.skipif(not IMPORTS_SUCCESSFUL, reason="Imports failed")
