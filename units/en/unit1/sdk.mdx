@@ -53,6 +53,36 @@ if __name__ == "__main__":
 
 Once you have your server implemented, you can start it by running the server script.
 
+Install `uv` (recommended by the MCP ecosystem)
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Add `uv` to your PATH:
+```bash
+source $HOME/.local/bin/env
+```
+
+Verify `uv` is working:
+```bash
+uv --version
+```
+Create a virtual environment:
+```bash
+python -m venv myenv && source myenv/bin/activate
+```
+
+Install MCP:
+```bash
+uv pip install mcp
+```
+
+Install MCP CLI:
+```bash
+uv pip install "mcp[cli]"
+```
+
+Run the server:
 ```bash
 mcp dev server.py
 ```
@@ -161,19 +191,4 @@ MCP is designed to be language-agnostic, and there are official SDKs available f
 
 | Language   | Repository                                                                                               | Maintainer(s)       | Status           |
 | ---------- | -------------------------------------------------------------------------------------------------------- | ------------------- | ---------------- |
-| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | Anthropic           | Active           |
-| Python     | [github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk)         | Anthropic           | Active           |
-| Java       | [github.com/modelcontextprotocol/java-sdk](https://github.com/modelcontextprotocol/java-sdk)             | Spring AI (VMware)  | Active           |
-| Kotlin     | [github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk)         | JetBrains           | Active           |
-| C#         | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk)         | Microsoft           | Active (Preview) |
-| Swift      | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk)           | loopwork-ai         | Active           |
-| Rust       | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk)             | Anthropic/Community | Active           |
-| Dart       | [https://github.com/leehack/mcp_dart](https://github.com/leehack/mcp_dart)                               | Flutter Community   | Active           |
-
-These SDKs provide language-specific abstractions that simplify working with the MCP protocol, allowing you to focus on implementing the core logic of your servers or clients rather than dealing with low-level protocol details.
-
-## Next Steps
-
-We've only scratched the surface of what you can do with the MCP but you've already got a basic server running. In fact, you've also connected to it using the MCP Client in the browser.
-
-In the next section, we'll look at how to connect to your server from an LLM.
+| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) 
