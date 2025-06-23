@@ -257,6 +257,21 @@ Then, we will need to log in to the Hugging Face Hub to access the MCP servers. 
 ```bash
 huggingface-cli login
 ```
+### Configure Access Token Permissions
+
+After creating your Hugging Face access token and logging in, you need to ensure your token has the proper permissions to work with inference providers.
+
+**Important:** If you skip this step, you may encounter authentication errors when running tiny agents with hosted models.
+
+1. Go to your [Hugging Face Access Tokens page](https://huggingface.co/settings/tokens)
+2. Find your MCP token and click the three dots (⋮) next to it
+3. Select **"Edit permissions"**
+4. Under the **Inference** section, check the box for:
+   - **"Make calls to Inference Providers"**
+5. Save your changes
+
+This permission is required because tiny agents need to make API calls to hosted models like `Qwen/Qwen2.5-72B-Instruct` through providers like Nebius.
+
 
 <hfoptions id="language">
 <hfoption id="python">
