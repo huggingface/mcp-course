@@ -1,0 +1,10 @@
+langchain-groq
+langchain-mcp-adapters
+langchain-community
+langchain
+langchain-openai
+mcp
+mcp[cli]
+python-dotenv
+langgraph
+fastmcp
