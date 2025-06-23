@@ -193,7 +193,7 @@ async def suggest_template(
     changes_summary: str,
     change_type: str
 ) -> str:
-    """Let Claude analyze the changes and suggest the most appropriate PR template.
+    """Let agent analyze the changes and suggest the most appropriate PR template.
     
     Args:
         changes_summary: Your analysis of what the changes do
@@ -225,4 +225,4 @@ async def suggest_template(
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="stdio")

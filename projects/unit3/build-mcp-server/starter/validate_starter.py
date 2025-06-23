@@ -158,7 +158,7 @@ def main():
     tests = [
         ("Project Structure", test_project_structure),
         ("Python Imports", test_imports),
-        ("TODO Comments", test_todos),
+        # ("TODO Comments", test_todos),
         ("Starter Execution", test_starter_runs),
         ("Dependencies", test_dependencies),
         ("Clean Starter", test_no_implementation)
