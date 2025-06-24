@@ -54,15 +54,32 @@ async def analyze_file_changes(base_branch: str = "main", include_diff: bool = T
     # roots_result = await context.session.list_roots()
     # working_dir = roots_result.roots[0].uri.path
     # subprocess.run(["git", "diff"], cwd=working_dir)
-    
-    return json.dumps({"error": "Not implemented yet", "hint": "Use subprocess to run git commands"})
+
+    try:
+        context = mcp.get_context()
+        roots_result = await context.session.list_roots()
+        working_dir = roots_result.roots[0].uri.path
+    except Exception as e:
+        working_dir = Path.cwd()
+
+    try:
+        diff = subprocess.run(["git", "diff", f"{base_branch}..HEAD"], cwd=working_dir, capture_output=True, text=True) if include_diff else None
+        changed_files = subprocess.run(["git", "diff", "--name-only", f"{base_branch}..HEAD"], cwd=working_dir, capture_output=True, text=True)
+
+        return json.dumps({"diff": diff.stdout, "changed_files": changed_files.stdout})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
 
 
 @mcp.tool()
 async def get_pr_templates() -> str:
     """List available PR templates with their content."""
-    # TODO: Implement this tool
-    return json.dumps({"error": "Not implemented yet", "hint": "Read templates from TEMPLATES_DIR"})
+
+    try:
+        templates = [f.stem for f in TEMPLATES_DIR.glob("*.md")]
+        return json.dumps({"templates": templates})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
 
 
 @mcp.tool()
@@ -73,8 +90,18 @@ async def suggest_template(changes_summary: str, change_type: str) -> str:
         changes_summary: Your analysis of what the changes do
         change_type: The type of change you've identified (bug, feature, docs, refactor, test, etc.)
     """
-    # TODO: Implement this tool
-    return json.dumps({"error": "Not implemented yet", "hint": "Map change_type to templates"})
+
+    template = TEMPLATES_DIR / f"{change_type}.md"
+    if not template.exists():
+        return json.dumps({"error": "Template not found for change type: " + change_type})
+    
+    template_content = template.read_text()
+
+    return json.dumps({
+        "recommended_template": change_type,
+        "template_content": template_content
+    })
+
 
 
 if __name__ == "__main__":
