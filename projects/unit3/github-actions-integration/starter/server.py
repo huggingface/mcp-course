@@ -204,14 +204,37 @@ async def get_workflow_status(workflow_name: Optional[str] = None) -> str:
     Args:
         workflow_name: Optional specific workflow name to filter by
     """
-    # TODO: Implement this function
-    # 1. Read events from EVENTS_FILE
-    # 2. Filter events for workflow_run events
-    # 3. If workflow_name provided, filter by that name
-    # 4. Group by workflow and show latest status
-    # 5. Return formatted workflow status information
-    
-    return json.dumps({"message": "TODO: Implement get_workflow_status"})
+
+    try:
+        # 1. Read events from EVENTS_FILE
+        EVENTS_FILE = Path(__file__).parent / "github_events.json"
+
+        if not EVENTS_FILE.exists():
+            return json.dumps([])
+        
+        with open(EVENTS_FILE, "r") as f:
+            events = json.load(f)
+        
+        # 2. Filter events for workflow_run events
+        workflow_events = [event for event in events if event["type"] == "workflow_run"]
+
+        # 3. If workflow_name provided, filter by that name
+        if workflow_name:
+            workflow_events = [event for event in workflow_events if event["name"] == workflow_name]
+
+        # 4. Group by workflow and show latest status
+        workflow_status = {}
+
+        for event in workflow_events:
+            workflow_name = event["name"]
+            status = event["status"]
+            workflow_status[workflow_name] = status
+
+        # 5. Return formatted workflow status information
+        return json.dumps(workflow_status)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
 
 
 # ===== Module 2: MCP Prompts =====
@@ -219,40 +242,41 @@ async def get_workflow_status(workflow_name: Optional[str] = None) -> str:
 @mcp.prompt()
 async def analyze_ci_results():
     """Analyze recent CI/CD results and provide insights."""
-    # TODO: Implement this prompt
-    # Return a string with instructions for Claude to:
-    # 1. Use get_recent_actions_events() 
-    # 2. Use get_workflow_status()
-    # 3. Analyze results and provide insights
-    
-    return "TODO: Implement analyze_ci_results prompt"
+    return """
+    You are a helpful assistant that analyzes recent CI/CD results and provides insights.
+    You will need to use the get_recent_actions_events() and get_workflow_status() tools to get the information you need.
+    You will then need to analyze the results and provide insights.
+    """
 
 
 @mcp.prompt()
-async def create_deployment_summary():
+async def create_deployment_summary() -> str:
     """Generate a deployment summary for team communication."""
-    # TODO: Implement this prompt
-    # Return a string that guides Claude to create a deployment summary
-    
-    return "TODO: Implement create_deployment_summary prompt"
+    return """
+    You are a helpful assistant that generates a deployment summary for team communication.
+    You will need to use the get_recent_actions_events() and get_workflow_status() tools to get the information you need.
+    You will then need to analyze the results and generate a deployment summary.
+    """
 
 
 @mcp.prompt()
 async def generate_pr_status_report():
     """Generate a comprehensive PR status report including CI/CD results."""
-    # TODO: Implement this prompt
-    # Return a string that guides Claude to combine code changes with CI/CD status
-    
-    return "TODO: Implement generate_pr_status_report prompt"
+    return """
+    You are a helpful assistant that generates a comprehensive PR status report including CI/CD results.
+    You will need to use the get_recent_actions_events() and get_workflow_status() tools to get the information you need.
+    You will then need to analyze the results and generate a comprehensive PR status report.
+    """
 
 
 @mcp.prompt()
 async def troubleshoot_workflow_failure():
     """Help troubleshoot a failing GitHub Actions workflow."""
-    # TODO: Implement this prompt
-    # Return a string that guides Claude through troubleshooting steps
-    
-    return "TODO: Implement troubleshoot_workflow_failure prompt"
+    return """
+    You are a helpful assistant that helps troubleshoot a failing GitHub Actions workflow.
+    You will need to use the get_recent_actions_events() and get_workflow_status() tools to get the information you need.
+    You will then need to analyze the results and help troubleshoot the workflow failure.
+    """
 
 
 if __name__ == "__main__":
