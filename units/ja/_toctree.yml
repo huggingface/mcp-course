@@ -1,0 +1,82 @@
+- title: "0. MCPコースへようこそ"
+  sections:
+  - local: unit0/introduction
+    title: MCPコースへようこそ
+    
+- title: "1. Model Context Protocolの紹介"
+  sections:
+  - local: unit1/introduction
+    title: Model Context Protocol (MCP)の紹介
+  - local: unit1/key-concepts
+    title: 主要概念と用語
+  - local: unit1/architectural-components
+    title: アーキテクチャコンポーネント
+  - local: unit1/quiz1
+    title: クイズ1 - MCP基礎
+  - local: unit1/communication-protocol
+    title: 通信プロトコル
+  - local: unit1/capabilities
+    title: MCP機能の理解
+  - local: unit1/sdk
+    title: MCP SDK
+  - local: unit1/quiz2
+    title: クイズ2 - MCP SDK
+  - local: unit1/mcp-clients
+    title: MCPクライアント
+  - local: unit1/gradio-mcp
+    title: Gradio MCP統合
+  - local: unit1/unit1-recap
+    title: ユニット1まとめ
+  - local: unit1/certificate
+    title: 証明書を取得しよう！
+
+- title: "2. ユースケース: エンドツーエンドMCPアプリケーション"
+  sections:
+  - local: unit2/introduction
+    title: MCPアプリケーション構築の紹介
+  - local: unit2/gradio-server
+    title: Gradio MCPサーバーの構築
+  - local: unit2/clients
+    title: アプリケーションでのMCPクライアントの使用
+  - local: unit2/continue-client
+    title: AIコーディングアシスタントでのMCPの使用
+  - local: unit2/gradio-client
+    title: GradioでのMCPクライアント構築
+  - local: unit2/tiny-agents
+    title: MCPとHugging Face Hubを使ったTiny Agentsの構築
+
+- title: "3. 高度なMCP開発: カスタムワークフローサーバー"
+  sections:
+  - local: unit3/introduction
+    title: Claude Code用カスタムワークフローサーバーの構築
+  - local: unit3/build-mcp-server
+    title: "モジュール1: MCPサーバーの構築"
+  - local: unit3/github-actions-integration
+    title: "モジュール2: GitHub Actions統合"
+  - local: unit3/slack-notification
+    title: "モジュール3: Slack通知"
+  - local: unit3/build-mcp-server-solution-walkthrough
+    title: "ユニット3解答例: MCPを使ったプルリクエストエージェントの構築"
+  - local: unit3/certificate
+    title: "証明書を取得しよう！"
+  - local: unit3/conclusion
+    title: "ユニット3まとめ"
+
+- title: "3.1. ユースケース: Hub上でのプルリクエストエージェントの構築"
+  sections:
+  - local: unit3_1/introduction
+    title: Hugging Face Hub上でのプルリクエストエージェントの構築
+  - local: unit3_1/setting-up-the-project
+    title: プロジェクトのセットアップ
+  - local: unit3_1/creating-the-mcp-server
+    title: MCPサーバーの作成
+  - local: unit3_1/quiz1
+    title: クイズ1 - MCPサーバー実装
+  - local: unit3_1/mcp-client
+    title: MCPクライアント
+  - local: unit3_1/webhook-listener
+    title: Webhookリスナー
+  - local: unit3_1/quiz2
+    title: クイズ2 - プルリクエストエージェント統合
+  - local: unit3_1/conclusion
+    title: まとめ

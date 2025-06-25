@@ -1,0 +1,133 @@
+# Setting up the Project
+
+In this section, we'll set up the development environment for our Pull Request Agent. 
+
+<Tip>
+
+We'll use modern Python tooling with `uv` for dependency management and create the necessary configuration files. If you're not familiar with `uv`, you can learn more about it [here](https://docs.astral.sh/uv/).
+
+</Tip>
+
+
+## Project Structure
+
+Let's start by creating the project directory and understanding the file structure:
+
+```bash
+git clone https://huggingface.co/spaces/mcp-course/tag-this-repo
+```
+
+Our final project structure will look like this:
+
+```
+hf-pr-agent/
+├── mcp_server.py              # Core MCP server with tagging tools
+├── app.py                     # FastAPI webhook listener and agent
+├── requirements.txt           # Python dependencies
+├── pyproject.toml             # Project configuration
+├── env.example                # Environment variables template
+├── cleanup.py                 # Development utility
+```
+
+## Dependencies and Configuration
+
+Let's walk through the dependencies and configuration for our project. 
+
+### 1. Python Project Configuration
+
+We will use `uv` to create the `pyproject.toml` file to define our project:
+
+<Tip>
+
+If you don't have `uv` installed, you can follow the instructions [here](https://docs.astral.sh/uv/getting-started/installation/).
+
+</Tip>
+
+```toml
+[project]
+name = "mcp-course-unit3-example"
+version = "0.1.0"
+description = "FastAPI and Gradio app for Hugging Face Hub discussion webhooks"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "gradio>=4.0.0",
+    "huggingface-hub[mcp]>=0.32.0",
+    "pydantic>=2.0.0",
+    "python-multipart>=0.0.6",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "fastmcp>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+```
+
+For compatibility with various deployment platforms, the same is repeated in `requirements.txt`
+
+To create a virtual environment, run:
+
+```bash
+uv venv
+source .venv/bin/activate # or .venv/Scripts/activate on Windows
+```
+
+To install the dependencies, run:
+
+```bash
+uv sync
+```
+
+### 2. Environment Configuration
+
+Create `env.example` to document required environment variables:
+
+```bash
+# Hugging Face API Token (required)
+# Get from: https://huggingface.co/settings/tokens
+HF_TOKEN=hf_your_token_here
+
+# Webhook Secret (required for production)
+# Use a strong, random string
+WEBHOOK_SECRET=your-webhook-secret-here
+
+# Model for the agent (optional)
+HF_MODEL=owner/model
+
+# Provider for MCP agent (optional)
+HF_PROVIDER=huggingface
+```
+
+You will need to get your Hugging Face API token from [here](https://huggingface.co/settings/tokens).
+
+You will also need to generate a webhook secret. You can do this by running the following command:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+You will then need to add the webhook secret to your `.env` file based on the `env.example` file.
+
+## Next Steps
+
+With our project structure and environment set up, we're ready to:
+
+1. **Create the MCP Server** - Implement the core tagging functionality
+2. **Build the Webhook Listener** - Handle incoming discussion events
+3. **Integrate the Agent** - Connect MCP tools with webhook processing
+4. **Test and Deploy** - Validate functionality and deploy to Spaces
+
+In the next section, we'll dive into creating our MCP server that will handle all the Hugging Face Hub interactions.
+
+<Tip>
+
+Keep your `.env` file secure and never commit it to version control. The `.env` file should be added to your `.gitignore` file to prevent accidental exposure of secrets.
+
+</Tip> 
