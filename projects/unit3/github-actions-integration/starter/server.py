@@ -181,14 +181,21 @@ async def get_recent_actions_events(limit: int = 10) -> str:
     Args:
         limit: Maximum number of events to return (default: 10)
     """
-    # TODO: Implement this function
-    # 1. Check if EVENTS_FILE exists
-    # 2. Read the JSON file
-    # 3. Return the most recent events (up to limit)
-    # 4. Return empty list if file doesn't exist
-    
-    return json.dumps({"message": "TODO: Implement get_recent_actions_events"})
 
+    try:
+        EVENTS_FILE = Path(__file__).parent / "github_events.json"
+
+        if not EVENTS_FILE.exists():
+            return json.dumps([])
+        
+        with open(EVENTS_FILE, "r") as f:
+            events = json.load(f)
+
+        events = events[:limit]
+
+        return json.dumps(events)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
 
 @mcp.tool()
 async def get_workflow_status(workflow_name: Optional[str] = None) -> str:
