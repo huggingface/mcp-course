@@ -1,126 +1,126 @@
-# Gradio MCP Integration
+# Gradio MCP統合
 
-We've now explored the core concepts of the MCP protocol and how to implement MCP Servers and Clients. In this section, we're going to make things slightly easier by using Gradio to create an MCP Server!
+これまで、Model Context Protocol (MCP)の中核概念と、MCPサーバーとクライアントの実装方法について探ってきました。このセクションでは、GradioというライブラリでMCPサーバーを作成することで、実装をより簡単にしていきます！
 
 <Tip>
 
-Gradio is a popular Python library for quickly creating customizable web interfaces for machine learning models. 
+Gradioは、機械学習モデル用のカスタマイズ可能なWebインターフェースを素早く作成するための人気のPythonライブラリです。
 
 </Tip>
 
-## Introduction to Gradio
+## Gradioの紹介
 
-Gradio allows developers to create UIs for their models with just a few lines of Python code. It's particularly useful for:
+Gradioを使うと、開発者はわずか数行のPythonコードでモデル用のUIを作成できます。特に以下の用途で有用です：
 
-- Creating demos and prototypes
-- Sharing models with non-technical users
-- Testing and debugging model behavior
+- デモとプロトタイプの作成
+- 技術的でないユーザーとのモデル共有
+- モデルの動作のテストとデバッグ
 
-With the addition of MCP support, Gradio now offers a straightforward way to expose AI model capabilities through the standardized MCP protocol.
+MCP対応が追加されたことで、Gradioは標準化されたMCPプロトコルを通じてAIモデルの機能を公開する直接的な方法を提供するようになりました。
 
-Combining Gradio with MCP allows you to create both human-friendly interfaces and AI-accessible tools with minimal code. But best of all, Gradio is already well-used by the AI community, so you can use it to share your MCP Servers with others.
+GradioとMCPを組み合わせることで、最小限のコードで人間にとって使いやすいインターフェースとAIがアクセス可能なツールの両方を作成できます。さらに素晴らしいことに、GradioはすでにAIコミュニティで広く使用されているため、MCPサーバーを他の人と共有するのにも使えます。
 
-## Prerequisites
+## 前提条件
 
-To use Gradio with MCP support, you'll need to install Gradio with the MCP extra:
+MCP対応のGradioを使用するには、MCP拡張機能付きでGradioをインストールする必要があります：
 
 ```bash
 pip install "gradio[mcp]"
 ```
 
-You'll also need an LLM application that supports tool calling using the MCP protocol, such as Cursor ( known as "MCP Hosts").
+また、Cursor（「MCPホスト」として知られる）などのMCPプロトコルを使用したツール呼び出しをサポートするLLMアプリケーションも必要です。
 
-## Creating an MCP Server with Gradio
+## GradioでMCPサーバーを作成する
 
-Let's walk through a basic example of creating an MCP Server using Gradio:
+Gradioを使用してMCPサーバーを作成する基本的な例を見てみましょう：
 
 ```python
 import gradio as gr
 
 def letter_counter(word: str, letter: str) -> int:
     """
-    Count the number of occurrences of a letter in a word or text.
+    単語やテキスト内の文字の出現回数を数える。
 
     Args:
-        word (str): The input text to search through
-        letter (str): The letter to search for
+        word (str): 検索対象の入力テキスト
+        letter (str): 検索する文字
 
     Returns:
-        int: The number of times the letter appears in the text
+        int: テキスト内に文字が現れる回数
     """
     word = word.lower()
     letter = letter.lower()
     count = word.count(letter)
     return count
 
-# Create a standard Gradio interface
+# 標準的なGradioインターフェースを作成
 demo = gr.Interface(
     fn=letter_counter,
     inputs=["textbox", "textbox"],
     outputs="number",
     title="Letter Counter",
-    description="Enter text and a letter to count how many times the letter appears in the text."
+    description="テキストと文字を入力して、テキスト内にその文字が何回現れるかを数えます。"
 )
 
-# Launch both the Gradio web interface and the MCP server
+# Gradio WebインターフェースとMCPサーバーの両方を起動
 if __name__ == "__main__":
     demo.launch(mcp_server=True)
 ```
 
-With this setup, your letter counter function is now accessible through:
+この設定により、文字カウンター関数は以下の方法でアクセス可能になります：
 
-1. A traditional Gradio web interface for direct human interaction
-2. An MCP Server that can be connected to compatible clients
+1. 人間が直接操作できる従来のGradio Webインターフェース
+2. 互換性のあるクライアントに接続できるMCPサーバー
 
-The MCP server will be accessible at:
+MCPサーバーは以下のアドレスでアクセス可能になります：
 ```
 http://your-server:port/gradio_api/mcp/sse
 ```
 
-The application itself will still be accessible and it looks like this:
+アプリケーション自体もアクセス可能で、以下のような外観になります：
 
 ![Gradio MCP Server](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/7.png)
 
-## How It Works Behind the Scenes
+## 裏側での動作原理
 
-When you set `mcp_server=True` in `launch()`, several things happen:
+`launch()`で`mcp_server=True`を設定すると、いくつかのことが起こります：
 
-1. Gradio functions are automatically converted to MCP Tools
-2. Input components map to tool argument schemas
-3. Output components determine the response format
-4. The Gradio server now also listens for MCP protocol messages
-5. JSON-RPC over HTTP+SSE is set up for client-server communication
+1. Gradio関数が自動的にMCPツールに変換される
+2. 入力コンポーネントがツール引数スキーマにマッピングされる
+3. 出力コンポーネントが応答形式を決定する
+4. GradioサーバーがMCPプロトコルメッセージも待機するようになる
+5. クライアント・サーバー通信のためのJSON-RPC over HTTP+SSEが設定される
 
-## Key Features of the Gradio <> MCP Integration
+## Gradio <> MCP統合の主要機能
 
-1. **Tool Conversion**: Each API endpoint in your Gradio app is automatically converted into an MCP tool with a corresponding name, description, and input schema. To view the tools and schemas, visit `http://your-server:port/gradio_api/mcp/schema` or go to the "View API" link in the footer of your Gradio app, and then click on "MCP".
+1. **ツール変換**: GradioアプリのAPIエンドポイントはそれぞれ、対応する名前、説明、入力スキーマを持つMCPツールに自動変換されます。ツールとスキーマを確認するには、`http://your-server:port/gradio_api/mcp/schema`にアクセスするか、Gradioアプリのフッターにある「View API」リンクに移動し、「MCP」をクリックしてください。
 
-2. **Environment Variable Support**: There are two ways to enable the MCP server functionality:
-- Using the `mcp_server` parameter in `launch()`:
+2. **環境変数サポート**: MCPサーバー機能を有効にする方法は2つあります：
+- `launch()`で`mcp_server`パラメータを使用：
   ```python
   demo.launch(mcp_server=True)
   ```
-- Using environment variables:
+- 環境変数を使用：
   ```bash
   export GRADIO_MCP_SERVER=True
   ```
 
-3. **File Handling**: The server automatically handles file data conversions, including:
-   - Converting base64-encoded strings to file data
-   - Processing image files and returning them in the correct format
-   - Managing temporary file storage
+3. **ファイル処理**: サーバーは以下を含むファイルデータ変換を自動処理します：
+   - base64エンコードされた文字列をファイルデータに変換
+   - 画像ファイルを処理して正しい形式で返す
+   - 一時ファイルストレージの管理
 
-   It is **strongly** recommended that input images and files be passed as full URLs ("http://..." or "https://...") as MCP Clients do not always handle local files correctly.
+   MCPクライアントはローカルファイルを正しく処理しないことがあるため、入力画像とファイルは完全なURL（「http://...」または「https://...」）として渡すことを**強く**推奨します。
 
-4. **Hosted MCP Servers on 🤗 Spaces**: You can publish your Gradio application for free on Hugging Face Spaces, which will allow you to have a free hosted MCP server. Here's an example of such a Space: https://huggingface.co/spaces/abidlabs/mcp-tools
+4. **🤗 SpacesでホストされるMCPサーバー**: GradioアプリケーションをHugging Face Spacesで無料で公開でき、これにより無料でホストされるMCPサーバーを持つことができます。このようなSpaceの例はこちらです：https://huggingface.co/spaces/abidlabs/mcp-tools
 
-## Troubleshooting Tips
+## トラブルシューティングのヒント
 
-1. **Type Hints and Docstrings**: Ensure you provide type hints and valid docstrings for your functions. The docstring should include an "Args:" block with indented parameter names.
+1. **型ヒントとドキュメント文字列**: 関数には型ヒントと有効なドキュメント文字列を提供してください。ドキュメント文字列には、インデントされたパラメータ名を含む「Args:」ブロックを含める必要があります。
 
-2. **String Inputs**: When in doubt, accept input arguments as `str` and convert them to the desired type inside the function.
+2. **文字列入力**: 迷った場合は、入力引数を`str`として受け取り、関数内で望ましい型に変換してください。
 
-3. **SSE Support**: Some MCP Hosts don't support SSE-based MCP Servers. In those cases, you can use `mcp-remote`:
+3. **SSEサポート**: MCPホストの中にはSSEベースのMCPサーバーをサポートしないものがあります。その場合は、`mcp-remote`を使用できます：
    ```json
    {
      "mcpServers": {
@@ -135,20 +135,20 @@ When you set `mcp_server=True` in `launch()`, several things happen:
    }
    ```
 
-4. **Restart**: If you encounter connection issues, try restarting both your MCP Client and MCP Server.
+4. **再起動**: 接続の問題が発生した場合は、MCPクライアントとMCPサーバーの両方を再起動してみてください。
 
-## Share your MCP Server
+## MCPサーバーを共有する
 
-You can share your MCP Server by publishing your Gradio app to Hugging Face Spaces. The video below shows how to create a Hugging Face Space.
+GradioアプリをHugging Face Spacesに公開することで、MCPサーバーを共有できます。以下の動画では、Hugging Face Spaceの作成方法を紹介しています。
 
 <Youtube id="3bSVKNKb_PY" />
 
-Now, you can share your MCP Server with others by sharing your Hugging Face Space.
+これで、Hugging Face Spaceを共有することで、MCPサーバーを他の人と共有できるようになりました。
 
-## Conclusion
+## まとめ
 
-Gradio's integration with MCP provides an accessible entry point to the MCP ecosystem. By leveraging Gradio's simplicity and adding MCP's standardization, developers can quickly create both human-friendly interfaces and AI-accessible tools with minimal code.
+GradioのMCP統合は、MCPエコシステムへのアクセスしやすいエントリーポイントを提供します。Gradioのシンプルさを活用し、MCPの標準化を追加することで、開発者は最小限のコードで人間にとって使いやすいインターフェースとAIがアクセス可能なツールの両方を素早く作成できます。
 
-As we progress through this course, we'll explore more sophisticated MCP implementations, but Gradio offers an excellent starting point for understanding and experimenting with the protocol.
+このコースを進めるにつれて、より洗練されたMCP実装を探求していきますが、Gradioはプロトコルの理解と実験のための優れた出発点を提供します。
 
-In the next unit, we'll dive deeper into building MCP applications, focusing on setting up development environments, exploring SDKs, and implementing more advanced MCP Servers and Clients. 
+次のユニットでは、MCPアプリケーションの構築により深く掘り下げ、開発環境の設定、SDKの探索、より高度なMCPサーバーとクライアントの実装に焦点を当てます。 

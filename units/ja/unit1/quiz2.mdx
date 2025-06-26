@@ -1,125 +1,125 @@
-# Quiz 2: MCP SDK
+# クイズ2：MCP SDK
 
-Test your knowledge of the MCP SDKs and their functionalities.
+MCP SDKとその機能に関する知識をテストしてください。
 
-### Q1: What is the main purpose of the MCP SDKs?
-
-<Question
-  choices={[
-    {
-      text: "To define the MCP protocol specification",
-      explain: "The SDKs implement the protocol, they don't define it. The specification is separate."
-    },
-    {
-      text: "To make it easier to implement MCP clients and servers",
-      explain: "Correct! SDKs abstract away low-level protocol details.",
-      correct: true
-    },
-    {
-      text: "To provide a visual interface for MCP interactions",
-      explain: "While some tools might offer this (like MCP Inspector), it's not the primary purpose of the SDKs themselves."
-    },
-    {
-      text: "To replace the need for programming languages",
-      explain: "SDKs are libraries used within programming languages."
-    }
-  ]}
-/>
-
-### Q2: Which of the following functionalities do the MCP SDKs typically handle?
+### Q1: MCP SDKの主要な目的は何ですか？
 
 <Question
   choices={[
     {
-      text: "Optimizing MCP Servers",
-      explain: "This is outside the scope of MCP SDKs, which focus on protocol implementation."
+      text: "MCPプロトコル仕様を定義すること",
+      explain: "SDKはプロトコルを実装するものであり、定義するものではありません。仕様は別途あります。"
     },
     {
-      text: "Defining new AI algorithms",
-      explain: "This is outside the scope of MCP SDKs, which focus on protocol implementation."
-    },
-    {
-      text: "Message serialization/deserialization",
-      explain: "Correct! This is a core function for handling JSON-RPC messages.",
+      text: "MCPクライアントとサーバーの実装を容易にすること",
+      explain: "正解です！SDKは低レベルのプロトコル詳細を抽象化します。",
       correct: true
     },
     {
-      text: "Hosting Large Language Models",
-      explain: "MCP enables connection to LLMs, but the SDKs themselves don't host them."
+      text: "MCPインタラクション用の視覚的インターフェースを提供すること",
+      explain: "一部のツール（MCP Inspectorなど）はこれを提供するかもしれませんが、SDK自体の主要な目的ではありません。"
+    },
+    {
+      text: "プログラミング言語の必要性を置き換えること",
+      explain: "SDKはプログラミング言語内で使用されるライブラリです。"
     }
   ]}
 />
 
-### Q3: According to the provided text, which company maintains the official Python SDK for MCP?
+### Q2: MCP SDKが通常処理する機能は次のうちどれですか？
+
+<Question
+  choices={[
+    {
+      text: "MCPサーバーの最適化",
+      explain: "これはプロトコル実装に焦点を当てるMCP SDKの範囲外です。"
+    },
+    {
+      text: "新しいAIアルゴリズムの定義",
+      explain: "これはプロトコル実装に焦点を当てるMCP SDKの範囲外です。"
+    },
+    {
+      text: "メッセージのシリアライゼーション/デシリアライゼーション",
+      explain: "正解です！これはJSON-RPCメッセージを処理するためのコア機能です。",
+      correct: true
+    },
+    {
+      text: "大規模言語モデルのホスティング",
+      explain: "MCPはLLMへの接続を可能にしますが、SDK自体がそれらをホストするわけではありません。"
+    }
+  ]}
+/>
+
+### Q3: 提供されたテキストによると、MCPの公式Python SDKを維持している会社はどこですか？
 
 <Question
   choices={[
     {
       text: "Google",
-      explain: "The text lists Anthropic as the maintainer."
+      explain: "テキストではAnthropic がメンテナーとして記載されています。"
     },
     {
       text: "Anthropic",
-      explain: "Correct! The course material indicates Anthropic maintains the Python SDK.",
+      explain: "正解です！コース資料ではAnthropicがPython SDKを維持していると示されています。",
       correct: true
     },
     {
       text: "Microsoft",
-      explain: "Microsoft maintains the C# SDK according to the text."
+      explain: "テキストによると、MicrosoftはC# SDKを維持しています。"
     },
     {
       text: "JetBrains",
-      explain: "JetBrains maintains the Kotlin SDK according to the text."
+      explain: "テキストによると、JetBrainsはKotlin SDKを維持しています。"
     }
   ]}
 />
 
-### Q4: What command is used to start a development MCP server using a Python file named `server.py`?
+### Q4: `server.py`という名前のPythonファイルを使用して開発用MCPサーバーを開始するために使用されるコマンドは何ですか？
 
 <Question
   choices={[
     {
       text: "python server.py run",
-      explain: "While you run Python scripts with `python`, MCP has a specific CLI command."
+      explain: "`python`でPythonスクリプトを実行しますが、MCPには特定のCLIコマンドがあります。"
     },
     {
       text: "mcp start server.py",
-      explain: "The command is `mcp dev`, not `mcp start`."
+      explain: "コマンドは`mcp start`ではなく`mcp dev`です。"
     },
     {
       text: "mcp dev server.py",
-      explain: "Correct! This command initializes the development server.",
+      explain: "正解です！このコマンドは開発サーバーを初期化します。",
       correct: true
     },
     {
       text: "serve mcp server.py",
-      explain: "This is not the standard MCP CLI command shown in the course material."
+      explain: "これはコース資料に示されている標準的なMCP CLIコマンドではありません。"
     }
   ]}
 />
 
-### Q5: What is the role of JSON-RPC 2.0 in MCP?
+### Q5: MCPにおけるJSON-RPC 2.0の役割は何ですか？
 
 <Question
   choices={[
     {
-      text: "As a primary transport mechanism for remote communication",
-      explain: "HTTP+SSE or Streamable HTTP are transport mechanisms; JSON-RPC is the message format."
+      text: "リモート通信の主要な転送メカニズムとして",
+      explain: "HTTP+SSEまたはStreamable HTTPが転送メカニズムです；JSON-RPCはメッセージ形式です。"
     },
     {
-      text: "As the message format for all communication between Clients and Servers",
-      explain: "Correct! MCP uses JSON-RPC 2.0 for structuring messages.",
+      text: "クライアントとサーバー間のすべての通信のメッセージ形式として",
+      explain: "正解です！MCPはメッセージの構造化にJSON-RPC 2.0を使用します。",
       correct: true
     },
     {
-      text: "As a tool for debugging AI models",
-      explain: "While its human-readable nature helps in debugging communications, it's not a debugging tool for AI models themselves."
+      text: "AIモデルのデバッグツールとして",
+      explain: "人間が読める性質が通信のデバッグに役立ちますが、AIモデル自体のデバッグツールではありません。"
     },
     {
-      text: "As a method for defining AI capabilities like Tools and Resources",
-      explain: "Capabilities are defined by their own schemas; JSON-RPC is used to invoke them and exchange data."
+      text: "ツールやリソースなどのAI機能を定義する方法として",
+      explain: "機能はそれら自身のスキーマによって定義されます；JSON-RPCはそれらを呼び出し、データを交換するために使用されます。"
     }
   ]}
 />
 
-Congrats on finishing this Quiz 🥳! If you need to review any elements, take the time to revisit the chapter to reinforce your knowledge. 
+このクイズを完了おめでとうございます🥳！要素を復習する必要がある場合は、時間をかけて章を見直して知識を強化してください。 

@@ -1,66 +1,66 @@
-# MCP Clients
+# MCPクライアント
 
-Now that we have a basic understanding of the Model Context Protocol, we can explore the essential role of MCP Clients in the Model Context Protocol ecosystem.
+Model Context Protocol (MCP) の基本的な理解を深めた今、MCPエコシステムにおけるMCPクライアントの重要な役割を探ることができます。
 
- In this part of Unit 1, we'll explore the essential role of MCP Clients in the Model Context Protocol ecosystem.
+Unit 1のこの部分では、Model Context Protocol (MCP) エコシステムにおけるMCPクライアントの重要な役割を探ります。
 
-In this section, you will:
+このセクションでは、次のことを学習します：
 
-* Understand what MCP Clients are and their role in the MCP architecture
-* Learn about the key responsibilities of MCP Clients
-* Explore the major MCP Client implementations
-* Discover how to use Hugging Face's MCP Client implementation
-* See practical examples of MCP Client usage
-
-<Tip>
-
-In this page we're going to show examples of how to set up MCP Clients in a few different ways using the JSON notation. For now, we will use *examples* like `path/to/server.py` to represent the path to the MCP Server. In the next unit, we'll implement this with real MCP Servers.  
-
-For now, focus on understanding the MCP Client notation. We'll implement the MCP Servers in the next unit.
-
-</Tip>
-
-## Understanding MCP Clients
-
-MCP Clients are crucial components that act as the bridge between AI applications (Hosts) and external capabilities provided by MCP Servers. Think of the Host as your main application (like an AI assistant or IDE) and the Client as a specialized module within that Host responsible for handling MCP communications.
-
-## User Interface Client
-
-Let's start by exploring the user interface clients that are available for the MCP.
-
-### Chat Interface Clients
-
-Anthropic's Claude Desktop stands as one of the most prominent MCP Clients, providing integration with various MCP Servers.
-
-### Interactive Development Clients
-
-Cursor's MCP Client implementation enables AI-powered coding assistance through direct integration with code editing capabilities. It supports multiple MCP Server connections and provides real-time tool invocation during coding, making it a powerful tool for developers.
-
-Continue.dev is another example of an interactive development client that supports MCP and connects to an MCP server from VS Code.
-
-## Configuring MCP Clients
-
-Now that we've covered the core of the MCP protocol, let's look at how to configure your MCP servers and clients.
-
-Effective deployment of MCP servers and clients requires proper configuration. 
+* MCPクライアントとは何か、MCPアーキテクチャにおける役割を理解する
+* MCPクライアントの主要な責任について学ぶ
+* 主要なMCPクライアント実装を探る
+* Hugging FaceのMCPクライアント実装の使用方法を発見する
+* MCPクライアント使用の実践的な例を確認する
 
 <Tip>
 
-The MCP specification is still evolving, so the configuration methods are subject to evolution. We'll focus on the current best practices for configuration.
+このページでは、JSON記法を使用してMCPクライアントをいくつかの異なる方法で設定する例を示します。今のところ、MCPサーバーへのパスを表すために `path/to/server.py` のような*例*を使用します。次のユニットでは、これを実際のMCPサーバーで実装します。
+
+今は、MCPクライアント記法の理解に集中してください。MCPサーバーは次のユニットで実装します。
 
 </Tip>
 
-### MCP Configuration Files
+## MCPクライアントの理解
 
-MCP hosts use configuration files to manage server connections. These files define which servers are available and how to connect to them.
+MCPクライアントは、AIアプリケーション（ホスト）とMCPサーバーによって提供される外部機能との間の橋渡しとして機能する重要なコンポーネントです。ホストをメインアプリケーション（AIアシスタントやIDEなど）として、クライアントをそのホスト内でMCP通信の処理を担当する専用モジュールとして考えてください。
 
-Fortunately, the configuration files are very simple, easy to understand, and consistent across major MCP hosts.
+## ユーザーインターフェースクライアント
 
-#### `mcp.json` Structure
+MCPで利用可能なユーザーインターフェースクライアントを探ることから始めましょう。
 
-The standard configuration file for MCP is named `mcp.json`. Here's the basic structure:
+### チャットインターフェースクライアント
 
-This is the basic structure of the `mcp.json` can be passed to applications like Claude Desktop, Cursor, or VS Code.
+AnthropicのClaude Desktopは、最も著名なMCPクライアントの一つとして、様々なMCPサーバーとの統合を提供しています。
+
+### インタラクティブ開発クライアント
+
+CursorのMCPクライアント実装は、コード編集機能との直接統合を通じてAI駆動のコーディング支援を可能にします。複数のMCPサーバー接続をサポートし、コーディング中にリアルタイムでツール呼び出しを提供するため、開発者にとって強力なツールとなっています。
+
+Continue.devは、MCPをサポートし、VS CodeからMCPサーバーに接続するインタラクティブ開発クライアントの別の例です。
+
+## MCPクライアントの設定
+
+MCPプロトコルのコアを扱った今、MCPサーバーとクライアントの設定方法を見てみましょう。
+
+MCPサーバーとクライアントの効果的な展開には適切な設定が必要です。
+
+<Tip>
+
+MCP仕様はまだ進化しているため、設定方法は進化の対象となります。設定の現在のベストプラクティスに焦点を当てます。
+
+</Tip>
+
+### MCP設定ファイル
+
+MCPホストは設定ファイルを使用してサーバー接続を管理します。これらのファイルは、どのサーバーが利用可能で、どのように接続するかを定義します。
+
+幸い、設定ファイルは非常にシンプルで理解しやすく、主要なMCPホスト間で一貫しています。
+
+#### `mcp.json` 構造
+
+MCPの標準設定ファイルは `mcp.json` という名前です。基本構造は次のとおりです：
+
+これは `mcp.json` の基本構造で、Claude Desktop、Cursor、VS Codeなどのアプリケーションに渡すことができます。
 
 ```json
 {
@@ -76,11 +76,11 @@ This is the basic structure of the `mcp.json` can be passed to applications like
 }
 ```
 
-In this example, we have a single server with a name and a transport type. The transport type is either `stdio` or `sse`.
+この例では、名前と転送タイプを持つ単一のサーバーがあります。転送タイプは `stdio` または `sse` のいずれかです。
 
-#### Configuration for stdio Transport
+#### stdio転送の設定
 
-For local servers using stdio transport, the configuration includes the command and arguments to launch the server process:
+stdio転送を使用するローカルサーバーの場合、設定にはサーバープロセスを起動するコマンドと引数が含まれます：
 
 ```json
 {
@@ -90,18 +90,18 @@ For local servers using stdio transport, the configuration includes the command 
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/file_explorer_server.py"] // This is an example, we'll use a real server in the next unit
+        "args": ["/path/to/file_explorer_server.py"] // これは例です。次のユニットで実際のサーバーを使用します
       }
     }
   ]
 }
 ```
 
-Here, we have a server called "File Explorer" that is a local script.
+ここでは、ローカルスクリプトである「File Explorer」というサーバーがあります。
 
-#### Configuration for HTTP+SSE Transport
+#### HTTP+SSE転送の設定
 
-For remote servers using HTTP+SSE transport, the configuration includes the server URL:
+HTTP+SSE転送を使用するリモートサーバーの場合、設定にはサーバーURLが含まれます：
 
 ```json
 {
@@ -117,52 +117,52 @@ For remote servers using HTTP+SSE transport, the configuration includes the serv
 }
 ```
 
-#### Environment Variables in Configuration
+#### 設定における環境変数
 
-Environment variables can be passed to server processes using the `env` field. Here's how to access them in your server code:
+環境変数は `env` フィールドを使用してサーバープロセスに渡すことができます。サーバーコードでアクセスする方法は次のとおりです：
 
 <hfoptions id="env-variables">
 <hfoption id="python">
 
-In Python, we use the `os` module to access environment variables:
+Pythonでは、`os` モジュールを使用して環境変数にアクセスします：
 
 ```python
 import os
 
-# Access environment variables
+# 環境変数にアクセス
 github_token = os.environ.get("GITHUB_TOKEN")
 if not github_token:
     raise ValueError("GITHUB_TOKEN environment variable is required")
 
-# Use the token in your server code
+# サーバーコードでトークンを使用
 def make_github_request():
     headers = {"Authorization": f"Bearer {github_token}"}
-    # ... rest of your code
+    # ... コードの残り
 ```
 
 </hfoption>
 <hfoption id="javascript">
 
-In JavaScript, we use the `process.env` object to access environment variables:
+JavaScriptでは、`process.env` オブジェクトを使用して環境変数にアクセスします：
 
 ```javascript
-// Access environment variables
+// 環境変数にアクセス
 const githubToken = process.env.GITHUB_TOKEN;
 if (!githubToken) {
     throw new Error("GITHUB_TOKEN environment variable is required");
 }
 
-// Use the token in your server code
+// サーバーコードでトークンを使用
 function makeGithubRequest() {
     const headers = { "Authorization": `Bearer ${githubToken}` };
-    // ... rest of your code
+    // ... コードの残り
 }
 ```
 
 </hfoption>
 </hfoptions>
 
-The corresponding configuration in `mcp.json` would look like this:
+`mcp.json` の対応する設定は次のようになります：
 
 ```json
 {
@@ -172,7 +172,7 @@ The corresponding configuration in `mcp.json` would look like this:
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/github_server.py"], // This is an example, we'll use a real server in the next unit
+        "args": ["/path/to/github_server.py"], // これは例です。次のユニットで実際のサーバーを使用します
         "env": {
           "GITHUB_TOKEN": "your_github_token"
         }
@@ -182,13 +182,13 @@ The corresponding configuration in `mcp.json` would look like this:
 }
 ```
 
-### Configuration Examples
+### 設定例
 
-Let's look at some real-world configuration scenarios:
+実際の設定シナリオを見てみましょう：
 
-#### Scenario 1: Local Server Configuration
+#### シナリオ1：ローカルサーバー設定
 
-In this scenario, we have a local server that is a Python script which could be a file explorer or a code editor.
+このシナリオでは、ファイルエクスプローラーやコードエディターなどのPythonスクリプトであるローカルサーバーがあります。
 
 ```json
 {
@@ -198,16 +198,16 @@ In this scenario, we have a local server that is a Python script which could be 
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/file_explorer_server.py"] // This is an example, we'll use a real server in the next unit
+        "args": ["/path/to/file_explorer_server.py"] // これは例です。次のユニットで実際のサーバーを使用します
       }
     }
   ]
 }
 ```
 
-#### Scenario 2: Remote Server Configuration
+#### シナリオ2：リモートサーバー設定
 
-In this scenario, we have a remote server that is a weather API.
+このシナリオでは、天気APIであるリモートサーバーがあります。
 
 ```json
 {
@@ -216,43 +216,43 @@ In this scenario, we have a remote server that is a weather API.
       "name": "Weather API",
       "transport": {
         "type": "sse",
-        "url": "https://example.com/mcp-server" // This is an example, we'll use a real server in the next unit
+        "url": "https://example.com/mcp-server" // これは例です。次のユニットで実際のサーバーを使用します
       }
     }
   ]
 }
 ```
 
-Proper configuration is essential for successfully deploying MCP integrations. By understanding these aspects, you can create robust and reliable connections between AI applications and external capabilities.
+適切な設定は、MCP統合の成功した展開に不可欠です。これらの側面を理解することで、AIアプリケーションと外部機能の間の堅牢で信頼性の高い接続を作成できます。
 
-In the next section, we'll explore the ecosystem of MCP servers available on Hugging Face Hub and how to publish your own servers there. 
+次のセクションでは、Hugging Face Hubで利用可能なMCPサーバーのエコシステムと、そこで独自のサーバーを公開する方法を探ります。
 
-## Tiny Agents Clients
+## Tiny Agentsクライアント
 
-Now, let's explore how to use MCP Clients within code.
+今度は、コード内でMCPクライアントを使用する方法を探ってみましょう。
 
-You can also use tiny agents as MCP Clients to connect directly to MCP servers from your code. Tiny agents provide a simple way to create AI agents that can use tools from MCP servers.
+コードから直接MCPサーバーに接続するMCPクライアントとしてtiny agentsを使用することもできます。Tiny agentsは、MCPサーバーからツールを使用できるAIエージェントを作成する簡単な方法を提供します。
 
-Tiny Agent can run MCP servers with a command line environment. To do this, we will need to install `npm` and run the server with `npx`. **We'll need these for both Python and JavaScript.**
+Tiny Agentはコマンドライン環境でMCPサーバーを実行できます。これを行うには、`npm` をインストールし、`npx` でサーバーを実行する必要があります。**PythonとJavaScriptの両方でこれらが必要です。**
 
-Let's install `npx` with `npm`. If you don't have `npm` installed, check out the [npm documentation](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
+`npm` で `npx` をインストールしましょう。`npm` がインストールされていない場合は、[npm documentation](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)を確認してください。
 
-### Setup
+### セットアップ
 
-First, we will need to install `npx` if you don't have it installed. You can do this with the following command:
+まず、インストールされていない場合は `npx` をインストールする必要があります。次のコマンドでこれを行うことができます：
 
 ```bash
-# install npx
+# npxをインストール
 npm install -g npx
 ```
 
-Then, we will need to install the huggingface_hub package with the MCP support. This will allow us to run MCP servers and clients.
+次に、MCPサポート付きのhuggingface_hubパッケージをインストールする必要があります。これにより、MCPサーバーとクライアントを実行できるようになります。
 
 ```bash
 pip install "huggingface_hub[mcp]>=0.32.0"
 ```
 
-Then, we will need to log in to the Hugging Face Hub to access the MCP servers. You can do this with the `huggingface-cli` command line tool. You will need a [login token](https://huggingface.co/docs/huggingface_hub/v0.32.3/en/quick-start#authentication) to do this.
+次に、MCPサーバーにアクセスするためにHugging Face Hubにログインする必要があります。これは `huggingface-cli` コマンドラインツールで行うことができます。これを行うには[ログイントークン](https://huggingface.co/docs/huggingface_hub/v0.32.3/en/quick-start#authentication)が必要です。
 
 ```bash
 huggingface-cli login
@@ -261,9 +261,9 @@ huggingface-cli login
 <hfoptions id="language">
 <hfoption id="python">
 
-### Connecting to MCP Servers
+### MCPサーバーへの接続
 
-Now, let's create an agent configuration file `agent.json`.
+今度は、エージェント設定ファイル `agent.json` を作成しましょう。
 
 ```json
 {
@@ -281,9 +281,9 @@ Now, let's create an agent configuration file `agent.json`.
 }
 ```
 
-In this configuration, we are using the `@playwright/mcp` MCP server. This is an MCP server that can control a browser with Playwright.
+この設定では、`@playwright/mcp` MCPサーバーを使用しています。これは、PlaywrightでブラウザーをコントロールできるMCPサーバーです。
 
-Now you can run the agent:
+これでエージェントを実行できます：
 
 ```bash
 tiny-agents run agent.json
@@ -291,22 +291,22 @@ tiny-agents run agent.json
 </hfoption>
 <hfoption id="javascript">
 
-First, install the tiny agents package with [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm).
+まず、[npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)でtiny agentsパッケージをインストールします。
 
 ```bash
 npm install @huggingface/tiny-agents
 ```
 
-### Connecting to MCP Servers
+### MCPサーバーへの接続
 
-Make an agent project directory and create an `agent.json` file.
+エージェントプロジェクトディレクトリを作成し、`agent.json` ファイルを作成します。
 
 ```bash
 mkdir my-agent
 touch my-agent/agent.json
 ```
 
-Create an agent configuration file at `my-agent/agent.json`:
+`my-agent/agent.json` でエージェント設定ファイルを作成します：
 
 ```json
 {
@@ -324,7 +324,7 @@ Create an agent configuration file at `my-agent/agent.json`:
 }
 ```
 
-Now you can run the agent:
+これでエージェントを実行できます：
 
 ```bash
 npx @huggingface/tiny-agents run ./my-agent
@@ -333,25 +333,25 @@ npx @huggingface/tiny-agents run ./my-agent
 </hfoption>
 </hfoptions>
 
-In the video below, we run the agent and ask it to open a new tab in the browser.
+下のビデオでは、エージェントを実行してブラウザーで新しいタブを開くように依頼しています。
 
-The following example shows a web-browsing agent configured to use the [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) model via Nebius inference provider, and it comes equipped with a playwright MCP server, which lets it use a web browser! The agent config is loaded specifying [its path in the `tiny-agents/tiny-agents`](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser) Hugging Face dataset.
+次の例は、Nebius推論プロバイダー経由で[Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)モデルを使用するように設定されたWebブラウジングエージェントを示しており、playwright MCPサーバーが装備されているため、Webブラウザーを使用できます！エージェント設定は、[`tiny-agents/tiny-agents`](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser) Hugging Faceデータセット内のパスを指定して読み込まれます。
 
 <video controls autoplay loop>
   <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/python-tiny-agents/web_browser_agent.mp4" type="video/mp4">
 </video>
 
-When you run the agent, you'll see it load, listing the tools it has discovered from its connected MCP servers. Then, it's ready for your prompts!
+エージェントを実行すると、読み込み中に接続されたMCPサーバーから発見したツールをリストアップし、その後プロンプトの準備が整います！
 
-Prompt used in this demo:
+このデモで使用されたプロンプト：
 
 > do a Web Search for HF inference providers on Brave Search and open the first result and then give me the list of the inference providers supported on Hugging Face 
 
-## Next Steps
+## 次のステップ
 
-Now that you understand MCP Clients, you're ready to:
-* Explore specific MCP Server implementations
-* Learn about creating custom MCP Clients
-* Dive into advanced MCP integration patterns
+MCPクライアントを理解した今、次のことができます：
+* 特定のMCPサーバー実装を探る
+* カスタムMCPクライアントの作成について学ぶ
+* 高度なMCP統合パターンに深く入り込む
 
-Let's continue our journey into the world of Model Context Protocol!
+Model Context Protocolの世界への旅を続けましょう！

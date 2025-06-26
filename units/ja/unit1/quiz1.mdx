@@ -1,125 +1,125 @@
-# Quiz 1: MCP Fundamentals
+# クイズ1：MCP基礎
 
-Test your knowledge of the core concepts of Model Context Protocol.
+Model Context Protocolの主要概念の理解をテストしてください。
 
-### Q1: What is the primary purpose of Model Context Protocol (MCP)?
-
-<Question
-  choices={[
-    {
-      text: "To limit the training data of AI models",
-      explain: "MCP aims to expand, not limit, the contexts AI models can access."
-    },
-    {
-      text: "To enable AI models to connect with external data sources, tools, and environments",
-      explain: "Correct! MCP's main goal is to facilitate interoperability.",
-      correct: true
-    },
-    {
-      text: "To replace prompting when using Large Language Models",
-      explain: "MCP is a protocol that enhances prompting, not a replacement for it."
-    },
-    {
-      text: "To create a new programming language for AI",
-      explain: "MCP is a protocol, not a programming language."
-    }
-  ]}
-/>
-
-### Q2: What problem does MCP primarily aim to solve?
+### Q1: Model Context Protocol（MCP）の主要な目的は何ですか？
 
 <Question
   choices={[
     {
-      text: "The lack of AI models",
-      explain: "MCP addresses integration challenges, not the availability of AI models themselves."
+      text: "AIモデルの学習データを制限すること",
+      explain: "MCPはAIモデルがアクセスできるコンテキストを制限するのではなく、拡張することを目指しています。"
     },
     {
-      text: "The high cost of training LLMs",
-      explain: "While MCP can improve efficiency, its primary focus is not on reducing training costs directly."
-    },
-    {
-      text: "The M×N Integration Problem",
-      explain: "Correct! MCP standardizes connections to avoid M×N custom integrations.",
+      text: "AIモデルが外部データソース、ツール、環境と接続できるようにすること",
+      explain: "正解です！MCPの主要な目標は相互運用性を促進することです。",
       correct: true
     },
     {
-      text: "The difficulty in creating new AI algorithms",
-      explain: "MCP facilitates using existing algorithms and tools, not creating new ones from scratch."
+      text: "大規模言語モデルを使用する際のプロンプトを置き換えること",
+      explain: "MCPはプロンプトを強化するプロトコルであり、置き換えるものではありません。"
+    },
+    {
+      text: "AI用の新しいプログラミング言語を作成すること",
+      explain: "MCPはプロトコルであり、プログラミング言語ではありません。"
     }
   ]}
 />
 
-### Q3: Which of the following is a key benefit of MCP?
+### Q2: MCPが主に解決を目指している問題は何ですか？
 
 <Question
   choices={[
     {
-      text: "Reduced AI model accuracy",
-      explain: "MCP aims to enhance AI capabilities, which should ideally lead to improved or maintained accuracy, not reduced."
+      text: "AIモデルの不足",
+      explain: "MCPはAIモデル自体の利用可能性ではなく、統合の課題に取り組んでいます。"
     },
     {
-      text: "Increased complexity in AI development",
-      explain: "MCP aims to simplify integration, thereby reducing complexity."
+      text: "LLMの訓練コストの高さ",
+      explain: "MCPは効率性を向上させることができますが、主な焦点は直接的な訓練コストの削減ではありません。"
     },
     {
-      text: "Standardization and interoperability in the AI ecosystem",
-      explain: "Correct! This is a primary goal and benefit of MCP.",
+      text: "M×N統合問題",
+      explain: "正解です！MCPはM×Nのカスタム統合を避けるために接続を標準化します。",
       correct: true
     },
     {
-      text: "Isolation of AI models from external systems",
-      explain: "MCP promotes connection and interaction, not isolation."
+      text: "新しいAIアルゴリズムの作成の困難さ",
+      explain: "MCPは既存のアルゴリズムとツールの使用を促進するものであり、ゼロから新しいものを作成することではありません。"
     }
   ]}
 />
 
-### Q4: In MCP terminology, what is a "Host"?
+### Q3: 以下のうち、MCPの主要な利点はどれですか？
 
 <Question
   choices={[
     {
-      text: "The external program exposing capabilities",
-      explain: "This describes an MCP Server."
+      text: "AIモデルの精度の低下",
+      explain: "MCPはAI機能を向上させることを目指しており、理想的には精度の向上または維持につながるはずで、低下ではありません。"
     },
     {
-      text: "The user-facing AI application",
-      explain: "Correct! The Host is the application users interact with.",
+      text: "AI開発の複雑さの増加",
+      explain: "MCPは統合を簡素化することを目指しており、複雑さを減らします。"
+    },
+    {
+      text: "AIエコシステムでの標準化と相互運用性",
+      explain: "正解です！これはMCPの主要な目標と利点です。",
       correct: true
     },
     {
-      text: "A read-only data source",
-      explain: "This describes a type of MCP Capability (Resource)."
-    },
-    {
-      text: "A pre-defined template for interactions",
-      explain: "This describes a type of MCP Capability (Prompt)."
+      text: "AIモデルの外部システムからの分離",
+      explain: "MCPは分離ではなく、接続とインタラクションを促進します。"
     }
   ]}
 />
 
-### Q5: What does "M×N Integration Problem" refer to in the context of AI applications?
+### Q4: MCP用語で「ホスト」とは何ですか？
 
 <Question
   choices={[
     {
-      text: "The difficulty of training M models with N datasets",
-      explain: "This relates to model training, not the integration problem MCP addresses."
+      text: "機能を公開する外部プログラム",
+      explain: "これはMCPサーバーを説明しています。"
     },
     {
-      text: "The challenge of connecting M AI applications to N external tools without a standard",
-      explain: "Correct! MCP provides the standard to solve this M*N complexity.",
+      text: "ユーザー向けのAIアプリケーション",
+      explain: "正解です！ホストはユーザーがインタラクトするアプリケーションです。",
       correct: true
     },
     {
-      text: "The problem of managing M users across N applications",
-      explain: "This is a user management or identity problem, not the focus of MCP."
+      text: "読み取り専用のデータソース",
+      explain: "これはMCP機能の一種（リソース）を説明しています。"
     },
     {
-      text: "The complexity of developing M features for N different user segments",
-      explain: "This relates to product development strategy, not system integration in the way MCP defines."
+      text: "インタラクション用の事前定義されたテンプレート",
+      explain: "これはMCP機能の一種（プロンプト）を説明しています。"
     }
   ]}
 />
 
-Congrats on finishing this Quiz 🥳! If you need to review any elements, take the time to revisit the chapter to reinforce your knowledge. 
+### Q5: AIアプリケーションのコンテキストで「M×N統合問題」とは何を指しますか？
+
+<Question
+  choices={[
+    {
+      text: "Mモデルを使ってNデータセットで訓練することの困難さ",
+      explain: "これはモデル訓練に関連しており、MCPが対処する統合問題ではありません。"
+    },
+    {
+      text: "標準なしにM個のAIアプリケーションをN個の外部ツールに接続する課題",
+      explain: "正解です！MCPはこのM*N複雑性を解決する標準を提供します。",
+      correct: true
+    },
+    {
+      text: "N個のアプリケーション間でMユーザーを管理する問題",
+      explain: "これはユーザー管理やアイデンティティの問題であり、MCPの焦点ではありません。"
+    },
+    {
+      text: "N個の異なるユーザーセグメント向けにM機能を開発する複雑さ",
+      explain: "これはプロダクト開発戦略に関連しており、MCPが定義する方法でのシステム統合ではありません。"
+    }
+  ]}
+/>
+
+このクイズを完了おめでとうございます🥳！要素を復習する必要がある場合は、時間をかけて章を見直して知識を強化してください。 

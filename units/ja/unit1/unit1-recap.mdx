@@ -1,45 +1,45 @@
-# Unit1 recap
+# Unit1 まとめ
 
 ## Model Context Protocol (MCP)
 
-The MCP is a standardized protocol designed to connect AI models with external tools, data sources, and environments. It addresses the limitations of existing AI systems by enabling interoperability and access to real-time information.
+MCPは、AIモデルを外部ツール、データソース、環境と接続するために設計された標準化されたプロトコルです。相互運用性を可能にし、リアルタイム情報へのアクセスを提供することで、既存のAIシステムの制限に対処します。
 
-## Key Concepts
+## 主要概念
 
-### Client-Server Architecture
-MCP follows a client-server model where clients manage communication between users and servers. This architecture promotes modularity, allowing for easy addition of new servers without requiring changes to existing hosts.
+### クライアント・サーバー・アーキテクチャ
+MCPはクライアントがユーザーとサーバー間の通信を管理するクライアント・サーバーモデルに従います。このアーキテクチャはモジュラー性を促進し、既存のホストに変更を加えることなく新しいサーバーの追加を容易にします。
 
-### Components
-#### Host
-The user-facing AI application that serves as the interface for end-users.
+### コンポーネント
+#### ホスト
+エンドユーザーのインターフェースとして機能するユーザー向けAIアプリケーション。
 
-##### Client
-A component within the host application responsible for managing communication with a specific MCP server. Clients maintain 1:1 connections with servers and handle protocol-level details.
+##### クライアント
+特定のMCPサーバーとの通信を管理する責任を持つホストアプリケーション内のコンポーネント。クライアントはサーバーとの1:1接続を維持し、プロトコルレベルの詳細を処理します。
 
-#### Server
-An external program or service that provides access to tools, data sources, or services via the MCP protocol. Servers act as lightweight wrappers around existing functionalities.
+#### サーバー
+MCPプロトコルを介してツール、データソース、またはサービスへのアクセスを提供する外部プログラムまたはサービス。サーバーは既存の機能の軽量なラッパーとして機能します。
 
-### Capabilities
-#### Tools
-Executable functions that can perform actions (e.g., sending messages, querying APIs). Tools are typically model-controlled and require user approval due to their ability to perform actions with side effects.
+### 機能
+#### ツール
+アクションを実行できる実行可能な関数（例：メッセージの送信、APIのクエリ）。ツールは通常モデル制御であり、副作用を伴うアクションを実行する能力があるため、ユーザーの承認が必要です。
 
-#### Resources
-Read-only data sources for context retrieval without significant computation. Resources are application-controlled and designed for data retrieval similar to GET endpoints in REST APIs.
+#### リソース
+重要な計算を伴わずにコンテキスト取得のための読み取り専用データソース。リソースはアプリケーション制御であり、REST APIのGETエンドポイントと同様にデータ取得用に設計されています。
 
-#### Prompts
-Pre-defined templates or workflows that guide interactions between users, AI models, and available capabilities. Prompts are user-controlled and set the context for interactions.
+#### プロンプト
+ユーザー、AIモデル、利用可能な機能間のインタラクションをガイドする事前定義されたテンプレートまたはワークフロー。プロンプトはユーザー制御であり、インタラクションのコンテキストを設定します。
 
-#### Sampling
-Server-initiated requests for LLM processing, enabling server-driven agentic behaviors and potentially recursive or multi-step interactions. Sampling operations typically require user approval.
+#### サンプリング
+LLM処理のためのサーバー開始のリクエストで、サーバー駆動のエージェンティック行動と潜在的に再帰的またはマルチステップインタラクションを可能にします。サンプリング操作は通常ユーザーの承認が必要です。
 
-### Communication Protocol
-The MCP protocol uses JSON-RPC 2.0 as the message format for communication between clients and servers. Two primary transport mechanisms are supported: stdio (for local communication) and HTTP+SSE (for remote communication). Messages include requests, responses, and notifications.
+### 通信プロトコル
+MCPプロトコルは、クライアントとサーバー間の通信のメッセージ形式としてJSON-RPC 2.0を使用します。2つの主要な転送メカニズムがサポートされています：stdio（ローカル通信用）とHTTP+SSE（リモート通信用）。メッセージには、リクエスト、レスポンス、通知が含まれます。
 
-### Discovery Process
-MCP allows clients to dynamically discover available tools, resources, and prompts through list methods (e.g., `tools/list`). This dynamic discovery mechanism enables clients to adapt to the specific capabilities each server offers without requiring hardcoded knowledge of server functionality.
+### 発見プロセス
+MCPは、クライアントがリストメソッド（例：`tools/list`）を通じて利用可能なツール、リソース、プロンプトを動的に発見することを可能にします。この動的発見メカニズムにより、クライアントは各サーバーが提供する特定の機能に適応でき、サーバー機能のハードコードされた知識を必要としません。
 
-### MCP SDKs
-Official SDKs are available in various programming languages for implementing MCP clients and servers. These SDKs handle protocol-level communication, capability registration, and error handling, simplifying the development process.
+### MCP SDK
+MCPクライアントとサーバーの実装のために、様々なプログラミング言語で公式SDKが利用可能です。これらのSDKは、プロトコルレベルの通信、機能登録、エラーハンドリングを処理し、開発プロセスを簡素化します。
 
-### Gradio Integration
-Gradio allows easy creation of web interfaces that expose capabilities to the MCP protocol, making it accessible for both humans and AI models. This integration provides a human-friendly interface alongside AI-accessible tools with minimal code.
+### Gradio統合
+GradioはMCPプロトコルに機能を公開するWebインターフェースの簡単な作成を可能にし、人間とAIモデルの両方がアクセスできるようにします。この統合は、最小限のコードで人間にとって使いやすいインターフェースとAIがアクセス可能なツールを提供します。
