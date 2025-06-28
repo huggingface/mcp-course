@@ -1,37 +1,37 @@
-# Webhook Listener
+# Webhookリスナー
 
-The webhook listener is the entry point for our Pull Request Agent. It receives real-time events from the Hugging Face Hub when discussions are created or updated, triggering our MCP-powered tagging workflow. In this section, we'll implement a webhook handler using FastAPI.
+webhookリスナーは、プルリクエストエージェントのエントリーポイントです。Hugging Face Hubでディスカッションが作成または更新されたときにリアルタイムイベントを受信し、MCPを活用したタグ付けワークフローをトリガーします。このセクションでは、FastAPIを使用してwebhookハンドラーを実装します。
 
-## Understanding Webhook Integration
+## Webhook統合の理解
 
-Following the [Hugging Face Webhooks Guide](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md), our webhook listener validates incoming requests and processes discussion events in real-time.
+[Hugging Face Webhooks Guide](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md)に従って、webhookリスナーは受信リクエストを検証し、ディスカッションイベントをリアルタイムで処理します。
 
 ![Webhook Creation](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
 
-### Webhook Event Flow
+### Webhookイベントフロー
 
-Understanding the webhook flow is crucial for building a reliable listener:
+信頼性の高いリスナーを構築するためには、webhookフローを理解することが重要です：
 
-1. **User Action**: Someone creates a comment in a model repository discussion
-2. **Hub Event**: Hugging Face generates a webhook event
-3. **Webhook Delivery**: Hub sends POST request to our endpoint
-4. **Authentication**: We validate the webhook secret
-5. **Processing**: Extract tags from the comment content
-6. **Action**: Use MCP tools to create pull requests for new tags
+1. **ユーザーアクション**: 誰かがモデルリポジトリのディスカッションでコメントを作成
+2. **Hubイベント**: Hugging Faceがwebhookイベントを生成
+3. **Webhook配信**: HubがPOST requestを私たちのエンドポイントに送信
+4. **認証**: webhookシークレットを検証
+5. **処理**: コメント内容からタグを抽出
+6. **アクション**: MCPツールを使用して新しいタグのプルリクエストを作成
 
 <Tip>
 
-Webhooks are push notifications - the Hugging Face Hub actively sends events to your application rather than you polling for changes. This enables real-time responses to discussions and comments.
+Webhookはプッシュ通知です - Hugging Face Hubは変更をポーリングするのではなく、アクティブにイベントをアプリケーションに送信します。これにより、ディスカッションやコメントに対するリアルタイムの応答が可能になります。
 
 </Tip>
 
-## FastAPI Webhook Application
+## FastAPI Webhookアプリケーション
 
-Let's build our webhook listener step by step, starting with the foundation and building up to the complete processing logic.
+基盤から始めて完全な処理ロジックまで構築しながら、webhookリスナーをステップバイステップで作成しましょう。
 
-### 1. Application Setup
+### 1. アプリケーションセットアップ
 
-First, let's set up the basic FastAPI application with all necessary imports and configuration:
+まず、必要なすべてのインポートと設定を含む基本のFastAPIアプリケーションをセットアップしましょう：
 
 ```python
 import os
@@ -44,9 +44,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 ```
 
-These imports give us everything we need to build a robust webhook handler. `FastAPI` provides the web framework, `BackgroundTasks` enables async processing, and the typing imports help with data validation.
+これらのインポートは、堅牢なwebhookハンドラーを構築するために必要なすべてを提供します。`FastAPI`はWebフレームワークを提供し、`BackgroundTasks`は非同期処理を可能にし、typingインポートはデータ検証を支援します。
 
-Now let's configure our application:
+次に、アプリケーションを設定しましょう：
 
 ```python
 # Configuration
@@ -60,19 +60,19 @@ app = FastAPI(title="HF Tagging Bot")
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 ```
 
-This configuration sets up:
-- **Webhook secret**: For validating incoming webhooks
-- **HF token**: For authenticating with the Hub API
-- **Operations store**: In-memory storage for monitoring processed operations
-- **CORS middleware**: Allows cross-origin requests for the web interface
+この設定では以下をセットアップします：
+- **Webhookシークレット**: 受信webhookの検証用
+- **HFトークン**: Hub APIでの認証用
+- **オペレーションストア**: 処理されたオペレーションを監視するためのインメモリストレージ
+- **CORSミドルウェア**: Webインターフェース用のクロスオリジンリクエストを許可
 
 <Tip>
-The `tag_operations_store` list keeps track of recent webhook processing operations. This is useful for debugging and monitoring, but in production you might want to use a database or limit the size of this list.
+`tag_operations_store`リストは最近のwebhook処理オペレーションを追跡します。これはデバッグと監視に役立ちますが、本番環境ではデータベースを使用するか、このリストのサイズを制限することを検討してください。
 </Tip>
 
-### 2. Webhook Data Models
+### 2. Webhookデータモデル
 
-Based on the [Hugging Face webhook documentation](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md), we need to understand the webhook data structure:
+[Hugging Face webhook documentation](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md)に基づいて、webhookデータ構造を理解する必要があります：
 
 ```python
 class WebhookEvent(BaseModel):
@@ -82,17 +82,17 @@ class WebhookEvent(BaseModel):
     repo: Dict[str, str]           # Repository details
 ```
 
-This Pydantic model helps us understand the webhook structure.
+このPydanticモデルは、webhook構造の理解を助けます。
 
-The key fields we care about are:
-- `event.action`: Usually "create" for new comments
-- `event.scope`: Usually "discussion.comment" for comment events
-- `comment.content`: The actual comment text
-- `repo.name`: The repository where the comment was made
+私たちが関心を持つ主要なフィールドは：
+- `event.action`: 新しいコメントの場合は通常"create"
+- `event.scope`: コメントイベントの場合は通常"discussion.comment"
+- `comment.content`: 実際のコメントテキスト
+- `repo.name`: コメントが作成されたリポジトリ
 
-### 3. Core Webhook Handler
+### 3. コアWebhookハンドラー
 
-Now for the main webhook handler - this is where the important part happens. Let's break it down into digestible pieces:
+次に、メインのwebhookハンドラーです - ここが重要な部分です。理解しやすい部分に分けて見てみましょう：
 
 ```python
 @app.post("/webhook")
@@ -110,15 +110,15 @@ async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
         return {"error": "incorrect secret"}, 400
 ```
 
-The first step is security validation. We check the `X-Webhook-Secret` header against our configured secret to ensure the webhook is legitimate.
+最初のステップはセキュリティ検証です。webhookが正当なものであることを確認するために、`X-Webhook-Secret`ヘッダーを設定されたシークレットと照合します。
 
 <Tip>
 
-Always validate webhook secrets! Without this check, anyone could send fake webhook requests to your application. The secret acts as a shared password between Hugging Face and your application.
+常にwebhookシークレットを検証してください！この確認なしでは、誰でも偽のwebhookリクエストをアプリケーションに送信できてしまいます。シークレットはHugging Faceとアプリケーション間の共有パスワードとして機能します。
 
 </Tip>
 
-Next, let's parse and validate the webhook data:
+次に、webhookデータの解析と検証を行いましょう：
 
 ```python
     # Step 2: Parse webhook data
@@ -136,9 +136,9 @@ Next, let's parse and validate the webhook data:
         return {"error": "missing event data"}, 400
 ```
 
-This parsing step handles potential JSON errors gracefully and validates that we have the expected event structure.
+この解析ステップは、潜在的なJSONエラーを適切に処理し、期待されるイベント構造があることを検証します。
 
-Now for the event filtering logic:
+次に、イベントフィルタリングロジックです：
 
 ```python
     # Step 4: Check if this is a discussion comment creation
@@ -165,19 +165,19 @@ Now for the event filtering logic:
         }
 ```
 
-This filtering ensures we only process the events we care about - new discussion comments. We ignore other events like repository creation, model uploads, etc.
+このフィルタリングにより、私たちが関心を持つイベント（新しいディスカッションコメント）のみを処理することが保証されます。リポジトリ作成、モデルアップロードなどの他のイベントは無視します。
 
-We use FastAPI's `background_tasks.add_task()` to process the webhook asynchronously. This allows us to return a response quickly (within seconds) while the actual tag processing happens in the background.
+FastAPIの`background_tasks.add_task()`を使用してwebhookを非同期で処理します。これにより、実際のタグ処理はバックグラウンドで実行されながら、迅速にレスポンス（数秒以内）を返すことができます。
 
 <Tip>
 
-Webhook endpoints should respond within 10 seconds, or the sending platform may consider them failed. Using background tasks ensures fast responses while allowing complex processing to happen asynchronously.
+Webhookエンドポイントは10秒以内に応答する必要があります。そうでなければ、送信プラットフォームは失敗とみなす可能性があります。バックグラウンドタスクを使用することで、複雑な処理を非同期で実行しながら高速な応答を保証します。
 
 </Tip>
 
-### 4. Comment Processing Logic
+### 4. コメント処理ロジック
 
-Now let's implement the core comment processing function that does the actual tag extraction and MCP tool usage:
+次に、実際のタグ抽出とMCPツール使用を行うコアコメント処理機能を実装しましょう：
 
 ```python
 async def process_webhook_comment(webhook_data: Dict[str, Any]):
@@ -200,9 +200,9 @@ async def process_webhook_comment(webhook_data: Dict[str, Any]):
         print(f"📦 Repository: {repo_name}")
 ```
 
-This initial section extracts all the relevant information from the webhook data. We get both the comment content and discussion title since tags might be mentioned in either place.
+この初期セクションは、webhookデータから関連するすべての情報を抽出します。タグがどちらの場所でも言及される可能性があるため、コメント内容とディスカッションタイトルの両方を取得します。
 
-Next, we extract and process the tags:
+次に、タグを抽出して処理します：
 
 ```python
         # Extract potential tags from comment and title
@@ -225,15 +225,15 @@ Next, we extract and process the tags:
         tag_operations_store.append(operation)
 ```
 
-We combine tags from both sources and create an operation record for monitoring. This record tracks the progress of each webhook processing operation.
+両方のソースからタグを組み合わせ、監視用のオペレーションレコードを作成します。このレコードは、各webhook処理オペレーションの進行状況を追跡します。
 
 <Tip>
 
-Storing operation records is crucial for debugging and monitoring. When something goes wrong, you can look at recent operations to understand what happened and why.
+オペレーションレコードの保存は、デバッグと監視にとって重要です。何かが間違ったときに、最近のオペレーションを見て何が起こったか、なぜ起こったかを理解できます。
 
 </Tip>
 
-Now for the MCP agent integration:
+次に、MCPエージェント統合です：
 
 ```python
         if not all_tags:
@@ -293,18 +293,17 @@ Now for the MCP agent integration:
         print(f"✅ Completed processing {len(all_tags)} tags")
 ```
 
-This section handles the core business logic:
-1. **Validation**: Ensure we have tags to process and an available agent
-2. **Processing**: For each tag, create a natural language prompt for the agent
-3. **Recording**: Store all results for monitoring and debugging
-4. **Error handling**: Gracefully handle errors for individual tags
+このセクションは、コアビジネスロジックを処理します：
+1. **検証**: 処理すべきタグと利用可能なエージェントがあることを確認
+2. **処理**: 各タグに対して、エージェント用の自然言語プロンプトを作成
+3. **記録**: 監視とデバッグのためにすべての結果を保存
+4. **エラーハンドリング**: 個々のタグのエラーを適切に処理
 
-The agent prompt is carefully crafted to instruct the AI on exactly what steps to take: check current tags first, then add the new tag if appropriate.
+エージェントプロンプトは、AIが取るべき正確なステップを指示するように慎重に作成されています：まず現在のタグを確認し、適切な場合は新しいタグを追加します。
 
+### 5. ヘルスと監視エンドポイント
 
-### 5. Health and Monitoring Endpoints
-
-Besides the webhook handler, we need endpoints for monitoring and debugging. Let's add these essential endpoints:
+webhookハンドラー以外に、監視とデバッグのためのエンドポイントが必要です。これらの重要なエンドポイントを追加しましょう：
 
 ```python
 @app.get("/")
@@ -322,7 +321,7 @@ async def root():
     }
 ```
 
-The root endpoint provides basic information about your service and its available endpoints.
+ルートエンドポイントは、サービスとその利用可能なエンドポイントに関する基本情報を提供します。
 
 ```python
 @app.get("/health")
@@ -341,7 +340,7 @@ async def health_check():
     }
 ```
 
-The health check endpoint validates that all your components are properly configured. This is essential for production monitoring.
+ヘルスチェックエンドポイントは、すべてのコンポーネントが適切に設定されていることを検証します。これは本番監視に不可欠です。
 
 ```python
 @app.get("/operations")
@@ -355,60 +354,60 @@ async def get_operations():
     }
 ```
 
-The operations endpoint lets you see recent webhook processing activity, which is invaluable for debugging and monitoring.
+オペレーションエンドポイントでは、最近のwebhook処理アクティビティを確認できます。これはデバッグと監視にとって非常に有用です。
 
 <Tip>
 
-Health and monitoring endpoints are crucial for production deployments. They help you quickly identify configuration issues and monitor your application's activity without digging through logs.
+ヘルスと監視エンドポイントは、本番デプロイメントにとって重要です。ログを掘り下げることなく、設定の問題を迅速に特定し、アプリケーションのアクティビティを監視するのに役立ちます。
 
 </Tip>
 
-## Webhook Configuration on Hugging Face Hub
+## Hugging Face HubでのWebhook設定
 
-Now that we have our webhook listener ready, let's configure it on the Hugging Face Hub. This is where we connect our application to real repository events.
+webhookリスナーの準備ができたので、Hugging Face Hubで設定しましょう。ここで、アプリケーションを実際のリポジトリイベントに接続します。
 
-### 1. Create Webhook in Settings
+### 1. 設定でWebhookを作成
 
-Following the [webhook setup guide](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot):
+[webhook setup guide](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot)に従って：
 
 ![Webhook Settings](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
 
-Navigate to your [Hugging Face Settings](https://huggingface.co/settings/webhooks) and configure:
+[Hugging Face Settings](https://huggingface.co/settings/webhooks)に移動して設定します：
 
-1. **Target Repositories**: Specify which repositories to monitor
-2. **Webhook URL**: Your deployed application endpoint (e.g., `https://your-space.hf.space/webhook`)
-3. **Secret**: Use the same secret from your `WEBHOOK_SECRET` environment variable
-4. **Events**: Subscribe to "Community (PR & discussions)" events
+1. **対象リポジトリ**: 監視するリポジトリを指定
+2. **Webhook URL**: デプロイされたアプリケーションエンドポイント（例：`https://your-space.hf.space/webhook`）
+3. **シークレット**: `WEBHOOK_SECRET`環境変数と同じシークレットを使用
+4. **イベント**: "Community (PR & discussions)"イベントを購読
 
 <Tip>
 
-Start with one or two test repositories before configuring webhooks for many repositories. This lets you validate your application works correctly before scaling up.
+多くのリポジトリにwebhookを設定する前に、1つまたは2つのテストリポジトリから始めてください。これにより、スケールアップする前にアプリケーションが正しく動作することを検証できます。
 
 </Tip>
 
-### 2. Space URL Configuration
+### 2. Space URL設定
 
-For Hugging Face Spaces deployment, you'll need to get your direct URL:
+Hugging Face Spacesデプロイメントでは、直接URLを取得する必要があります：
 
 ![Direct URL](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/direct-url.png)
 
-The process is:
-1. Click "Embed this Space" in your Space settings
-2. Copy the "Direct URL" 
-3. Append `/webhook` to create your webhook endpoint
-4. Update your webhook configuration with this URL
+プロセスは以下の通りです：
+1. Space設定で"Embed this Space"をクリック
+2. "Direct URL"をコピー
+3. `/webhook`を追加してwebhookエンドポイントを作成
+4. このURLでwebhook設定を更新
 
-For example, if your Space URL is `https://username-space-name.hf.space`, your webhook endpoint would be `https://username-space-name.hf.space/webhook`.
+例えば、Space URLが`https://username-space-name.hf.space`の場合、webhookエンドポイントは`https://username-space-name.hf.space/webhook`になります。
 
 ![Space URL](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/direct-url.png)
 
-## Testing the Webhook Listener
+## Webhookリスナーのテスト
 
-Testing is crucial before deploying to production. Let's walk through different testing approaches:
+本番環境にデプロイする前にテストが重要です。さまざまなテストアプローチを見てみましょう：
 
-### 1. Local Testing
+### 1. ローカルテスト
 
-You can test your webhook handler locally using a simple script:
+簡単なスクリプトを使用してwebhookハンドラーをローカルでテストできます：
 
 ```python
 # test_webhook_local.py
@@ -445,11 +444,11 @@ print(f"Status: {response.status_code}")
 print(f"Response: {response.json()}")
 ```
 
-This script simulates a real webhook request, allowing you to test your handler without waiting for real events.
+このスクリプトは実際のwebhookリクエストをシミュレートし、実際のイベントを待つことなくハンドラーをテストできます。
 
-### 2. Simulation Endpoint for Development
+### 2. 開発用シミュレーションエンドポイント
 
-You can also add a simulation endpoint to your FastAPI application for easier testing:
+より簡単なテストのために、FastAPIアプリケーションにシミュレーションエンドポイントを追加することもできます：
 
 ```python
 @app.post("/simulate_webhook")
@@ -485,35 +484,35 @@ async def simulate_webhook(
     return f"Simulated webhook processed for {repo_name}"
 ```
 
-This endpoint makes it easy to test different scenarios through your application's interface.
+このエンドポイントにより、アプリケーションのインターフェースを通じてさまざまなシナリオを簡単にテストできます。
 
 <Tip>
-Simulation endpoints are incredibly useful during development. They let you test different tag combinations and edge cases without creating actual repository discussions.
+シミュレーションエンドポイントは開発中に非常に有用です。実際のリポジトリディスカッションを作成することなく、さまざまなタグの組み合わせやエッジケースをテストできます。
 </Tip>
 
-## Expected Webhook Result
+## 期待されるWebhook結果
 
-When everything is working correctly, you should see results like the discussion bot example:
+すべてが正しく動作している場合、ディスカッションボットの例のような結果が表示されるはずです：
 
 ![Discussion Result](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/discussion-result.png)
 
 <!-- This shows the bot responding to a discussion comment, creating a PR -->
 
-This screenshot shows a successful webhook processing where the bot creates a pull request in response to a discussion comment.
+このスクリーンショットは、ボットがディスカッションコメントに応答してプルリクエストを作成する成功したwebhook処理を示しています。
 
-## Next Steps
+## 次のステップ
 
-With our webhook listener implemented, we now have:
+webhookリスナーが実装されたことで、以下が得られました：
 
-1. **Secure webhook validation** following Hugging Face best practices
-2. **Real-time event processing** with background task handling
-3. **MCP integration** for intelligent tag management
-4. **Monitoring and debugging** capabilities
+1. **セキュアなwebhook検証** - Hugging Faceのベストプラクティスに従った
+2. **リアルタイムイベント処理** - バックグラウンドタスクハンドリング付き
+3. **MCP統合** - インテリジェントなタグ管理のため
+4. **監視とデバッグ** 機能
 
-In the next section, we'll integrate everything into a complete Pull Request Agent that demonstrates the full workflow from webhook to PR creation.
+次のセクションでは、webhookからPR作成までの完全なワークフローを実証する、完全なプルリクエストエージェントにすべてを統合します。
 
 <Tip>
 
-Always return webhook responses quickly (within 10 seconds) to avoid timeouts. Use background tasks for longer processing operations like MCP tool execution and pull request creation.
+タイムアウトを避けるため、常にwebhookレスポンスを迅速に（10秒以内に）返してください。MCPツール実行やプルリクエスト作成などの長い処理オペレーションには、バックグラウンドタスクを使用してください。
 
 </Tip>

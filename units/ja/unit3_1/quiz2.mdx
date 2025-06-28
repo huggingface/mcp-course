@@ -1,173 +1,173 @@
-# Quiz 2: Pull Request Agent Integration
+# クイズ2：プルリクエストエージェント統合
 
-Test your knowledge of the complete Pull Request Agent system including MCP client integration and webhook handling.
+MCPクライアント統合とwebhook処理を含む、完全なプルリクエストエージェントシステムの知識をテストしてください。
 
-### Q1: What is the primary purpose of the webhook listener in the Pull Request Agent architecture?
-
-<Question
-  choices={[
-    {
-      text: "To provide a user interface for managing pull requests",
-      explain: "The webhook listener handles GitHub events, not user interfaces."
-    },
-    {
-      text: "To receive and process Hugging Face Hub discussion comment events in real-time",
-      explain: "Correct! The webhook listener responds to Hub discussion events to trigger agent actions.",
-      correct: true
-    },
-    {
-      text: "To store pull request data permanently in a database",
-      explain: "While it may process PR data, its primary role is event handling, not storage."
-    },
-    {
-      text: "To authenticate users with the Hugging Face Hub",
-      explain: "Webhook listeners handle events, not user authentication."
-    }
-  ]}
-/>
-
-### Q2: In the Agent-based MCP client implementation, how does the client connect to the MCP server?
+### Q1: プルリクエストエージェントアーキテクチャにおけるwebhookリスナーの主な目的は何ですか？
 
 <Question
   choices={[
     {
-      text: "Through direct function calls in the same process",
-      explain: "The Agent uses subprocess communication, not direct function calls."
+      text: "プルリクエストを管理するためのユーザーインターフェースを提供する",
+      explain: "webhookリスナーはGitHubイベントを処理しますが、ユーザーインターフェースは提供しません。"
     },
     {
-      text: "Using stdio connection type to communicate with the MCP server as a subprocess",
-      explain: "Correct! The Agent starts the MCP server with 'python mcp_server.py' and communicates via stdin/stdout.",
+      text: "Hugging Face Hubディスカッションコメントイベントをリアルタイムで受信・処理する",
+      explain: "正解！webhookリスナーはHubディスカッションイベントに応答してエージェントアクションをトリガーします。",
       correct: true
     },
     {
-      text: "By writing files to a shared directory",
-      explain: "MCP uses real-time communication, not file-based communication."
+      text: "プルリクエストデータをデータベースに永続的に保存する",
+      explain: "PRデータを処理する場合もありますが、主な役割はイベント処理であり、ストレージではありません。"
     },
     {
-      text: "Through HTTP REST API calls",
-      explain: "The stdio connection type doesn't use HTTP - it uses standard input/output streams."
+      text: "Hugging Face Hubでユーザーを認証する",
+      explain: "webhookリスナーはイベントを処理しますが、ユーザー認証は行いません。"
     }
   ]}
 />
 
-### Q3: Why does the webhook handler use FastAPI's `background_tasks.add_task()` instead of processing requests synchronously?
+### Q2: エージェントベースのMCPクライアント実装において、クライアントはMCPサーバーにどのように接続しますか？
 
 <Question
   choices={[
     {
-      text: "To reduce server memory usage",
-      explain: "Background tasks don't necessarily reduce memory usage."
+      text: "同一プロセス内で直接関数呼び出しを通じて",
+      explain: "エージェントは直接関数呼び出しではなく、サブプロセス通信を使用します。"
     },
     {
-      text: "To comply with Hugging Face Hub requirements",
-      explain: "While Hub expects timely responses, this isn't a specific Hub requirement."
-    },
-    {
-      text: "To return responses quickly (within 10 seconds) while allowing complex tag processing in the background",
-      explain: "Correct! Webhook endpoints must respond quickly or be considered failed by the sending platform.",
+      text: "stdio接続タイプを使用してMCPサーバーとサブプロセスとして通信する",
+      explain: "正解！エージェントは'python mcp_server.py'でMCPサーバーを起動し、stdin/stdoutを介して通信します。",
       correct: true
     },
     {
-      text: "To enable multiple webhook requests to be processed in parallel",
-      explain: "While this enables parallelism, the primary reason is response time requirements."
+      text: "共有ディレクトリにファイルを書き込むことによって",
+      explain: "MCPはリアルタイム通信を使用し、ファイルベースの通信は使用しません。"
+    },
+    {
+      text: "HTTP REST API呼び出しを通じて",
+      explain: "stdio接続タイプはHTTPを使用しません - 標準入力/出力ストリームを使用します。"
     }
   ]}
 />
 
-### Q4: What is the purpose of validating the `X-Webhook-Secret` header in the webhook handler?
+### Q3: webhookハンドラーがリクエストを同期的に処理する代わりに、FastAPIの`background_tasks.add_task()`を使用する理由は何ですか？
 
 <Question
   choices={[
     {
-      text: "To identify which repository sent the webhook",
-      explain: "Repository information comes from the webhook payload, not the secret header."
+      text: "サーバーメモリ使用量を削減するため",
+      explain: "バックグラウンドタスクは必ずしもメモリ使用量を削減しません。"
     },
     {
-      text: "To prevent unauthorized requests and ensure the webhook is legitimate from Hugging Face",
-      explain: "Correct! The shared secret acts as authentication between Hugging Face and your application.",
+      text: "Hugging Face Hubの要件に準拠するため",
+      explain: "Hubはタイムリーなレスポンスを期待しますが、これは特定のHub要件ではありません。"
+    },
+    {
+      text: "複雑なタグ処理をバックグラウンドで実行しながら、レスポンスを迅速に（10秒以内に）返すため",
+      explain: "正解！webhookエンドポイントは迅速に応答しなければならず、そうでなければ送信プラットフォームによって失敗とみなされます。",
       correct: true
     },
     {
-      text: "To decode the webhook payload data",
-      explain: "The secret is for authentication, not for decoding payload data."
-    },
-    {
-      text: "To determine which MCP tools to use",
-      explain: "Tool selection is based on the webhook content, not the secret header."
+      text: "複数のwebhookリクエストを並行して処理できるようにするため",
+      explain: "これにより並列処理が可能になりますが、主な理由は応答時間要件です。"
     }
   ]}
 />
 
-### Q5: In the Agent implementation, what happens when `await agent_instance.load_tools()` is called?
+### Q4: webhookハンドラーで`X-Webhook-Secret`ヘッダーを検証する目的は何ですか？
 
 <Question
   choices={[
     {
-      text: "It downloads tools from the Hugging Face Hub",
-      explain: "The tools are local MCP server tools, not downloaded from the Hub."
+      text: "webhookを送信したリポジトリを特定するため",
+      explain: "リポジトリ情報はwebhookペイロードから取得され、シークレットヘッダーからではありません。"
     },
     {
-      text: "It discovers and makes available the MCP tools from the connected server (get_current_tags and add_new_tag)",
-      explain: "Correct! This discovers what tools the MCP server provides and makes them available to the agent's reasoning engine.",
+      text: "不正なリクエストを防ぎ、webhookがHugging Faceからの正当なものであることを確認するため",
+      explain: "正解！共有シークレットはHugging Faceとあなたのアプリケーション間の認証として機能します。",
       correct: true
     },
     {
-      text: "It starts the FastAPI webhook server",
-      explain: "load_tools() is specific to MCP tool discovery, not starting web servers."
+      text: "webhookペイロードデータをデコードするため",
+      explain: "シークレットは認証用であり、ペイロードデータのデコード用ではありません。"
     },
     {
-      text: "It authenticates with the Hugging Face API",
-      explain: "Authentication happens during agent creation, not during tool loading."
+      text: "使用するMCPツールを決定するため",
+      explain: "ツール選択はwebhookコンテンツに基づいており、シークレットヘッダーではありません。"
     }
   ]}
 />
 
-### Q6: How does the Agent intelligently use MCP tools when processing a natural language instruction?
+### Q5: エージェント実装において、`await agent_instance.load_tools()`が呼び出されたときに何が起こりますか？
 
 <Question
   choices={[
     {
-      text: "It randomly calls available tools until one works",
-      explain: "The Agent uses reasoning to determine which tools to call and in what order."
+      text: "Hugging Face Hubからツールをダウンロードする",
+      explain: "ツールはローカルMCPサーバーツールであり、Hubからダウンロードされません。"
     },
     {
-      text: "It always calls get_current_tags first, then add_new_tag second",
-      explain: "While this might be a common pattern, the Agent reasons about which tools to use based on the instruction."
-    },
-    {
-      text: "It reasons about the instruction and determines which tools to call and in what sequence",
-      explain: "Correct! The Agent can understand complex instructions and create tool execution plans automatically.",
+      text: "接続されたサーバーからMCPツール（get_current_tagsとadd_new_tag）を発見し、利用可能にする",
+      explain: "正解！これによりMCPサーバーが提供するツールを発見し、エージェントの推論エンジンで利用できるようにします。",
       correct: true
     },
     {
-      text: "It requires explicit function calls to be specified in the instruction",
-      explain: "The Agent can work with natural language instructions without explicit function specifications."
+      text: "FastAPI webhookサーバーを起動する",
+      explain: "load_tools()はMCPツール発見に特化しており、webサーバーの起動ではありません。"
+    },
+    {
+      text: "Hugging Face APIで認証する",
+      explain: "認証はエージェント作成時に行われ、ツール読み込み時ではありません。"
     }
   ]}
 />
 
-### Q7: What filtering logic determines whether a webhook event should trigger tag processing?
+### Q6: 自然言語命令を処理する際に、エージェントはどのようにMCPツールを知的に使用しますか？
 
 <Question
   choices={[
     {
-      text: "All webhook events are processed regardless of type",
-      explain: "The handler filters events to only process relevant ones."
+      text: "動作するまで利用可能なツールをランダムに呼び出す",
+      explain: "エージェントは推論を使用して、どのツールをどの順序で呼び出すかを決定します。"
     },
     {
-      text: "Only events where action='create' and scope='discussion.comment'",
-      explain: "Correct! This ensures we only process new discussion comments, ignoring other Hub events.",
+      text: "常にget_current_tagsを最初に呼び出し、次にadd_new_tagを呼び出す",
+      explain: "これは一般的なパターンかもしれませんが、エージェントは命令に基づいて使用するツールを推論します。"
+    },
+    {
+      text: "命令を推論し、どのツールをどの順序で呼び出すかを決定する",
+      explain: "正解！エージェントは複雑な命令を理解し、自動的にツール実行計画を作成できます。",
       correct: true
     },
     {
-      text: "Only events from verified repository owners",
-      explain: "The filtering is based on event type, not user verification status."
-    },
-    {
-      text: "Only events that contain the word 'tag' in the comment",
-      explain: "Event filtering happens before content analysis - we filter by event type first."
+      text: "命令で明示的な関数呼び出しが指定されている必要がある",
+      explain: "エージェントは明示的な関数仕様なしに自然言語命令で動作できます。"
     }
   ]}
 />
 
-Congrats on finishing this Quiz 🥳! If you need to review any elements, take the time to revisit the chapter to reinforce your knowledge. 
+### Q7: webhookイベントがタグ処理をトリガーするかどうかを決定するフィルタリングロジックは何ですか？
+
+<Question
+  choices={[
+    {
+      text: "すべてのwebhookイベントがタイプに関係なく処理される",
+      explain: "ハンドラーは関連するもののみを処理するためにイベントをフィルタリングします。"
+    },
+    {
+      text: "action='create'かつscope='discussion.comment'のイベントのみ",
+      explain: "正解！これにより新しいディスカッションコメントのみを処理し、他のHubイベントを無視します。",
+      correct: true
+    },
+    {
+      text: "検証済みリポジトリオーナーからのイベントのみ",
+      explain: "フィルタリングはイベントタイプに基づいており、ユーザー検証ステータスではありません。"
+    },
+    {
+      text: "コメントに「tag」という単語が含まれているイベントのみ",
+      explain: "イベントフィルタリングはコンテンツ分析の前に行われます - 最初にイベントタイプでフィルタリングします。"
+    }
+  ]}
+/>
+
+このクイズを完了おめでとうございます！要素を復習する必要がある場合は、時間をかけてチャプターを見直して知識を強化してください。 

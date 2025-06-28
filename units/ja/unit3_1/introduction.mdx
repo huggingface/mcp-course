@@ -1,108 +1,108 @@
-# Build a Pull Request Agent on the Hugging Face Hub
+# Hugging Face Hub上でプルリクエストエージェントを構築
 
-Welcome to Unit 3 of the MCP Course! 
+MCPコースのUnit 3へようこそ！
 
-In this unit, we'll build a pull request agent that automatically tags Hugging Face model repositories based on discussions and comments. This real-world application demonstrates how to integrate MCP with webhook listeners and automated workflows.
+このユニットでは、ディスカッションやコメントに基づいてHugging Faceモデルリポジトリを自動的にタグ付けするプルリクエストエージェントを構築します。この実世界のアプリケーションでは、Model Context Protocol (MCP) をwebhookリスナーや自動ワークフローと統合する方法を実演します。
 
 <Tip>
 
-This unit showcases a real world use case where MCP servers can respond to real-time events from the Hugging Face Hub, automatically creating pull requests to improve repository metadata.
+このユニットでは、MCPサーバーがHugging Face Hubからのリアルタイムイベントに応答し、リポジトリメタデータを改善するプルリクエストを自動的に作成する実世界のユースケースを紹介します。
 
 </Tip>
 
-## What You'll Learn
+## 学ぶ内容
 
-In this unit, you will:
+このユニットでは、以下のことを学習します：
 
-- Create an MCP Server that interacts with the Hugging Face Hub API
-- Implement webhook listeners to respond to discussion events
-- Set up automated tagging workflows for model repositories
-- Deploy a complete webhook-driven application to Hugging Face Spaces
+- Hugging Face Hub APIと連携するMCPサーバーの作成
+- ディスカッションイベントに応答するwebhookリスナーの実装
+- モデルリポジトリの自動タグ付けワークフローの設定
+- Hugging Face Spacesへの完全なwebhook駆動アプリケーションのデプロイ
 
-By the end of this unit, you'll have a working PR agent that can monitor discussions and automatically improve repository metadata through pull requests.
+このユニットの終わりには、ディスカッションを監視し、プルリクエストを通じてリポジトリメタデータを自動的に改善できる動作するプルリクエストエージェントを持つことになります。
 
-## Prerequisites
+## 前提条件
 
-Before proceeding with this unit, make sure you:
+このユニットを進める前に、以下のことを確認してください：
 
-- Have completed Units 1 and 2, or have experience with MCP concepts
-- Are comfortable with Python, FastAPI, and webhook concepts
-- Have a basic understanding of Hugging Face Hub workflows and pull requests
-- Have a development environment with:
-  - Python 3.11+
-  - A Hugging Face account with API access
+- Unit 1およびUnit 2を完了している、またはMCPの概念に精通している
+- Python、FastAPI、webhookの概念に慣れている
+- Hugging Face Hubワークフローとプルリクエストの基本的な理解がある
+- 以下を含む開発環境を持っている：
+  - Python 3.11以上
+  - APIアクセス権限のあるHugging Faceアカウント
 
-## Our Pull Request Agent Project
+## プルリクエストエージェントプロジェクト
 
-We'll build a tagging agent that consists of four main components: the MCP server, webhook listener, agent logic, and deployment infrastructure. The agent will be able to tag model repositories based on discussions and comments. This should save model authors time by receiving ready to use PRs, instead of having to manually tag their repositories.
+4つの主要コンポーネントで構成されるタグ付けエージェントを構築します：MCPサーバー、webhookリスナー、エージェントロジック、およびデプロイメントインフラストラクチャ。エージェントは、ディスカッションとコメントに基づいてモデルリポジトリにタグを付けることができます。これにより、モデル作成者は使用準備済みのプルリクエストを受け取ることで、手動でリポジトリにタグ付けする必要がなくなり、時間を節約できるはずです。
 
-![PR Agent Architecture](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/architecture.png)
+![プルリクエストエージェントアーキテクチャ](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/architecture.png)
 
-In the diagram above, we have a MCP server that can read and update model tags. We have a webhook listener that can receive webhooks from the Hugging Face Hub. We have an agent that can analyze discussions and comments and create PRs to update model tags. We have a deployment infrastructure that can deploy the MCP server to Hugging Face Spaces.
+上の図では、モデルタグを読み取りおよび更新できるMCPサーバーがあります。Hugging Face Hubからwebhookをリッスンできるwebhookリスナーがあります。ディスカッションとコメントを分析し、モデルタグを更新するプルリクエストを作成できるエージェントがあります。MCPサーバーをHugging Face Spacesにデプロイできるデプロイメントインフラストラクチャがあります。
 
-### Project Overview
+### プロジェクト概要
 
-  To build this application we will need the following files:
+このアプリケーションを構築するには、以下のファイルが必要です：
 
-| File | Purpose | Description |
+| ファイル | 目的 | 説明 |
 |------|---------|-------------|
-| `mcp_server.py` | **Core MCP Server** | FastMCP-based server with tools for reading and updating model tags |
-| `app.py` | **Webhook Listener & Agent** | FastAPI app that receives webhooks, processes discussions, and creates PRs |
-| `requirements.txt` | **Dependencies** | Python packages including FastMCP, FastAPI, and huggingface-hub |
-| `pyproject.toml` | **Project Configuration** | Modern Python packaging with uv dependency management |
-| `Dockerfile` | **Deployment** | Container configuration for Hugging Face Spaces |
-| `env.example` | **Configuration Template** | Required environment variables and secrets |
-| `cleanup.py` | **Utility** | Helper script for development and testing cleanup |
+| `mcp_server.py` | **コアMCPサーバー** | モデルタグの読み取りと更新のためのツールを持つFastMCPベースのサーバー |
+| `app.py` | **Webhookリスナー & エージェント** | webhookを受信し、ディスカッションを処理し、プルリクエストを作成するFastAPIアプリ |
+| `requirements.txt` | **依存関係** | FastMCP、FastAPI、huggingface-hubを含むPythonパッケージ |
+| `pyproject.toml` | **プロジェクト設定** | uv依存関係管理を使用したモダンなPythonパッケージング |
+| `Dockerfile` | **デプロイメント** | Hugging Face Spaces用のコンテナ設定 |
+| `env.example` | **設定テンプレート** | 必要な環境変数とシークレット |
+| `cleanup.py` | **ユーティリティ** | 開発とテストのクリーンアップ用ヘルパースクリプト |
 
-Let's go through each of these files and understand their purpose.
+これらのファイルを一つずつ確認し、その目的を理解しましょう。
 
-### MCP Server (`mcp_server.py`)
+### MCPサーバー (`mcp_server.py`)
 
-The heart of our application - a FastMCP server that provides tools for:
-- Reading current tags from model repositories
-- Adding new tags via pull requests to the Hub
-- Error handling and validation
+アプリケーションの中核 - 以下のためのツールを提供するFastMCPサーバー：
+- モデルリポジトリから現在のタグを読み取り
+- Hubへのプルリクエストを通じて新しいタグを追加
+- エラーハンドリングと検証
 
-This is where you will implement the MCP server and do most of the work for this project. The Gradio app and FastAPI app will be used to test the MCP server and the webhook listener, and they are ready to use.
+ここでMCPサーバーを実装し、このプロジェクトの作業の大部分を行います。GradioアプリとFastAPIアプリは、MCPサーバーとwebhookリスナーをテストするために使用され、これらは使用準備が整っています。
 
-### Webhook Integration
+### Webhook統合
 
-Following the [Hugging Face Webhooks Guide](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot), our agent:
-- Listens for discussion comment events
-- Validates webhook signatures for security
-- Processes mentions and tag suggestions
-- Creates pull requests automatically
+[Hugging Face Webhooks Guide](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot)に従って、エージェントは：
+- ディスカッションコメントイベントをリッスン
+- セキュリティのためのwebhook署名を検証
+- メンションとタグ提案を処理
+- プルリクエストを自動的に作成
 
-### Agent Functionality
+### エージェント機能
 
-The agent analyzes discussion content to:
-- Extract explicit tag mentions (`tag: pytorch`, `#transformers`)
-- Recognize implicit tags from natural language
-- Validate tags against known ML/AI categories
-- Generate appropriate pull request descriptions
+エージェントはディスカッション内容を分析して：
+- 明示的なタグメンション（`tag: pytorch`、`#transformers`）を抽出
+- 自然言語から暗黙的なタグを認識
+- 既知のML/AIカテゴリに対してタグを検証
+- 適切なプルリクエスト説明を生成
 
-### Deployment & Production
+### デプロイメント & 本番環境
 
-- Containerized deployment to Hugging Face Spaces
-- Environment variable management for secrets
-- Background task processing for webhook responses
-- Gradio interface for testing and monitoring
+- Hugging Face Spacesへのコンテナ化されたデプロイメント
+- シークレット用の環境変数管理
+- webhook応答のためのバックグラウンドタスク処理
+- テストと監視のためのGradioインターフェース
 
-## Webhook Integration Overview
+## Webhook統合概要
 
-Our PR agent leverages the same webhook infrastructure used by Hugging Face's discussion bots. Here's how webhooks enable real-time responses:
+プルリクエストエージェントは、Hugging Faceのディスカッションボットで使用されているのと同じwebhookインフラストラクチャを活用します。webhookがリアルタイム応答を可能にする方法は以下の通りです：
 
-![Webhook Flow](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
+![Webhookフロー](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
 
-The webhook flow works as follows:
-1. **Event Trigger**: A user creates a comment in a model repository discussion
-2. **Webhook Delivery**: Hugging Face sends a POST request to our endpoint
-3. **Authentication**: We validate the webhook secret for security
-4. **Processing**: Our agent analyzes the comment for tag suggestions
-5. **Action**: If relevant tags are found, we create a pull request
-6. **Response**: The webhook returns immediately while PR creation happens in the background
+webhookフローは以下のように動作します：
+1. **イベントトリガー**: ユーザーがモデルリポジトリディスカッションでコメントを作成
+2. **Webhook配信**: Hugging Faceがエンドポイントへのリクエストを送信
+3. **認証**: セキュリティのためにwebhookシークレットを検証
+4. **処理**: エージェントがタグ提案についてコメントを分析
+5. **アクション**: 関連するタグが見つかった場合、プルリクエストを作成
+6. **応答**: プルリクエスト作成がバックグラウンドで実行される間、webhookは即座に応答を返す
 
-## Let's Get Started!
+## さあ始めましょう！
 
-Ready to build a production-ready PR agent that can automatically improve Hugging Face repositories? Let's begin by setting up the project structure and understanding the MCP server implementation.
+Hugging Faceリポジトリを自動的に改善できる本番環境対応のプルリクエストエージェントを構築する準備はできましたか？プロジェクト構造を設定し、MCPサーバーの実装を理解することから始めましょう。
 

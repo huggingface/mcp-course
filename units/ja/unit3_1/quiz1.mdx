@@ -1,149 +1,149 @@
-# Quiz 1: MCP Server Implementation
+# クイズ1：MCPサーバー実装
 
-Test your knowledge of MCP server concepts and implementation for the Pull Request Agent.
+プルリクエストエージェントのMCPサーバーの概念と実装について知識をテストしてください。
 
-### Q1: What is the primary role of an MCP Server in the Pull Request Agent architecture?
-
-<Question
-  choices={[
-    {
-      text: "To host the user interface for the application",
-      explain: "The MCP Server provides backend capabilities, not the user interface."
-    },
-    {
-      text: "To expose tools and resources that the AI agent can use to interact with GitHub",
-      explain: "Close, but this project focuses on the Hugging Face Hub, not GitHub."
-    },
-    {
-      text: "To expose tools for reading and updating model repository tags on the Hugging Face Hub",
-      explain: "Correct! The MCP Server provides get_current_tags and add_new_tag tools for Hub interactions.",
-      correct: true
-    },
-    {
-      text: "To train the AI model on pull request data",
-      explain: "MCP Servers provide runtime capabilities, not model training functionality."
-    }
-  ]}
-/>
-
-### Q2: In the FastMCP implementation, why must all MCP tool functions return strings instead of Python objects?
+### Q1: プルリクエストエージェントのアーキテクチャにおけるMCPサーバーの主な役割は何ですか？
 
 <Question
   choices={[
     {
-      text: "To improve performance by reducing memory usage",
-      explain: "While strings might be more memory efficient, this is not the primary reason."
+      text: "アプリケーションのユーザーインターフェースをホストする",
+      explain: "MCPサーバーはバックエンド機能を提供し、ユーザーインターフェースは提供しません。"
     },
     {
-      text: "To ensure reliable data exchange between the MCP server and client",
-      explain: "Correct! MCP protocol requires string responses, so we use json.dumps() to serialize data.",
+      text: "AIエージェントがGitHubと相互作用するために使用できるツールとリソースを公開する",
+      explain: "近いですが、このプロジェクトはGitHubではなく、Hugging Face Hubに焦点を当てています。"
+    },
+    {
+      text: "Hugging Face Hubでモデルリポジトリのタグを読み取り、更新するためのツールを公開する",
+      explain: "正解です！MCPサーバーはHubとの相互作用のためにget_current_tagsとadd_new_tagツールを提供します。",
       correct: true
     },
     {
-      text: "To make the code easier to debug",
-      explain: "While JSON strings are readable, this is not the primary technical requirement."
-    },
-    {
-      text: "To comply with Hugging Face Hub API requirements",
-      explain: "This is an MCP protocol requirement, not specific to the Hub API."
+      text: "プルリクエストデータでAIモデルを訓練する",
+      explain: "MCPサーバーはランタイム機能を提供し、モデル訓練機能は提供しません。"
     }
   ]}
 />
 
-### Q3: When implementing the `add_new_tag` tool, what is the purpose of checking if a tag already exists before creating a pull request?
+### Q2: FastMCP実装では、なぜすべてのMCPツール関数がPythonオブジェクトではなく文字列を返す必要があるのですか？
 
 <Question
   choices={[
     {
-      text: "To reduce API calls and improve performance",
-      explain: "While this helps performance, it's not the primary reason for the check."
+      text: "メモリ使用量を削減してパフォーマンスを向上させるため",
+      explain: "文字列の方がメモリ効率が良い可能性がありますが、これが主な理由ではありません。"
     },
     {
-      text: "To prevent creating duplicate pull requests and provide better user feedback",
-      explain: "Correct! This validation prevents unnecessary PRs and returns meaningful status messages.",
+      text: "MCPサーバーとクライアント間の信頼性のあるデータ交換を確保するため",
+      explain: "正解です！MCPプロトコルは文字列レスポンスを要求するため、json.dumps()を使用してデータをシリアル化します。",
       correct: true
     },
     {
-      text: "To comply with Hugging Face Hub rate limits",
-      explain: "While avoiding unnecessary calls helps with rate limits, this is not the primary purpose."
+      text: "コードのデバッグを簡単にするため",
+      explain: "JSON文字列は読みやすいですが、これは主要な技術的要件ではありません。"
     },
     {
-      text: "To ensure the tag format is valid",
-      explain: "Tag validation is separate from checking if it already exists."
+      text: "Hugging Face Hub API要件に準拠するため",
+      explain: "これはHub APIに特有ではなく、MCPプロトコルの要件です。"
     }
   ]}
 />
 
-### Q4: In the MCP server implementation, what happens when a model repository doesn't have an existing README.md file?
+### Q3: `add_new_tag`ツールを実装する際、プルリクエストを作成する前にタグが既に存在するかを確認する目的は何ですか？
 
 <Question
   choices={[
     {
-      text: "The add_new_tag tool will fail with an error",
-      explain: "The implementation handles this case gracefully."
+      text: "API呼び出しを削減してパフォーマンスを向上させるため",
+      explain: "これはパフォーマンスに役立ちますが、チェックの主な理由ではありません。"
     },
     {
-      text: "The tool creates a new ModelCard with ModelCardData and proceeds with the tag addition",
-      explain: "Correct! The code handles HfHubHTTPError and creates a new model card when none exists.",
+      text: "重複したプルリクエストの作成を防ぎ、より良いユーザーフィードバックを提供するため",
+      explain: "正解です！この検証は不要なPRを防ぎ、意味のあるステータスメッセージを返します。",
       correct: true
     },
     {
-      text: "The tool skips adding the tag and returns a warning",
-      explain: "The tool doesn't skip the operation - it creates what's needed."
+      text: "Hugging Face Hubのレート制限に準拠するため",
+      explain: "不要な呼び出しを避けることはレート制限に役立ちますが、これが主な目的ではありません。"
     },
     {
-      text: "The tool automatically creates a default README with placeholder content",
-      explain: "It creates a minimal model card structure, not placeholder content."
+      text: "タグ形式が有効であることを確認するため",
+      explain: "タグの検証は、それが既に存在するかを確認することとは別です。"
     }
   ]}
 />
 
-### Q5: What is the significance of using `create_pr=True` in the `hf_api.create_commit()` function call?
+### Q4: MCPサーバー実装において、モデルリポジトリに既存のREADME.mdファイルがない場合、何が起こりますか？
 
 <Question
   choices={[
     {
-      text: "It makes the commit directly to the main branch",
-      explain: "Setting create_pr=True creates a pull request, not a direct commit to main."
+      text: "add_new_tagツールはエラーで失敗する",
+      explain: "実装はこのケースを適切に処理します。"
     },
     {
-      text: "It automatically creates a pull request instead of committing directly to the main branch",
-      explain: "Correct! This enables the review workflow and follows repository governance practices.",
+      text: "ツールはModelCardDataで新しいModelCardを作成し、タグ追加を続行する",
+      explain: "正解です！コードはHfHubHTTPErrorを処理し、存在しない場合に新しいモデルカードを作成します。",
       correct: true
     },
     {
-      text: "It creates a private branch that only the repository owner can see",
-      explain: "Pull requests are visible to repository collaborators and can be public."
+      text: "ツールはタグの追加をスキップし、警告を返す",
+      explain: "ツールは操作をスキップしません - 必要なものを作成します。"
     },
     {
-      text: "It validates the commit before creating it",
-      explain: "Validation happens regardless of the create_pr parameter."
+      text: "ツールはプレースホルダーコンテンツでデフォルトのREADMEを自動的に作成する",
+      explain: "プレースホルダーコンテンツではなく、最小限のモデルカード構造を作成します。"
     }
   ]}
 />
 
-### Q6: Why does the MCP server implementation use extensive logging with emojis throughout the code?
+### Q5: `hf_api.create_commit()`関数呼び出しで`create_pr=True`を使用することの意義は何ですか？
 
 <Question
   choices={[
     {
-      text: "To make the code more fun and engaging for developers",
-      explain: "While emojis are visually appealing, there's a more practical reason."
+      text: "メインブランチに直接コミットする",
+      explain: "create_pr=Trueを設定すると、メインへの直接コミットではなく、プルリクエストが作成されます。"
     },
     {
-      text: "To help with debugging and monitoring when the server runs autonomously in response to Hub events",
-      explain: "Correct! Since the agent responds to webhooks automatically, detailed logs are crucial for troubleshooting.",
+      text: "メインブランチに直接コミットする代わりに、自動的にプルリクエストを作成する",
+      explain: "正解です！これによりレビューワークフローが有効になり、リポジトリガバナンスの実践に従います。",
       correct: true
     },
     {
-      text: "To comply with FastMCP logging requirements",
-      explain: "FastMCP doesn't require specific logging formats or emojis."
+      text: "リポジトリオーナーのみが見ることができるプライベートブランチを作成する",
+      explain: "プルリクエストはリポジトリの協力者に表示され、公開される可能性があります。"
     },
     {
-      text: "To reduce the amount of text in log files",
-      explain: "Emojis don't significantly reduce log file size and this isn't the primary goal."
+      text: "作成前にコミットを検証する",
+      explain: "検証はcreate_prパラメータに関係なく行われます。"
     }
   ]}
 />
 
-Congrats on finishing this Quiz 🥳! If you need to review any elements, take the time to revisit the chapter to reinforce your knowledge. 
+### Q6: MCPサーバー実装では、コード全体で絵文字を使った広範囲なログ記録を使用するのはなぜですか？
+
+<Question
+  choices={[
+    {
+      text: "開発者にとってコードをより楽しく魅力的にするため",
+      explain: "絵文字は視覚的に魅力的ですが、より実用的な理由があります。"
+    },
+    {
+      text: "サーバーがHubイベントに応答して自律的に実行される際のデバッグと監視を支援するため",
+      explain: "正解です！エージェントがWebhookに自動的に応答するため、詳細なログはトラブルシューティングに重要です。",
+      correct: true
+    },
+    {
+      text: "FastMCPのログ記録要件に準拠するため",
+      explain: "FastMCPは特定のログ記録形式や絵文字を要求しません。"
+    },
+    {
+      text: "ログファイルのテキスト量を削減するため",
+      explain: "絵文字はログファイルサイズを大幅に削減せず、これが主な目標ではありません。"
+    }
+  ]}
+/>
+
+このクイズの完了おめでとうございます🥳！要素を復習する必要がある場合は、時間をかけて章を再訪し、知識を強化してください。 
