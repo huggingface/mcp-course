@@ -1,0 +1,10 @@
+[project]
+name = "unit1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.12.10"
+dependencies = [
+    "gradio[mcp]>=5.30.0",
+    "mcp[cli]>=1.10.1",
+]

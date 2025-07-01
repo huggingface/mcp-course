@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "sentiment-analysis": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://glukicov-mcp-sentiment.hf.space/gradio_api/mcp/sse",
+        "--transport",
+        "sse-only"
+      ]
+    }
+  }
+}

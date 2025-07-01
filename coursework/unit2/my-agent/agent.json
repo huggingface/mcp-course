@@ -1,0 +1,16 @@
+{
+	"model": "Qwen/Qwen2.5-72B-Instruct",
+	"provider": "nebius",
+	"servers": [
+		{
+			"type": "http",
+			"config": {
+				"command": "npx",
+				"args": [
+					"mcp-remote",
+					"https://glukicov-mcp-sentiment.hf.space/gradio_api/mcp/sse"
+				]
+			}
+		}
+	]
+}

@@ -1,0 +1,14 @@
+[project]
+name = "unit2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.11"
+dependencies = [
+    "fastmcp>=2.8.0",
+    "gradio[mcp]>=5.35.0",
+    "mcp>=1.9.3",
+    "smolagents[mcp]>=1.19.0",
+    "textblob>=0.19.0",
+    "typer>=0.12.0",
+]
