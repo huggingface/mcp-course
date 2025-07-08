@@ -28,7 +28,7 @@
   - local: unit1/unit1-recap
     title: Unit 1 Recap
   - local: unit1/certificate
-    title: Get your certificate!
+    title: Get Your Certificate!
 
 - title: "2. Use Case: End-to-End MCP Application"
   sections:
@@ -37,9 +37,9 @@
   - local: unit2/gradio-server
     title: Building the Gradio MCP Server
   - local: unit2/clients
-    title: Using MCP Clients with your application
+    title: Using MCP Clients with Your Application
   - local: unit2/continue-client
-    title: Using MCP in the Your AI Coding Assistant
+    title: Using MCP in Your AI Coding Assistant
   - local: unit2/gradio-client
     title: Building an MCP Client with Gradio
   - local: unit2/tiny-agents
@@ -60,7 +60,7 @@
   - local: unit3/build-mcp-server-solution-walkthrough
     title: "Unit 3 Solution Walkthrough: Building a Pull Request Agent with MCP"
   - local: unit3/certificate
-    title: "Get your certificate!"
+    title: "Get Your Certificate!"
   - local: unit3/conclusion
     title: "Unit 3 Conclusion"
 
@@ -69,7 +69,7 @@
   - local: unit3_1/introduction
     title: Build a Pull Request Agent on the Hugging Face Hub
   - local: unit3_1/setting-up-the-project
-    title: Setting up the Project
+    title: Setting Up the Project
   - local: unit3_1/creating-the-mcp-server
     title: Creating the MCP Server
   - local: unit3_1/quiz1
