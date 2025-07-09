@@ -1,0 +1,370 @@
+# MCPクライアント
+
+タグ付けツールを持つMCPサーバーができたので、次はこれらのツールと相互作用できるクライアントを作成する必要があります。MCPクライアントは、webhookハンドラーとMCPサーバーの間のブリッジとして機能し、エージェントがHubのタグ付け機能を使用できるようにします。
+
+このプロジェクトでは、APIとGradioアプリの両方を構築します。APIはMCPサーバーとwebhookリスナーのテストに使用し、GradioアプリはシミュレートされたwebhookイベントでMCPクライアントをテストするために使用します。
+
+<Tip>
+
+教育目的で、MCPサーバーとMCPクライアントを同じリポジトリに構築します。実際のアプリケーションでは、MCPサーバーとMCPクライアント用に別々のリポジトリを使用することが多いでしょう。実際、これらのコンポーネントのうち片方だけを構築する場合もあります。
+
+</Tip>
+
+## MCPクライアントアーキテクチャの理解
+
+我々のアプリケーションでは、MCPクライアントはメインのFastAPIアプリケーション（`app.py`）に統合されています。これによりMCPサーバーへの接続を作成・管理し、ツール実行のためのシームレスなインターフェースを提供します。
+
+![MCP Client Integration](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/app.png)
+
+## エージェントベースのMCPクライアント
+
+MCP対応が組み込まれた`huggingface_hub`のAgentクラスを使用します。これにより、言語モデル機能とMCPツール統合を単一のコンポーネントで提供できます。
+
+### 1. エージェント設定
+
+エージェント設定のセットアップから始めて、各コンポーネントを理解しましょう：
+
+```python
+from huggingface_hub.inference._mcp.agent import Agent
+from typing import Optional, Literal
+
+# Configuration
+HF_TOKEN = os.getenv("HF_TOKEN")
+HF_MODEL = os.getenv("HF_MODEL", "microsoft/DialoGPT-medium")
+DEFAULT_PROVIDER: Literal["hf-inference"] = "hf-inference"
+
+# Global agent instance
+agent_instance: Optional[Agent] = None
+```
+
+必要なインポートと設定から始めます。グローバルな`agent_instance`変数により、エージェントを一度だけ作成し、複数のリクエスト間で再利用することが保証されます。エージェントの初期化にはコストがかかるため、これはパフォーマンスにとって重要です。
+
+次に、エージェントを作成・管理する関数を実装しましょう：
+
+```python
+async def get_agent():
+    """Get or create Agent instance"""
+    print("🤖 get_agent() called...")
+    global agent_instance
+    if agent_instance is None and HF_TOKEN:
+        print("🔧 Creating new Agent instance...")
+        print(f"🔑 HF_TOKEN present: {bool(HF_TOKEN)}")
+        print(f"🤖 Model: {HF_MODEL}")
+        print(f"🔗 Provider: {DEFAULT_PROVIDER}")
+```
+
+この関数は、すでにエージェントインスタンスを持っているかどうかをチェックすることから始まります。このシングルトンパターンは、不要な再作成を防ぎ、一貫した状態を保証します。
+
+エージェントの作成を続けましょう：
+
+```python
+        try:
+            agent_instance = Agent(
+                model=HF_MODEL,
+                provider=DEFAULT_PROVIDER,
+                api_key=HF_TOKEN,
+                servers=[
+                    {
+                        "type": "stdio",
+                        "config": {
+                            "command": "python",
+                            "args": ["mcp_server.py"],
+                            "cwd": ".",
+                            "env": {"HF_TOKEN": HF_TOKEN} if HF_TOKEN else {},
+                        },
+                    }
+                ],
+            )
+            print("✅ Agent instance created successfully")
+            print("🔧 Loading tools...")
+            await agent_instance.load_tools()
+            print("✅ Tools loaded successfully")
+        except Exception as e:
+            print(f"❌ Error creating/loading agent: {str(e)}")
+            agent_instance = None
+```
+
+ここが重要な部分です！Agent設定を分解してみましょう：
+
+**エージェントパラメータ：**
+- `model`: ツール使用について推論する言語モデル
+- `provider`: モデルへのアクセス方法（Hugging Face Inference Providers）
+- `api_key`: Hugging Face APIキー
+
+**MCPサーバー接続：**
+- `type: "stdio"`: 標準入出力を介してMCPサーバーに接続
+- `command: "python"`: MCPサーバーをPythonサブプロセスとして実行
+- `args: ["mcp_server.py"]`: 実行するスクリプトファイル
+- `env`: HF_TOKENをサーバープロセスに渡す
+
+<Tip>
+
+`stdio`接続タイプは、エージェントがMCPサーバーをサブプロセスとして開始し、標準入出力を通じて通信することを意味します。これは開発や単一マシンでのデプロイメントに最適です。
+
+</Tip>
+
+`load_tools()`の呼び出しは重要です - これはMCPサーバーから利用可能なツールを発見し、エージェントの推論エンジンがアクセスできるようにします。
+
+これで、適切なエラーハンドリングとログ出力を持つエージェント管理関数が完成しました。
+
+## ツールの発見と使用
+
+エージェントが作成されツールがロードされると、MCPツールを自動的に発見・使用できます。これがAgentアプローチの真の力が発揮される部分です。
+
+### 利用可能なツール
+
+エージェントは我々のMCPツールを自動的に発見します：
+- `get_current_tags(repo_id: str)` - 既存のリポジトリタグを取得
+- `add_new_tag(repo_id: str, new_tag: str)` - プルリクエスト経由で新しいタグを追加
+
+エージェントはこれらのツールを盲目的に呼び出すのではなく、与えられたプロンプトに基づいて、いつどのように使用するかを推論します。
+
+### ツール実行の例
+
+エージェントがツールをインテリジェントに使用する方法は以下のとおりです：
+
+```python
+# Example of how the agent would use tools
+async def example_tool_usage():
+    agent = await get_agent()
+    
+    if agent:
+        # The agent can reason about which tools to use
+        response = await agent.run(
+            "Check the current tags for microsoft/DialoGPT-medium and add the tag 'conversational-ai' if it's not already present"
+        )
+        print(response)
+```
+
+エージェントに自然言語の指示を与えると、以下のことを理解することに注目してください：
+1. まず`get_current_tags`を呼び出して既存のタグを確認
+2. `conversational-ai`がすでに存在するかチェック
+3. 存在しない場合、`add_new_tag`を呼び出して追加
+4. 実行した内容の要約を提供
+
+これはツールを直接呼び出すよりもはるかにインテリジェントです！
+
+## webhook処理との統合
+
+次に、MCPクライアントがwebhook処理パイプラインにどのように統合されるかを見てみましょう。ここですべてが統合されます。
+
+### 1. タグ抽出と処理
+
+webhookイベントを処理してMCPエージェントを使用するメイン関数は以下のとおりです：
+
+```python
+async def process_webhook_comment(webhook_data: Dict[str, Any]):
+    """Process webhook to detect and add tags"""
+    print("🏷️ Starting process_webhook_comment...")
+
+    try:
+        comment_content = webhook_data["comment"]["content"]
+        discussion_title = webhook_data["discussion"]["title"]
+        repo_name = webhook_data["repo"]["name"]
+        
+        # Extract potential tags from the comment and discussion title
+        comment_tags = extract_tags_from_text(comment_content)
+        title_tags = extract_tags_from_text(discussion_title)
+        all_tags = list(set(comment_tags + title_tags))
+
+        print(f"🔍 All unique tags: {all_tags}")
+
+        if not all_tags:
+            return ["No recognizable tags found in the discussion."]
+```
+
+この最初の部分では、コメント内容とディスカッションタイトルの両方からタグを抽出・結合します。setを使用して、両方の場所に現れるタグを重複除去します。
+
+<Tip>
+
+コメントとディスカッションタイトルの両方を処理することで、関連するタグをキャッチする可能性が高まります。ユーザーは「Missing pytorch tag」のようにタイトルでタグに言及したり、「This needs #transformers」のようにコメントで言及したりする可能性があります。
+
+</Tip>
+
+次に、エージェントを取得し各タグを処理します：
+
+```python
+        # Get agent instance
+        agent = await get_agent()
+        if not agent:
+            return ["Error: Agent not configured (missing HF_TOKEN)"]
+
+        # Process each tag
+        result_messages = []
+        for tag in all_tags:
+            try:
+                # Use agent to process the tag
+                prompt = f"""
+                For the repository '{repo_name}', check if the tag '{tag}' already exists.
+                If it doesn't exist, add it via a pull request.
+                
+                Repository: {repo_name}
+                Tag to check/add: {tag}
+                """
+                
+                print(f"🤖 Processing tag '{tag}' for repo '{repo_name}'")
+                response = await agent.run(prompt)
+                
+                # Parse agent response for success/failure
+                if "success" in response.lower():
+                    result_messages.append(f"✅ Tag '{tag}' processed successfully")
+                else:
+                    result_messages.append(f"⚠️ Issue with tag '{tag}': {response}")
+                    
+            except Exception as e:
+                error_msg = f"❌ Error processing tag '{tag}': {str(e)}"
+                print(error_msg)
+                result_messages.append(error_msg)
+
+        return result_messages
+```
+
+ここでの重要な洞察は、各タグに対して明確で構造化されたプロンプトをエージェントに与えることです。エージェントは次のことを行います：
+1. まず現在のタグをチェックする必要があることを理解
+2. 追加したい新しいタグと比較
+3. 必要に応じてプルリクエストを作成
+4. その行動の要約を返す
+
+このアプローチは、ツールオーケストレーションの複雑さを自動的に処理します。
+
+### 2. タグ抽出ロジック
+
+MCP処理に供給されるタグ抽出ロジックを調べてみましょう：
+
+```python
+import re
+from typing import List
+
+# Recognized ML/AI tags for validation
+RECOGNIZED_TAGS = {
+    "pytorch", "tensorflow", "jax", "transformers", "diffusers",
+    "text-generation", "text-classification", "question-answering",
+    "text-to-image", "image-classification", "object-detection",
+    "fill-mask", "token-classification", "translation", "summarization",
+    "feature-extraction", "sentence-similarity", "zero-shot-classification",
+    "image-to-text", "automatic-speech-recognition", "audio-classification",
+    "voice-activity-detection", "depth-estimation", "image-segmentation",
+    "video-classification", "reinforcement-learning", "tabular-classification",
+    "tabular-regression", "time-series-forecasting", "graph-ml", "robotics",
+    "computer-vision", "nlp", "cv", "multimodal",
+}
+```
+
+この厳選された認識タグのリストは、関連するML/AIタグに焦点を当て、リポジトリに不適切なタグが追加されることを回避するのに役立ちます。
+
+抽出関数自体を見てみましょう：
+
+```python
+def extract_tags_from_text(text: str) -> List[str]:
+    """Extract potential tags from discussion text"""
+    text_lower = text.lower()
+    explicit_tags = []
+
+    # Pattern 1: "tag: something" or "tags: something"
+    tag_pattern = r"tags?:\s*([a-zA-Z0-9-_,\s]+)"
+    matches = re.findall(tag_pattern, text_lower)
+    for match in matches:
+        tags = [tag.strip() for tag in match.split(",")]
+        explicit_tags.extend(tags)
+
+    # Pattern 2: "#hashtag" style
+    hashtag_pattern = r"#([a-zA-Z0-9-_]+)"
+    hashtag_matches = re.findall(hashtag_pattern, text_lower)
+    explicit_tags.extend(hashtag_matches)
+
+    # Pattern 3: Look for recognized tags mentioned in natural text
+    mentioned_tags = []
+    for tag in RECOGNIZED_TAGS:
+        if tag in text_lower:
+            mentioned_tags.append(tag)
+
+    # Combine and deduplicate
+    all_tags = list(set(explicit_tags + mentioned_tags))
+
+    # Filter to only include recognized tags or explicitly mentioned ones
+    valid_tags = []
+    for tag in all_tags:
+        if tag in RECOGNIZED_TAGS or tag in explicit_tags:
+            valid_tags.append(tag)
+
+    return valid_tags
+```
+
+この関数は複数の戦略を使用してタグを抽出します：
+
+1. **明示的パターン**: "tags: pytorch, transformers" または "tag: nlp"
+2. **ハッシュタグ**: "#pytorch #nlp"
+3. **自然な言及**: "This transformers model does text-generation"
+
+検証ステップにより、適切なタグのみを提案し、スパムや無関係なタグが追加されることを防ぎます。
+
+
+## パフォーマンスの考慮事項
+
+本番環境のMCPクライアントを構築する際、レスポンシブなwebhook処理を維持するためにパフォーマンスは重要です。我々が行った考慮事項のいくつかを見てみましょう。
+
+### 1. エージェントシングルトンパターン
+
+エージェントは一度作成され再利用されることで、以下を回避します：
+- 繰り返されるMCPサーバー起動のオーバーヘッド
+- ツールロードの遅延
+- 接続確立のコスト
+
+このパターンは、迅速に応答する必要があるwebhookハンドラーにとって不可欠です。
+
+### 2. 非同期処理
+
+すべてのMCP操作は以下の理由で非同期です：
+- 複数のwebhookリクエストを同時に処理
+- メインのFastAPIスレッドのブロックを回避
+- レスポンシブなwebhook応答を提供
+
+非同期の性質により、webhookハンドラーはバックグラウンドでタグを処理しながら新しいリクエストを受け入れることができます。
+
+### 3. バックグラウンドタスク処理
+
+FastAPIには、バックグラウンドでタスクを実行するために使用できる組み込みの`BackgroundTasks`クラスがあります。これは、メインスレッドをブロックすることなく長時間実行されるタスクを実行するのに便利です。
+
+```python
+from fastapi import BackgroundTasks
+
+@app.post("/webhook")
+async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
+    """Handle webhook and process in background"""
+    
+    # Validate webhook quickly
+    if request.headers.get("X-Webhook-Secret") != WEBHOOK_SECRET:
+        return {"error": "Invalid secret"}
+    
+    webhook_data = await request.json()
+    
+    # Process in background to return quickly
+    background_tasks.add_task(process_webhook_comment, webhook_data)
+    
+    return {"status": "accepted"}
+```
+
+このパターンにより、複雑なタグ処理をバックグラウンドで実行しながら、webhook応答を高速（1秒未満）に保つことができます。
+
+<Tip>
+
+webhookエンドポイントは10秒以内に応答する必要があります。そうでないと、プラットフォームはタイムアウトしたと見なす可能性があります。バックグラウンドタスクを使用することで、複雑な処理を非同期で処理しながら、常に迅速に応答できることが保証されます。
+
+</Tip>
+
+## 次のステップ
+
+MCPクライアントの実装により、次のことが可能になります：
+
+1. **webhookリスナーの実装** - Hubイベントを受信するFastAPIエンドポイントを作成
+2. **すべての統合** - webhook、クライアント、サーバーを完全なシステムに接続
+3. **テストインターフェースの追加** - 開発・監視用のGradioインターフェースを作成
+4. **デプロイとテスト** - 本番環境で完全なシステムを検証
+
+次のセクションでは、MCPパワードタグ付けエージェントをトリガーするwebhookリスナーを実装します。
+
+<Tip>
+
+`huggingface_hub`のAgentクラスは、MCPツール統合と言語モデル推論の両方を提供し、プルリクエストエージェントのようなインテリジェントな自動化ワークフローの構築に最適です。
+
+</Tip> 
