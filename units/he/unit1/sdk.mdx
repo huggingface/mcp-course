@@ -1,0 +1,169 @@
+# SDK של MCP
+
+פרוטוקול הקשר המודל מספק SDK רשמיים הן לג'אווהסקריפט, פייתון ושפות אחרות. זה מקל על יישום לקוחות ושרתי MCP ביישומים שלך. SDK אלה מטפלים בפרטי פרוטוקול ברמה נמוכה, מאפשרים לך להתמקד בבניית היכולות של היישום שלך.
+
+## סקירת SDK
+
+שני ה-SDK מספקים פונקציונליות ליבה דומה, בהתאם למפרט פרוטוקול ה-MCP שדנו בו קודם. הם מטפלים ב:
+
+- תקשורת ברמת הפרוטוקול
+- רישום וגילוי יכולות
+- סריאליזציה/דה-סריאליזציה של הודעות
+- ניהול חיבורים
+- טיפול בשגיאות
+
+## יישום הפרימיטיבים הבסיסיים
+
+בואו נחקור כיצד ליישם כל אחד מהפרימיטיבים הבסיסיים (כלים, משאבים והנחיות) באמצעות שני ה-SDK.
+
+<hfoptions id="server-implementation">
+<hfoption id="python">
+
+<Youtube id="exzrb5QNUis" />
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+# יצירת שרת MCP
+mcp = FastMCP("שירות מזג אוויר")
+
+
+@mcp.tool()
+def get_weather(location: str) -> str:
+    """קבל את מזג האוויר הנוכחי למיקום מסוים."""
+    return f"מזג האוויר ב-{location}: שמשי, 22°C"
+
+
+@mcp.resource("weather://{location}")
+def weather_resource(location: str) -> str:
+    """ספק נתוני מזג אוויר כמשאב."""
+    return f"נתוני מזג אוויר עבור {location}: שמשי, 22°C"
+
+
+@mcp.prompt()
+def weather_report(location: str) -> str:
+    """צור הנחיית דיווח מזג אוויר."""
+    return f"""אתה מדווח מזג אוויר. דוח מזג אוויר עבור {location}?"""
+
+
+# הרץ את השרת
+if __name__ == "__main__":
+    mcp.run()
+
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// יצירת שרת MCP
+const server = new McpServer({
+    name: "שירות מזג אוויר",
+    version: "1.0.0"
+});
+
+// יישום כלי
+server.tool("get_weather",
+    { location: z.string() },
+    async ({ location }) => ({
+        content: [{
+            type: "text",
+            text: `מזג האוויר ב-${location}: שמשי, 22°C`
+        }]
+    })
+);
+
+// יישום משאב
+server.resource(
+    "weather",
+    new ResourceTemplate("weather://{location}", { list: undefined }),
+    async (uri, { location }) => ({
+        contents: [{
+            uri: uri.href,
+            text: `נתוני מזג אוויר עבור ${location}: שמשי, 22°C`
+        }]
+    })
+);
+
+// יישום הנחיה
+server.prompt(
+    "weather_report",
+    { location: z.string() },
+    async ({ location }) => ({
+        messages: [
+            {
+                role: "assistant",
+                content: {
+                    type: "text",
+                    text: "אתה מדווח מזג אוויר."
+                }
+            },
+            {
+                role: "user",
+                content: {
+                    type: "text",
+                    text: `דוח מזג אוויר עבור ${location}?`
+                }
+            }
+        ]
+    })
+);
+
+// הרץ את השרת
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+</hfoption>
+</hfoptions>
+
+לאחר שיש לך את השרת מיושם, אתה יכול להתחיל אותו על ידי הרצת סקריפט השרת.
+
+```bash
+mcp dev server.py
+```
+
+זה יאתחל שרת פיתוח המריץ את הקובץ `server.py`. ויתעד את הפלט הבא:
+
+```bash
+מתחיל את MCP inspector...
+⚙️ שרת proxy מאזין בפורט 6277
+הפעיל תעבורת stdio
+חיבר לקוח MCP לתעבורת שרת גיבוי
+יצר תעבורת אפליקציית web
+הגדיר proxy MCP
+🔍 MCP Inspector פועל וזמין בכתובת http://127.0.0.1:6274 🚀
+```
+
+אתה יכול אז לפתוח את MCP Inspector בכתובת [http://127.0.0.1:6274](http://127.0.0.1:6274) כדי לראות את היכולות של השרת ולתקשר איתן.
+
+תראה את היכולות של השרת ואת היכולת לקרוא להן דרך הממשק.
+
+![MCP Inspector](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/6.png)
+
+## SDK של MCP
+
+MCP מתוכנן להיות אגנוסטי לשפה, וישנם SDK רשמיים זמינים למספר שפות תכנות פופולריות:
+
+| שפה | מאגר | מתחזק(ים) | סטטוס |
+|----------|------------|---------------|--------|
+| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | Anthropic | פעיל |
+| Python | [github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | Anthropic | פעיל |
+| Java | [github.com/modelcontextprotocol/java-sdk](https://github.com/modelcontextprotocol/java-sdk) | Spring AI (VMware) | פעיל |
+| Kotlin | [github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk) | JetBrains | פעיל |
+| C# | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk) | Microsoft | פעיל (תצוגה מקדימה) |
+| Swift | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk) | loopwork-ai | פעיל |
+| Rust | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk) | Anthropic/קהילה | פעיל |
+| Dart | [https://github.com/leehack/mcp_dart](https://github.com/leehack/mcp_dart) | קהילת Flutter | פעיל |
+
+SDK אלה מספקים הפשטות ספציפיות לשפה המפשטות את העבודה עם פרוטוקול ה-MCP, מאפשרים לך להתמקד ביישום הלוגיקה המרכזית של השרתים או הלקוחות שלך במקום להתמודד עם פרטי פרוטוקול ברמה נמוכה.
+
+## הצעדים הבאים
+
+רק שרטנו את פני השטח של מה שאתה יכול לעשות עם ה-MCP אבל כבר יש לך שרת בסיסי פועל. למעשה, התחברת אליו גם באמצעות לקוח ה-MCP בדפדפן.
+
+בסעיף הבא, נראה כיצד להתחבר לשרת שלך מ-LLM.
