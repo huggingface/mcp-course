@@ -30,8 +30,8 @@ DEFAULT_TEMPLATES = {
     "security.md": "Security"
 }
 
-# TODO: Add path to events file where webhook_server.py stores events
-# Hint: EVENTS_FILE = Path(__file__).parent / "github_events.json"
+# File where webhook server stores events
+EVENTS_FILE = Path(__file__).parent / "github_events.json"
 
 # Type mapping for PR templates
 TYPE_MAPPING = {
@@ -177,34 +177,100 @@ async def suggest_template(changes_summary: str, change_type: str) -> str:
 @mcp.tool()
 async def get_recent_actions_events(limit: int = 10) -> str:
     """Get recent GitHub Actions events received via webhook.
-    
+
     Args:
         limit: Maximum number of events to return (default: 10)
     """
-    # TODO: Implement this function
-    # 1. Check if EVENTS_FILE exists
-    # 2. Read the JSON file
-    # 3. Return the most recent events (up to limit)
-    # 4. Return empty list if file doesn't exist
-    
-    return json.dumps({"message": "TODO: Implement get_recent_actions_events"})
+    try:
+        # Check if EVENTS_FILE exists
+        if not EVENTS_FILE.exists():
+            return json.dumps({"events": [], "message": "No events file found. Make sure webhook_server.py is running."})
+
+        # Read the JSON file
+        with open(EVENTS_FILE, 'r') as f:
+            events = json.load(f)
+
+        # Return the most recent events (up to limit)
+        # Events are stored in chronological order, so we take the last 'limit' items
+        recent_events = events[-limit:] if len(events) > limit else events
+
+        return json.dumps({
+            "events": recent_events,
+            "total_events": len(events),
+            "showing": len(recent_events)
+        }, indent=2)
+
+    except json.JSONDecodeError:
+        return json.dumps({"error": "Invalid JSON in events file"})
+    except Exception as e:
+        return json.dumps({"error": f"Failed to read events: {str(e)}"})
 
 
 @mcp.tool()
 async def get_workflow_status(workflow_name: Optional[str] = None) -> str:
     """Get the current status of GitHub Actions workflows.
-    
+
     Args:
         workflow_name: Optional specific workflow name to filter by
     """
-    # TODO: Implement this function
-    # 1. Read events from EVENTS_FILE
-    # 2. Filter events for workflow_run events
-    # 3. If workflow_name provided, filter by that name
-    # 4. Group by workflow and show latest status
-    # 5. Return formatted workflow status information
-    
-    return json.dumps({"message": "TODO: Implement get_workflow_status"})
+    try:
+        # Check if EVENTS_FILE exists
+        if not EVENTS_FILE.exists():
+            return json.dumps({"workflows": {}, "message": "No events file found. Make sure webhook_server.py is running."})
+
+        # Read events from EVENTS_FILE
+        with open(EVENTS_FILE, 'r') as f:
+            events = json.load(f)
+
+        # Filter events for workflow_run events
+        workflow_events = [
+            event for event in events
+            if event.get("event_type") == "workflow_run" and event.get("workflow_run")
+        ]
+
+        # Group by workflow and show latest status
+        workflows = {}
+        for event in workflow_events:
+            workflow_run = event.get("workflow_run", {})
+            name = workflow_run.get("name")
+
+            if not name:
+                continue
+
+            # If workflow_name provided, filter by that name
+            if workflow_name and name != workflow_name:
+                continue
+
+            # Keep track of the latest event for each workflow
+            if name not in workflows or event.get("timestamp", "") > workflows[name].get("timestamp", ""):
+                workflows[name] = {
+                    "name": name,
+                    "status": workflow_run.get("status"),
+                    "conclusion": workflow_run.get("conclusion"),
+                    "timestamp": event.get("timestamp"),
+                    "repository": event.get("repository"),
+                    "sender": event.get("sender"),
+                    "run_number": workflow_run.get("run_number"),
+                    "html_url": workflow_run.get("html_url"),
+                    "head_branch": workflow_run.get("head_branch"),
+                    "head_sha": workflow_run.get("head_sha", "")[:7] if workflow_run.get("head_sha") else None
+                }
+
+        result = {
+            "workflows": workflows,
+            "total_workflow_events": len(workflow_events),
+            "unique_workflows": len(workflows)
+        }
+
+        if workflow_name:
+            result["filtered_by"] = workflow_name
+
+        return json.dumps(result, indent=2)
+
+    except json.JSONDecodeError:
+        return json.dumps({"error": "Invalid JSON in events file"})
+    except Exception as e:
+        return json.dumps({"error": f"Failed to read workflow status: {str(e)}"})
 
 
 # ===== Module 2: MCP Prompts =====

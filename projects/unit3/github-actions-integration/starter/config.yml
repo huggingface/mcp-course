@@ -1,0 +1,7 @@
+tunnel: 5af55691-c3e5-480d-9749-6de0a2959386
+credentials-file: /home/glenny/.cloudflared/5af55691-c3e5-480d-9749-6de0a2959386.json
+
+ingress:
+  - hostname: mcp-webhook.saasyagents.net
+    service: http://localhost:8080
+  - service: http_status:404
