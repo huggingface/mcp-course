@@ -1,0 +1,221 @@
+# 通信协议
+
+MCP 定义了一套标准化的通信协议，使客户端和服务端能够以一致、可预测的方式进行消息交换。这种标准化对于实现跨平台的互操作性至关重要。本节我们将深入解析 MCP 的协议结构和传输机制。
+
+<Tip warning={true}>
+
+虽然实际开发中不需要掌握所有协议细节，但了解其工作原理对构建 MCP 应用很有帮助。
+
+</Tip>
+
+## JSON-RPC：协议基础
+
+MCP 使用 **JSON-RPC 2.0** 作为客户端与服务端通信的核心消息格式。这种轻量级远程过程调用协议具有以下优势：
+
+- 人类可读，易于调试
+- 语言无关，支持任意编程环境
+- 规范明确，社区广泛采用
+
+![消息类型示意图](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/5.png)
+
+协议定义了三种消息类型：
+
+### 1. 请求（Requests）
+
+由客户端发往服务端以发起操作，包含：
+- 唯一标识符 ([id](file://e:\githubProjects\incubator-shenyu\shenyu-common\src\main\java\org\apache\shenyu\common\dto\RuleData.java#L29-L29))
+- 调用方法名（如 `tools/call`）
+- 方法参数（可选）
+
+请求示例：
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "weather",
+    "arguments": {
+      "location": "San Francisco"
+    }
+  }
+}
+```
+
+### 2. 响应
+
+服务器发送响应给客户端，以回复请求。响应消息包含：
+- 与相应请求相同的 `id`
+- 成功时返回 `result`，失败时返回 `error`
+
+成功响应示例：
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "temperature": 62,
+    "conditions": "Partly cloudy"
+  }
+}
+```
+
+错误响应示例：
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32602,
+    "message": "Invalid location parameter"
+  }
+}
+```
+
+### 3. 通知
+
+无需响应的单向消息。通常由服务器发送到客户端，用于提供事件更新或通知。
+
+通知示例：
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "progress",
+  "params": {
+    "message": "Processing data...",
+    "percent": 50
+  }
+}
+```
+
+## 传输机制
+
+JSON-RPC 定义了消息格式，但 MCP 还规定了这些消息在客户端和服务器之间的传输方式。主要支持两种传输机制：
+
+### stdio（标准输入/输出）
+
+stdio 传输用于本地通信，当客户端和服务器运行在同一台机器时：
+
+宿主应用将服务器作为子进程启动，通过写入其标准输入（stdin）和读取标准输出（stdout）进行通信。
+
+<Tip>
+
+**典型用例**：文件系统访问或运行本地脚本等本地工具。
+
+</Tip>
+
+主要**优势**：简单无需网络配置，受操作系统安全沙盒保护。
+
+### HTTP + SSE（服务器发送事件）/ 可流式 HTTP
+
+HTTP+SSE 传输用于远程通信，当客户端和服务器可能位于不同机器时：
+
+通过 HTTP 进行通信，服务器使用服务器发送事件（SSE）通过持久连接向客户端推送更新。
+
+<Tip>
+
+**典型用例**：连接远程 API、云服务或共享资源。
+
+</Tip>
+
+主要**优势**：支持跨网络工作，可与 Web 服务集成，兼容无服务器环境。
+
+MCP 标准的最新更新引入并改进了"可流式 HTTP"，允许服务器在需要时动态升级到 SSE 进行流传输，同时保持与无服务器环境的兼容性。
+
+## 交互生命周期
+
+MCP 协议定义了客户端与服务器之间结构化的交互生命周期：
+
+### 初始化
+
+客户端连接服务器并交换协议版本和能力信息，服务器响应其支持的协议版本和功能。
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>initialize</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>initialized</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+客户端通过通知消息确认初始化完成。
+
+### 发现
+
+客户端请求可用能力信息，服务器响应可用工具列表。
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>tools/list</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+此过程可针对每种工具、资源或提示类型重复执行。
+
+### 执行
+
+客户端根据宿主需求调用能力：
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>tools/call</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>notification (optional progress)</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+### 终止
+
+当不再需要连接时优雅关闭，服务器确认关闭请求：
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>shutdown</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>exit</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+客户端发送最终 exit 消息完成终止流程。
+
+## 协议演进
+
+MCP 协议设计具备可扩展性和适应性。初始化阶段包含版本协商机制，支持协议演进时的向后兼容。能力发现机制使客户端能适配不同服务器的特性，实现在同一生态系统中基础服务器和高级服务器的共存。
