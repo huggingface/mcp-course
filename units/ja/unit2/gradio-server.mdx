@@ -1,0 +1,193 @@
+# Gradio MCPサーバーの構築
+
+このセクションでは、Gradioを使用して感情分析MCPサーバーを作成します。このサーバーは、Webインターフェースを通じたユーザーとMCPプロトコルを通じたAIモデルの両方が使用できる感情分析ツールを公開します。
+
+## Gradio MCP統合の紹介
+
+Gradioは、Python関数をMCPツールに自動変換することでMCPサーバーを作成する簡単な方法を提供します。`launch()`で`mcp_server=True`を設定すると、Gradioは以下を実行します：
+
+1. 関数をMCPツールに自動変換
+2. 入力コンポーネントをツール引数スキーマにマッピング
+3. 出力コンポーネントからレスポンス形式を決定
+4. クライアント・サーバー通信用にHTTP+SSE上のJSON-RPCを設定
+5. WebインターフェースとMCPサーバーエンドポイントの両方を作成
+
+## プロジェクトのセットアップ
+
+まず、プロジェクト用の新しいディレクトリを作成し、必要な依存関係をセットアップしましょう：
+
+```bash
+mkdir mcp-sentiment
+cd mcp-sentiment
+python -m venv venv
+source venv/bin/activate  # Windowsの場合: venv\Scripts\activate
+pip install "gradio[mcp]" textblob
+```
+
+## サーバーの作成
+
+> Hugging face spacesはスペースを構築するためにapp.pyファイルが必要です。そのため、Pythonファイルの名前はapp.pyでなければなりません。
+
+以下のコードで`app.py`という新しいファイルを作成してください：
+
+```python
+import json
+import gradio as gr
+from textblob import TextBlob
+
+def sentiment_analysis(text: str) -> str:
+    """
+    与えられたテキストの感情を分析します。
+
+    Args:
+        text (str): 分析するテキスト
+
+    Returns:
+        str: 極性、主観性、評価を含むJSON文字列
+    """
+    blob = TextBlob(text)
+    sentiment = blob.sentiment
+    
+    result = {
+        "polarity": round(sentiment.polarity, 2),  # -1 (ネガティブ) から 1 (ポジティブ)
+        "subjectivity": round(sentiment.subjectivity, 2),  # 0 (客観的) から 1 (主観的)
+        "assessment": "positive" if sentiment.polarity > 0 else "negative" if sentiment.polarity < 0 else "neutral"
+    }
+
+    return json.dumps(result)
+
+# Gradioインターフェースを作成
+demo = gr.Interface(
+    fn=sentiment_analysis,
+    inputs=gr.Textbox(placeholder="分析するテキストを入力..."),
+    outputs=gr.Textbox(),  # gr.JSON()からgr.Textbox()に変更
+    title="テキスト感情分析",
+    description="TextBlobを使用してテキストの感情を分析します"
+)
+
+# インターフェースとMCPサーバーを起動
+if __name__ == "__main__":
+    demo.launch(mcp_server=True)
+```
+
+## コードの理解
+
+主要なコンポーネントを分解してみましょう：
+
+1. **関数定義**:
+   - `sentiment_analysis`関数はテキスト入力を受け取り、辞書を返します
+   - TextBlobを使用して感情を分析します
+   - docstringはGradioがMCPツールスキーマを生成するために重要です
+   - 型ヒント（`str`と`dict`）は入出力スキーマを定義するのに役立ちます
+
+2. **Gradioインターフェース**:
+   - `gr.Interface`はWeb UIとMCPサーバーの両方を作成します
+   - 関数は自動的にMCPツールとして公開されます
+   - 入力と出力コンポーネントがツールのスキーマを定義します
+   - JSON出力コンポーネントは適切なシリアライゼーションを保証します
+
+3. **MCPサーバー**:
+   - `mcp_server=True`を設定するとMCPサーバーが有効になります
+   - サーバーは`http://localhost:7860/gradio_api/mcp/sse`で利用可能になります
+   - 環境変数を使用して有効にすることもできます：
+     ```bash
+     export GRADIO_MCP_SERVER=True
+     ```
+
+## サーバーの実行
+
+以下を実行してサーバーを起動します：
+
+```bash
+python app.py
+```
+
+WebインターフェースとMCPサーバーの両方が実行されていることを示す出力が表示されるはずです。Webインターフェースは`http://localhost:7860`で、MCPサーバーは`http://localhost:7860/gradio_api/mcp/sse`で利用可能です。
+
+## サーバーのテスト
+
+サーバーは2つの方法でテストできます：
+
+1. **Webインターフェース**:
+   - ブラウザで`http://localhost:7860`を開きます
+   - テキストを入力し、"送信"をクリックします
+   - 感情分析結果が表示されるはずです
+
+2. **MCPスキーマ**:
+   - `http://localhost:7860/gradio_api/mcp/schema`を訪問します
+   - これはクライアントが使用するMCPツールスキーマを表示します
+   - Gradioアプリのフッターにある"View API"リンクでもこれを見つけることができます
+
+## トラブルシューティングティップス
+
+1. **型ヒントとDocstring**:
+   - 関数パラメーターと戻り値に必ず型ヒントを提供してください
+   - 各パラメーターに対して"Args:"ブロックを含むdocstringを含めてください
+   - これはGradioが正確なMCPツールスキーマを生成するのに役立ちます
+
+2. **文字列入力**:
+   - 迷ったときは、入力引数を`str`として受け入れてください
+   - 関数内で目的の型に変換してください
+   - これはMCPクライアントとの互換性を向上させます
+
+3. **SSEサポート**:
+   - 一部のMCPクライアントはSSEベースのMCPサーバーをサポートしていません
+   - その場合、`mcp-remote`を使用してください：
+     ```json
+     {
+       "mcpServers": {
+         "gradio": {
+           "command": "npx",
+           "args": [
+             "mcp-remote",
+             "http://localhost:7860/gradio_api/mcp/sse"
+           ]
+         }
+       }
+     }
+     ```
+
+4. **接続問題**:
+   - 接続問題が発生した場合、クライアントとサーバーの両方を再起動してみてください
+   - サーバーが実行され、アクセス可能であることを確認してください
+   - MCPスキーマが期待されるURLで利用可能であることを確認してください
+
+## Hugging Face Spacesへのデプロイ
+
+サーバーを他の人が利用できるようにするために、Hugging Face Spacesにデプロイできます：
+
+1. Hugging Faceで新しいSpaceを作成します：
+   - huggingface.co/spacesにアクセスします
+   - "Create new Space"をクリックします
+   - SDKとして"Gradio"を選択します
+   - スペースに名前を付けます（例："mcp-sentiment"）
+
+2. `requirements.txt`ファイルを作成します：
+```txt
+gradio[mcp]
+textblob
+```
+
+3. コードをSpaceにプッシュします：
+```bash
+git init
+git add app.py requirements.txt
+git commit -m "Initial commit"
+git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/mcp-sentiment
+git push -u origin main
+```
+
+MCPサーバーは以下で利用可能になります：
+```
+https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse
+```
+
+## 次のステップ
+
+MCPサーバーが実行されたので、それとインタラクトするクライアントを作成します。次のセクションでは、以下を行います：
+
+1. Tiny AgentsにインスパイアされたHuggingFace.jsベースのクライアントを作成
+2. SmolAgentsベースのPythonクライアントを実装
+3. デプロイされたサーバーで両方のクライアントをテスト
+
+最初のクライアントの構築に移りましょう！ 

@@ -1,0 +1,125 @@
+# クイズ2：MCP SDK
+
+MCP SDKとその機能に関する知識をテストしてください。
+
+### Q1: MCP SDKの主要な目的は何ですか？
+
+<Question
+  choices={[
+    {
+      text: "MCPプロトコル仕様を定義すること",
+      explain: "SDKはプロトコルを実装するものであり、定義するものではありません。仕様は別途あります。"
+    },
+    {
+      text: "MCPクライアントとサーバーの実装を容易にすること",
+      explain: "正解です！SDKは低レベルのプロトコル詳細を抽象化します。",
+      correct: true
+    },
+    {
+      text: "MCPインタラクション用の視覚的インターフェースを提供すること",
+      explain: "一部のツール（MCP Inspectorなど）はこれを提供するかもしれませんが、SDK自体の主要な目的ではありません。"
+    },
+    {
+      text: "プログラミング言語の必要性を置き換えること",
+      explain: "SDKはプログラミング言語内で使用されるライブラリです。"
+    }
+  ]}
+/>
+
+### Q2: MCP SDKが通常処理する機能は次のうちどれですか？
+
+<Question
+  choices={[
+    {
+      text: "MCPサーバーの最適化",
+      explain: "これはプロトコル実装に焦点を当てるMCP SDKの範囲外です。"
+    },
+    {
+      text: "新しいAIアルゴリズムの定義",
+      explain: "これはプロトコル実装に焦点を当てるMCP SDKの範囲外です。"
+    },
+    {
+      text: "メッセージのシリアライゼーション/デシリアライゼーション",
+      explain: "正解です！これはJSON-RPCメッセージを処理するためのコア機能です。",
+      correct: true
+    },
+    {
+      text: "大規模言語モデルのホスティング",
+      explain: "MCPはLLMへの接続を可能にしますが、SDK自体がそれらをホストするわけではありません。"
+    }
+  ]}
+/>
+
+### Q3: 提供されたテキストによると、MCPの公式Python SDKを維持している会社はどこですか？
+
+<Question
+  choices={[
+    {
+      text: "Google",
+      explain: "テキストではAnthropic がメンテナーとして記載されています。"
+    },
+    {
+      text: "Anthropic",
+      explain: "正解です！コース資料ではAnthropicがPython SDKを維持していると示されています。",
+      correct: true
+    },
+    {
+      text: "Microsoft",
+      explain: "テキストによると、MicrosoftはC# SDKを維持しています。"
+    },
+    {
+      text: "JetBrains",
+      explain: "テキストによると、JetBrainsはKotlin SDKを維持しています。"
+    }
+  ]}
+/>
+
+### Q4: `server.py`という名前のPythonファイルを使用して開発用MCPサーバーを開始するために使用されるコマンドは何ですか？
+
+<Question
+  choices={[
+    {
+      text: "python server.py run",
+      explain: "`python`でPythonスクリプトを実行しますが、MCPには特定のCLIコマンドがあります。"
+    },
+    {
+      text: "mcp start server.py",
+      explain: "コマンドは`mcp start`ではなく`mcp dev`です。"
+    },
+    {
+      text: "mcp dev server.py",
+      explain: "正解です！このコマンドは開発サーバーを初期化します。",
+      correct: true
+    },
+    {
+      text: "serve mcp server.py",
+      explain: "これはコース資料に示されている標準的なMCP CLIコマンドではありません。"
+    }
+  ]}
+/>
+
+### Q5: MCPにおけるJSON-RPC 2.0の役割は何ですか？
+
+<Question
+  choices={[
+    {
+      text: "リモート通信の主要な転送メカニズムとして",
+      explain: "HTTP+SSEまたはStreamable HTTPが転送メカニズムです；JSON-RPCはメッセージ形式です。"
+    },
+    {
+      text: "クライアントとサーバー間のすべての通信のメッセージ形式として",
+      explain: "正解です！MCPはメッセージの構造化にJSON-RPC 2.0を使用します。",
+      correct: true
+    },
+    {
+      text: "AIモデルのデバッグツールとして",
+      explain: "人間が読める性質が通信のデバッグに役立ちますが、AIモデル自体のデバッグツールではありません。"
+    },
+    {
+      text: "ツールやリソースなどのAI機能を定義する方法として",
+      explain: "機能はそれら自身のスキーマによって定義されます；JSON-RPCはそれらを呼び出し、データを交換するために使用されます。"
+    }
+  ]}
+/>
+
+このクイズを完了おめでとうございます🥳！要素を復習する必要がある場合は、時間をかけて章を見直して知識を強化してください。 
