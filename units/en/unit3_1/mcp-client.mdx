@@ -66,12 +66,10 @@ Let's continue with the agent creation:
                 servers=[
                     {
                         "type": "stdio",
-                        "config": {
-                            "command": "python",
-                            "args": ["mcp_server.py"],
-                            "cwd": ".",
-                            "env": {"HF_TOKEN": HF_TOKEN} if HF_TOKEN else {},
-                        },
+                        "command": "python",
+                        "args": ["mcp_server.py"],
+                        "cwd": ".",
+                        "env": {"HF_TOKEN": HF_TOKEN} if HF_TOKEN else {},
                     }
                 ],
             )
