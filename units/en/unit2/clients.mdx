@@ -84,7 +84,7 @@ Cursor provides built-in MCP support, allowing you to connect your deployed MCP 
 
 ### Configuration
 
-Open Cursor settings (`Ctrl + Shift + J` / `Cmd + Shift + J`) → **MCP** tab → **Add new global MCP server**:
+Open Cursor settings (`Ctrl + Shift + J` / `Cmd + Shift + J`) → **Tools & Integrations** tab → **Add Custom MCP**:
 
 **macOS:**
 ```json
@@ -124,13 +124,28 @@ Open Cursor settings (`Ctrl + Shift + J` / `Cmd + Shift + J`) → **MCP** tab �
 }
 ```
 
-### Why We Use mcp-remote
+### Why We Use `mcp-remote`
 
-Most MCP clients, including Cursor, currently only support local servers via stdio transport and don't yet support remote servers with OAuth authentication. The `mcp-remote` tool serves as a bridge solution that:
+> **Note**: As of mid-2025, Cursor supports direct remote MCP connections via HTTP+SSE and OAuth. You may not need `mcp-remote` unless working with legacy setups or encountering specific compatibility issues.
 
-- Runs locally on your machine
-- Forwards requests from Cursor to the remote MCP server
+Earlier versions of MCP clients, including Cursor, only supported local servers via `stdio` transport and lacked support for remote servers with authentication. The `mcp-remote` tool was introduced as a workaround that:
+
+- Runs locally on your machine  
+- Bridges Cursor with remote MCP servers  
+- Handles transport and authentication implicitly  
 - Uses the familiar configuration file format
 
-Once configured, you can ask Cursor to use your sentiment analysis tool for tasks like analyzing code comments, user feedback, or pull request descriptions.
+While this is still useful in some edge cases, Cursor now supports native remote MCP integration. You can directly configure a remote server like this:
 
+```json
+{
+  "mcpServers": {
+    "my-server": {
+      "url": "https://your-mcp-server.hf.space/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+> See [Cursor’s official documentation](https://docs.cursor.com/context/mcp) for up-to-date setup instructions.
+
+Once configured, you can ask Cursor to use your sentiment analysis tool for tasks like analyzing code comments, user feedback, or pull request descriptions.
