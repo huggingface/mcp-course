@@ -267,17 +267,15 @@ Now, let's create an agent configuration file `agent.json`.
 
 ```json
 {
-    "model": "Qwen/Qwen2.5-72B-Instruct",
-    "provider": "nebius",
-    "servers": [
-        {
-            "type": "stdio",
-            "config": {
-                "command": "npx",
-                "args": ["@playwright/mcp@latest"]
-            }
-        }
-    ]
+	"model": "Qwen/Qwen2.5-72B-Instruct",
+	"provider": "nebius",
+	"servers": [
+		{
+			"type": "stdio",
+			"command": "npx",
+			"args": ["@playwright/mcp@latest"]
+		}
+	]
 }
 ```
 
