@@ -1,0 +1,139 @@
+# Gradio כלקוח MCP
+
+בסעיף הקודם, חקרנו כיצד ליצור שרת MCP באמצעות Gradio ולהתחבר אליו באמצעות לקוח MCP. בסעיף זה, נחקור כיצד להשתמש ב-Gradio כלקוח MCP כדי להתחבר לשרת MCP.
+
+<Tip>
+
+Gradio מתאים בצורה הטובה ביותר ליצירת לקוחות UI ושרתי MCP, אך ניתן גם להשתמש בו כלקוח MCP ולחשוף זאת כממשק משתמש.
+
+</Tip>
+
+נתחבר לשרת ה-MCP שיצרנו בסעיף הקודם ונשתמש בו כדי לענות על שאלות.
+
+## לקוח MCP ב-Gradio
+
+ראשית, עלינו להתקין את הספריות `smolagents`, gradio ו-mcp-client, אם עדיין לא עשינו זאת:
+
+```bash
+pip install "smolagents[mcp]" "gradio[mcp]" mcp
+```
+
+כעת, נוכל לייבא את הספריות הנדרשות וליצור ממשק Gradio פשוט המשתמש בלקוח MCP כדי להתחבר לשרת ה-MCP.
+
+
+```python
+import gradio as gr
+
+from mcp.client.stdio import StdioServerParameters
+from smolagents import InferenceClientModel, CodeAgent, ToolCollection
+from smolagents.mcp_client import MCPClient
+```
+
+לאחר מכן, נתחבר לשרת ה-MCP ונקבל את הכלים שנוכל להשתמש בהם כדי לענות על שאלות.
+
+```python
+mcp_client = MCPClient(
+    {"url": "http://localhost:7860/gradio_api/mcp/sse"}
+)
+tools = mcp_client.get_tools()
+```
+
+עכשיו שיש לנו את הכלים, נוכל ליצור סוכן פשוט המשתמש בהם כדי לענות על שאלות. לעת עתה, נשתמש ב-`InferenceClientModel` פשוט ובמודל ברירת המחדל מ-`smolagents`.
+
+```python
+model = InferenceClientModel()
+agent = CodeAgent(tools=[*tools], model=model)
+```
+
+כעת, נוכל ליצור ממשק Gradio פשוט המשתמש בסוכן כדי לענות על שאלות.
+
+```python
+demo = gr.ChatInterface(
+    fn=lambda message, history: str(agent.run(message)),
+    type="messages",
+    examples=["פירוק לגורמים ראשוניים של 68"],
+    title="סוכן עם כלי MCP",
+    description="זהו סוכן פשוט המשתמש בכלי MCP כדי לענות על שאלות.",
+    messages=[],
+)
+
+demo.launch()
+```
+
+וזהו! יצרנו ממשק Gradio פשוט המשתמש בלקוח MCP כדי להתחבר לשרת ה-MCP ולענות על שאלות.
+
+<iframe
+	src="https://mcp-course-unit2-gradio-client.hf.space"
+	frameborder="0"
+	width="850"
+	height="450"
+></iframe>
+
+
+## דוגמה מלאה
+
+הנה הדוגמה המלאה של לקוח ה-MCP ב-Gradio:
+
+```python
+import gradio as gr
+
+from mcp.client.stdio import StdioServerParameters
+from smolagents import InferenceClientModel, CodeAgent, ToolCollection
+from smolagents.mcp_client import MCPClient
+
+
+try:
+    mcp_client = MCPClient(
+        ## נסה דוגמה פעילה זו ב-hub:
+        # {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
+        {"url": "http://localhost:7860/gradio_api/mcp/sse"}
+    )
+    tools = mcp_client.get_tools()
+
+    model = InferenceClientModel()
+    agent = CodeAgent(tools=[*tools], model=model)
+
+    demo = gr.ChatInterface(
+        fn=lambda message, history: str(agent.run(message)),
+        type="messages",
+        examples=["פירוק לגורמים ראשוניים של 68"],
+        title="סוכן עם כלי MCP",
+        description="זהו סוכן פשוט המשתמש בכלי MCP כדי לענות על שאלות.",
+    )
+
+    demo.launch()
+finally:
+    mcp_client.disconnect()
+```
+
+תשים לב שאנחנו סוגרים את לקוח ה-MCP בבלוק `finally`. זה חשוב כי לקוח ה-MCP הוא אובייקט ארוך חיים שצריך להיסגר כאשר התוכנית יוצאת.
+
+## פריסה ל-Hugging Face Spaces
+
+כדי להפוך את השרת שלך זמין לאחרים, אתה יכול לפרוס אותו ל-Hugging Face Spaces, בדיוק כפי שעשינו בסעיף הקודם.
+כדי לפרוס את לקוח ה-MCP של Gradio ל-Hugging Face Spaces:
+
+1. צור Space חדש ב-Hugging Face:
+   - לך ל-huggingface.co/spaces
+   - לחץ על "Create new Space"
+   - בחר "Gradio" כ-SDK
+   - תן שם ל-space שלך (לדוגמה, "mcp-client")
+
+2. צור קובץ `requirements.txt`:
+```txt
+gradio[mcp]
+smolagents[mcp]
+```
+
+3. דחוף את הקוד שלך ל-Space:
+```bash
+git init
+git add server.py requirements.txt
+git commit -m "Initial commit"
+git remote add origin https://huggingface.co/spaces/YOUR_USERNAME/mcp-client
+git push -u origin main
+```
+
+## סיכום
+
+בסעיף זה, חקרנו כיצד להשתמש ב-Gradio כלקוח MCP כדי להתחבר לשרת MCP. ראינו גם כיצד לפרוס את לקוח ה-MCP ב-Hugging Face Spaces.

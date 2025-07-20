@@ -1,0 +1,223 @@
+# O Protocolo de Comunicação
+
+O MCP define um protocolo de comunicação padronizado que permite que Clientes e Servidores troquem mensagens de forma consistente e previsível. Essa padronização é fundamental para a interoperabilidade em toda a comunidade. Nesta seção, exploraremos a estrutura do protocolo e os mecanismos de transporte utilizados no MCP.
+
+<Tip warning={true}>
+
+Estamos entrando nos detalhes minuciosos do protocolo MCP. Você não precisará conhecer todos esses detalhes para construir com o MCP, mas é bom saber que eles existem e como funcionam.
+
+</Tip>
+
+## JSON-RPC: A Base
+
+Em sua essência, o MCP utiliza o **JSON-RPC 2.0** como formato de mensagem para toda a comunicação entre Clientes e Servidores. JSON-RPC é um protocolo leve de chamada de procedimento remoto codificado em JSON, o que o torna:
+
+- Legível por humanos e fácil de depurar
+- Agnóstico em relação à linguagem, permitindo implementação em qualquer ambiente de programação
+- Bem estabelecido, com especificações claras e ampla adoção
+
+![tipos de mensagens](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/5.png)
+
+O protocolo define três tipos de mensagens:
+
+### 1. Requisições
+
+Enviadas do Cliente para o Servidor para iniciar uma operação. Uma mensagem de Requisição inclui:
+- Um identificador único (`id`)
+- O nome do método a ser invocado (ex: `tools/call`)
+- Parâmetros para o método (se houver)
+
+Exemplo de Requisição:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "weather",
+    "arguments": {
+      "location": "San Francisco"
+    }
+  }
+}
+```
+
+### 2. Respostas
+
+Enviadas do Servidor para o Cliente em resposta a uma Requisição. Uma mensagem de Resposta inclui:
+- O mesmo `id` da Requisição correspondente
+- Um `result` (para sucesso) ou um `error` (para falha)
+
+Exemplo de Resposta com Sucesso:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "temperature": 62,
+    "conditions": "Partly cloudy"
+  }
+}
+```
+
+Exemplo de Resposta com Erro:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32602,
+    "message": "Invalid location parameter"
+  }
+}
+```
+
+### 3. Notificações
+
+Mensagens unidirecionais que não requerem resposta. Normalmente enviadas do Servidor para o Cliente para fornecer atualizações ou notificações sobre eventos.
+
+Exemplo de Notificação:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "progress",
+  "params": {
+    "message": "Processing data...",
+    "percent": 50
+  }
+}
+```
+
+## Mecanismos de Transporte
+
+O JSON-RPC define o formato da mensagem, mas o MCP também especifica como essas mensagens são transportadas entre Clientes e Servidores. Dois mecanismos principais de transporte são suportados:
+
+### stdio (Entrada/Saída Padrão)
+
+O transporte stdio é usado para comunicação local, onde o Cliente e o Servidor executam na mesma máquina:
+
+A aplicação Host inicia o Servidor como um subprocesso e se comunica com ele escrevendo em sua entrada padrão (stdin) e lendo de sua saída padrão (stdout).
+
+<Tip>
+
+**Casos de uso** para este transporte são ferramentas locais como acesso ao sistema de arquivos ou execução de scripts locais.
+
+</Tip>
+
+As principais **Vantagens** deste transporte são: é simples, não requer configuração de rede e é seguramente isolado pelo sistema operacional.
+
+### HTTP + SSE (Server-Sent Events) / HTTP Streamable
+
+O transporte HTTP+SSE é usado para comunicação remota, onde o Cliente e o Servidor podem estar em máquinas diferentes:
+
+A comunicação ocorre via HTTP, com o Servidor usando Server-Sent Events (SSE) para enviar atualizações ao Cliente através de uma conexão persistente.
+
+<Tip>
+
+**Casos de uso** para este transporte são conexões com APIs remotas, serviços em nuvem ou recursos compartilhados.
+
+</Tip>
+
+As principais **Vantagens** deste transporte são: funciona através de redes, permite integração com serviços web e é compatível com ambientes serverless.
+
+Atualizações recentes no padrão MCP introduziram ou refinaram o "HTTP Streamable", que oferece mais flexibilidade ao permitir que servidores façam upgrade dinâmico para SSE para streaming quando necessário, mantendo a compatibilidade com ambientes serverless.
+
+## O Ciclo de Vida da Interação
+
+Na seção anterior, discutimos o ciclo de vida de uma única interação entre um Cliente (💻) e um Servidor (🌐). Vamos agora examinar o ciclo de vida de uma interação completa entre um Cliente e um Servidor no contexto do protocolo MCP.
+
+O protocolo MCP define um ciclo de vida de interação estruturado entre Clientes e Servidores:
+
+### Inicialização
+
+O Cliente se conecta ao Servidor e eles trocam versões de protocolo e capacidades, e o Servidor responde com sua versão de protocolo suportada e capacidades.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>initialize</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>initialized</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+O Cliente confirma que a inicialização está completa através de uma mensagem de notificação.
+
+### Descoberta
+
+O Cliente solicita informações sobre capacidades disponíveis e o Servidor responde com uma lista de ferramentas disponíveis.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>tools/list</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+Este processo pode ser repetido para cada ferramenta, recurso ou tipo de prompt.
+
+### Execução
+
+O Cliente invoca capacidades com base nas necessidades do Host.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>tools/call</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>notification (progresso opcional)</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+### Encerramento
+
+A conexão é fechada de forma elegante quando não é mais necessária e o Servidor reconhece a solicitação de desligamento.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>shutdown</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>exit</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+O Cliente envia a mensagem final de saída para completar o encerramento.
+
+## Evolução do Protocolo
+
+O protocolo MCP é projetado para ser extensível e adaptável. A fase de inicialização inclui negociação de versão, permitindo compatibilidade retroativa à medida que o protocolo evolui. Além disso, a descoberta de capacidades permite que os Clientes se adaptem às características específicas oferecidas por cada Servidor, possibilitando uma mistura de Servidores básicos e avançados no mesmo ecossistema.

@@ -1,0 +1,79 @@
+# Construindo Clientes MCP
+
+Nesta seção, criaremos clientes que podem interagir com nosso servidor MCP usando diferentes linguagens de programação. Implementaremos tanto um cliente JavaScript usando HuggingFace.js quanto um cliente Python usando smolagents.
+
+## Configurando Clientes MCP
+
+A implantação eficaz de servidores e clientes MCP requer uma configuração adequada. A especificação MCP ainda está evoluindo, então os métodos de configuração estão sujeitos a mudanças. Vamos nos concentrar nas melhores práticas atuais para configuração.
+
+### Arquivos de Configuração MCP
+
+Hosts MCP usam arquivos de configuração para gerenciar conexões com servidores. Esses arquivos definem quais servidores estão disponíveis e como se conectar a eles.
+
+Os arquivos de configuração são muito simples, fáceis de entender e consistentes entre os principais hosts MCP.
+
+#### Estrutura do `mcp.json`
+
+O arquivo de configuração padrão para MCP é chamado `mcp.json`. Aqui está a estrutura básica:
+
+```json
+{
+  "servers": [
+    {
+      "name": "MCP Server",
+      "transport": {
+        "type": "sse",
+        "url": "http://localhost:7860/gradio_api/mcp/sse"
+      }
+    }
+  ]
+}
+```
+
+Neste exemplo, temos um único servidor configurado para usar o transporte SSE, conectando-se a um servidor Gradio local rodando na porta 7860.
+
+<Tip>
+
+Nos conectamos ao aplicativo Gradio via transporte SSE porque assumimos que o aplicativo gradio está sendo executado em um servidor remoto. No entanto, se você quiser se conectar a um script local, o transporte `stdio` em vez do transporte `sse` é uma opção melhor.
+
+</Tip>
+
+#### Configuração para Transporte HTTP+SSE
+
+Para servidores remotos usando o transporte HTTP+SSE, a configuração inclui a URL do servidor:
+
+```json
+{
+  "servers": [
+    {
+      "name": "Remote MCP Server",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/gradio_api/mcp/sse"
+      }
+    }
+  ]
+}
+```
+
+Essa configuração permite que seu cliente de interface do usuário se comunique com o servidor MCP do Gradio usando o protocolo MCP, permitindo uma integração perfeita entre seu frontend e o serviço MCP.
+
+## Configurando um Cliente MCP de Interface do Usuário
+
+Ao trabalhar com servidores Gradio MCP, você pode configurar seu cliente de interface do usuário para se conectar ao servidor usando o protocolo MCP. Veja como configurá-lo:
+
+### Configuração Básica
+
+Crie um novo arquivo chamado `config.json` com a seguinte configuração:
+
+```json
+{
+  "mcpServers": {
+    "mcp": {
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+Esta configuração permite que seu cliente de interface do usuário se comunique com o servidor MCP do Gradio usando o protocolo MCP, permitindo uma integração perfeita entre seu frontend e o serviço MCP.

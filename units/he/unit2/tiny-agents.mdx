@@ -1,0 +1,556 @@
+# סוכנים זעירים: סוכן מופעל-MCP ב-50 שורות קוד
+
+עכשיו שבנינו שרתי MCP ב-Gradio ולמדנו על יצירת לקוחות MCP, בואו נשלים את היישום שלנו מקצה לקצה על ידי בניית סוכן TypeScript שיכול לתקשר בקלות עם כלי ניתוח הרגשות שלנו. סעיף זה מבוסס על הפרויקט [Tiny Agents](https://huggingface.co/blog/tiny-agents), המדגים דרך פשוטה במיוחד לפריסת לקוחות MCP שיכולים להתחבר לשירותים כמו שרת ניתוח הרגשות של Gradio שבנינו.
+
+בתרגיל האחרון הזה של יחידה 2, נדריך אותך כיצד ליישם לקוח MCP של TypeScript (JS) שיכול לתקשר עם כל שרת MCP, כולל שרת ניתוח הרגשות מבוסס-Gradio שבנינו בסעיפים הקודמים. זה משלים את זרימת היישום MCP מקצה לקצה שלנו: מבניית שרת MCP של Gradio החושף כלי ניתוח רגשות, ועד ליצירת סוכן גמיש שיכול להשתמש בכלי זה לצד יכולות אחרות.
+
+![מים](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/thumbnail.jpg)
+<figcaption>קרדיט לתמונה https://x.com/adamdotdev</figcaption>
+
+## התקנה
+
+ראשית, עלינו להתקין את החבילה `tiny-agents`.
+
+```bash
+npm install @huggingface/tiny-agents
+# או
+pnpm add @huggingface/tiny-agents
+```
+
+לאחר מכן, עלינו להתקין את החבילה `mcp-remote`.
+
+```bash
+npm install @mcpjs/mcp-remote
+# או
+pnpm add @mcpjs/mcp-remote
+```
+
+## לקוח MCP של Tiny Agents בשורת הפקודה
+
+Tiny Agents יכול ליצור לקוחות MCP משורת הפקודה על בסיס קבצי תצורה JSON.
+
+בואו נגדיר פרויקט עם סוכן זעיר בסיסי.
+
+```bash
+mkdir my-agent
+touch my-agent/agent.json
+```
+
+קובץ ה-JSON ייראה כך:
+
+```json
+{
+	"model": "Qwen/Qwen2.5-72B-Instruct",
+	"provider": "nebius",
+	"servers": [
+		{
+			"type": "stdio",
+			"config": {
+				"command": "npx",
+				"args": [
+					"mcp-remote",
+					"http://localhost:7860/gradio_api/mcp/sse"
+				]
+			}
+		}
+	]
+}
+```
+
+כאן יש לנו סוכן זעיר בסיסי שיכול להתחבר לשרת ה-MCP של Gradio שלנו. הוא כולל מודל, ספק, ותצורת שרת.
+
+| שדה | תיאור |
+|-------|-------------|
+| `model` | המודל בקוד פתוח לשימוש עבור הסוכן |
+| `provider` | ספק ההיסק לשימוש עבור הסוכן |
+| `servers` | השרתים לשימוש עבור הסוכן. נשתמש בשרת `mcp-remote` עבור שרת ה-MCP של Gradio שלנו. |
+
+אנחנו יכולים גם להשתמש במודל קוד פתוח שרץ מקומית עם Tiny Agents.
+
+```json
+{
+	"model": "Qwen/Qwen3-32B",
+	"endpointUrl": "http://localhost:1234/v1",
+	"servers": [
+		{
+			"type": "stdio",
+			"config": {
+				"command": "npx",
+				"args": [
+					"mcp-remote",
+					"http://localhost:1234/v1/mcp/sse"
+				]
+			}
+		}
+	]
+}
+```
+
+כאן יש לנו סוכן זעיר שיכול להתחבר למודל מקומי. הוא כולל מודל, כתובת נקודת קצה (`http://localhost:1234/v1`), ותצורת שרת. נקודת הקצה צריכה להיות נקודת קצה תואמת OpenAI.
+
+אנחנו יכולים אז להפעיל את הסוכן עם הפקודה הבאה:
+
+```bash
+npx @huggingface/tiny-agents run ./my-agent
+```
+
+## לקוח MCP של Tiny Agents מותאם אישית
+
+עכשיו שאנחנו מבינים גם את Tiny Agents וגם את שרתי MCP של Gradio, בואו נראה איך הם עובדים יחד! היופי של MCP הוא שהוא מספק דרך סטנדרטית לסוכנים לתקשר עם כל שרת תואם-MCP, כולל שרת ניתוח הרגשות מבוסס-Gradio שלנו מהסעיפים הקודמים.
+
+### שימוש בשרת Gradio עם Tiny Agents
+
+כדי לחבר את הסוכן הזעיר שלנו לשרת ניתוח הרגשות של Gradio שבנינו קודם ביחידה זו, אנחנו רק צריכים להוסיף אותו לרשימת השרתים שלנו. הנה איך אנחנו יכולים לשנות את תצורת הסוכן שלנו:
+
+```ts
+const agent = new Agent({
+    provider: process.env.PROVIDER ?? "nebius",
+    model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+    apiKey: process.env.HF_TOKEN,
+    servers: [
+        // ... שרתים קיימים ...
+        {
+            command: "npx",
+            args: [
+                "mcp-remote",
+                "http://localhost:7860/gradio_api/mcp/sse"  // שרת ה-MCP של Gradio שלך
+            ]
+        }
+    ],
+});
+```
+
+עכשיו הסוכן שלנו יכול להשתמש בכלי ניתוח הרגשות לצד כלים אחרים! לדוגמה, הוא יכול:
+1. לקרוא טקסט מקובץ באמצעות שרת מערכת הקבצים
+2. לנתח את הרגש שלו באמצעות שרת ה-Gradio שלנו
+3. לכתוב את התוצאות בחזרה לקובץ
+
+### דוגמת אינטראקציה
+
+הנה איך שיחה עם הסוכן שלנו עשויה להיראות:
+
+```
+משתמש: קרא את הקובץ "feedback.txt" משולחן העבודה שלי ונתח את הרגש שלו
+
+סוכן: אעזור לך לנתח את הרגש של קובץ המשוב. בואו נפרק זאת לשלבים:
+
+1. ראשית, אקרא את הקובץ באמצעות כלי מערכת הקבצים
+2. לאחר מכן, אנתח את הרגש שלו באמצעות כלי ניתוח הרגשות
+3. לבסוף, אכתוב את התוצאות לקובץ חדש
+
+[הסוכן ממשיך להשתמש בכלים ולספק את הניתוח]
+```
+
+### שיקולי פריסה
+
+כאשר אתה פורס את שרת ה-MCP של Gradio ל-Hugging Face Spaces, תצטרך לעדכן את כתובת ה-URL של השרת בתצורת הסוכן שלך כדי שתצביע לחלל המפורס שלך:
+
+```ts
+{
+    command: "npx",
+    args: [
+        "mcp-remote",
+        "https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse"
+    ]
+}
+```
+
+זה מאפשר לסוכן שלך להשתמש בכלי ניתוח הרגשות מכל מקום, לא רק מקומית!
+
+## סיכום: היישום השלם מקצה לקצה של MCP שלנו
+
+ביחידה זו, עברנו מהבנת יסודות ה-MCP לבניית יישום שלם מקצה לקצה:
+
+1. יצרנו שרת MCP של Gradio שחושף כלי ניתוח רגשות
+2. למדנו כיצד להתחבר לשרת זה באמצעות לקוחות MCP
+3. בנינו סוכן זעיר ב-TypeScript שיכול לתקשר עם הכלי שלנו
+
+זה מדגים את הכוח של פרוטוקול הקשר המודל - אנחנו יכולים ליצור כלים מתמחים באמצעות מסגרות שאנחנו מכירים (כמו Gradio), לחשוף אותם דרך ממשק סטנדרטי (MCP), ואז לגרום לסוכנים להשתמש בכלים אלה בצורה חלקה לצד יכולות אחרות.
+
+הזרימה השלמה שבנינו מאפשרת לסוכן:
+- להתחבר למספר ספקי כלים
+- לגלות באופן דינמי כלים זמינים
+- להשתמש בכלי ניתוח הרגשות המותאם אישית שלנו
+- לשלב אותו עם יכולות אחרות כמו גישה למערכת קבצים וגלישה באינטרנט
+
+גישה מודולרית זו היא מה שהופך את MCP לכל כך עוצמתי לבניית יישומי בינה מלאכותית גמישים.
+
+## בונוס: בניית שרת MCP לאוטומציית דפדפן עם Playwright
+
+כבונוס, בואו נחקור כיצד להשתמש בשרת MCP של Playwright לאוטומציית דפדפן עם Tiny Agents. זה מדגים את יכולת ההרחבה של המערכת האקולוגית של MCP מעבר לדוגמת ניתוח הרגשות שלנו.
+
+<Tip>
+
+סעיף זה מבוסס על [פוסט הבלוג של Tiny Agents](https://huggingface.co/blog/tiny-agents) ומותאם לקורס MCP.
+
+</Tip>
+
+בסעיף זה, נראה לך כיצד לבנות סוכן שיכול לבצע משימות אוטומציית אינטרנט כמו חיפוש, לחיצה, ומיצוי מידע מאתרי אינטרנט.
+
+```ts
+// playwright-agent.ts
+import { Agent } from "@huggingface/tiny-agents";
+
+const agent = new Agent({
+  provider: process.env.PROVIDER ?? "nebius",
+  model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+  apiKey: process.env.HF_TOKEN,
+  servers: [
+    {
+      command: "npx",
+      args: ["playwright-mcp"]
+    }
+  ],
+});
+
+await agent.run();
+```
+
+שרת ה-MCP של Playwright חושף כלים המאפשרים לסוכן שלך:
+
+1. לפתוח כרטיסיות דפדפן
+2. לנווט ל-URL
+3. ללחוץ על אלמנטים
+4. להקליד בטפסים
+5. למצות תוכן מדפי אינטרנט
+6. לצלם צילומי מסך
+
+הנה דוגמת אינטראקציה עם סוכן אוטומציית הדפדפן שלנו:
+
+```
+משתמש: חפש "tiny agents" ב-GitHub ואסוף את השמות של 3 המאגרים המובילים
+
+סוכן: אחפש ב-GitHub מאגרים של "tiny agents".
+[הסוכן פותח דפדפן, מנווט ל-GitHub, מבצע את החיפוש, ומחלץ שמות מאגרים]
+
+הנה 3 המאגרים המובילים (לא אמיתיים) עבור "tiny agents":
+1. huggingface/tiny-agents
+2. modelcontextprotocol/tiny-agents-examples
+3. langchain/tiny-agents-js
+```
+
+יכולת אוטומציית דפדפן זו יכולה להשתלב עם שרתי MCP אחרים ליצירת זרימות עבודה עוצמתיות—לדוגמה, חילוץ טקסט מדף אינטרנט ואז ניתוחו עם כלים מותאמים אישית.
+
+## איך להריץ את ההדגמה המלאה
+
+אם יש לך NodeJS (עם `pnpm` או `npm`), פשוט הפעל זאת בטרמינל:
+
+```bash
+npx @huggingface/mcp-client
+```
+
+או אם משתמשים ב-`pnpm`:
+
+```bash
+pnpx @huggingface/mcp-client
+```
+
+זה מתקין את החבילה לתיקייה זמנית ואז מפעיל את הפקודה שלה.
+
+תראה את הסוכן הפשוט שלך מתחבר למספר שרתי MCP (הרצים מקומית), טוען את הכלים שלהם (בדומה לאיך שהוא יטען את כלי ניתוח הרגשות של Gradio שלך), ואז מבקש ממך שיחה.
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/use-filesystem.mp4" type="video/mp4">
+</video>
+
+כברירת מחדל הסוכן שלנו בדוגמה מתחבר לשני שרתי MCP הבאים:
+
+- [שרת מערכת הקבצים](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem) ה"קנוני", שמקבל גישה לשולחן העבודה שלך,
+- ושרת [Playwright MCP](https://github.com/microsoft/playwright-mcp), שיודע להשתמש בדפדפן Chromium מבודד עבורך.
+
+> [!NOTE]
+> הערה: זה קצת נגד האינטואיציה אבל כרגע, כל שרתי ה-MCP ב-tiny agents הם למעשה תהליכים מקומיים (אם כי שרתים מרוחקים יגיעו בקרוב).
+
+הקלט שלנו לסרטון הראשון הזה היה:
+
+> כתוב האיקו על קהילת Hugging Face וכתוב אותו לקובץ בשם "hf.txt" על שולחן העבודה שלי
+
+עכשיו בואו ננסה את הרמז הזה שכולל גלישה באינטרנט:
+
+> בצע חיפוש באינטרנט על ספקי היסק של HF ב-Brave Search ופתח את 3 התוצאות הראשונות
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/brave-search.mp4" type="video/mp4">
+</video>
+
+### מודל וספק ברירת מחדל
+
+מבחינת צמד מודל/ספק, סוכן הדוגמה שלנו משתמש כברירת מחדל ב:
+- ["Qwen/Qwen2.5-72B-Instruct"](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
+- רץ על [Nebius](https://huggingface.co/docs/inference-providers/providers/nebius)
+
+כל זה ניתן להגדרה דרך משתני סביבה:
+
+```ts
+const agent = new Agent({
+	provider: process.env.PROVIDER ?? "nebius",
+	model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+	apiKey: process.env.HF_TOKEN,
+	servers: [
+		// שרתי ברירת מחדל
+		{
+			command: "npx",
+			args: ["@modelcontextprotocol/servers", "filesystem"]
+		},
+		{
+			command: "npx",
+			args: ["playwright-mcp"]
+		},
+	],
+});
+```
+
+## יישום לקוח MCP מעל InferenceClient
+
+עכשיו שאנחנו יודעים מהו כלי ב-LLM עדכניים, בואו ניישם את לקוח ה-MCP עצמו שיתקשר עם שרתי MCP ושרתי MCP אחרים.
+
+התיעוד הרשמי ב-https://modelcontextprotocol.io/quickstart/client כתוב די טוב. אתה רק צריך להחליף כל אזכור של ה-SDK של לקוח Anthropic בכל SDK לקוח אחר תואם-OpenAI. (יש גם [llms.txt](https://modelcontextprotocol.io/llms-full.txt) שאתה יכול להזין ל-LLM שלך כדי לעזור לך לכתוב קוד).
+
+כתזכורת, אנחנו משתמשים ב-`InferenceClient` של HF עבור לקוח ההיסק שלנו.
+
+> [!TIP]
+> קובץ הקוד השלם של `McpClient.ts` נמצא [כאן](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/McpClient.ts) אם אתה רוצה לעקוב באמצעות הקוד האמיתי 🤓
+
+למחלקת `McpClient` שלנו יש:
+- לקוח היסק (עובד עם כל ספק היסק, ו-`huggingface/inference` תומך הן בנקודות קצה מרוחקות והן מקומיות)
+- סט של סשנים של לקוחות MCP, אחד לכל שרת MCP מחובר (זה מאפשר לנו להתחבר למספר שרתים)
+- ורשימה של כלים זמינים שתתמלא מהשרתים המחוברים ותעוצב מחדש מעט.
+
+```ts
+export class McpClient {
+	protected client: InferenceClient;
+	protected provider: string;
+	protected model: string;
+	private clients: Map<ToolName, Client> = new Map();
+	public readonly availableTools: ChatCompletionInputTool[] = [];
+
+	constructor({ provider, model, apiKey }: { provider: InferenceProvider; model: string; apiKey: string }) {
+		this.client = new InferenceClient(apiKey);
+		this.provider = provider;
+		this.model = model;
+	}
+	
+	// [...]
+}
+```
+
+כדי להתחבר לשרת MCP, ה-SDK הרשמי של TypeScript `@modelcontextprotocol/sdk/client` מספק מחלקת `Client` עם שיטת `listTools()`:
+
+```ts
+async addMcpServer(server: StdioServerParameters): Promise<void> {
+	const transport = new StdioClientTransport({
+		...server,
+		env: { ...server.env, PATH: process.env.PATH ?? "" },
+	});
+	const mcp = new Client({ name: "@huggingface/mcp-client", version: packageVersion });
+	await mcp.connect(transport);
+
+	const toolsResult = await mcp.listTools();
+	debug(
+		"Connected to server with tools:",
+		toolsResult.tools.map(({ name }) => name)
+	);
+
+	for (const tool of toolsResult.tools) {
+		this.clients.set(tool.name, mcp);
+	}
+
+	this.availableTools.push(
+		...toolsResult.tools.map((tool) => {
+			return {
+				type: "function",
+				function: {
+					name: tool.name,
+					description: tool.description,
+					parameters: tool.inputSchema,
+				},
+			} satisfies ChatCompletionInputTool;
+		})
+	);
+}
+```
+
+`StdioServerParameters` הוא ממשק מה-SDK של MCP שיאפשר לך בקלות להפעיל תהליך מקומי: כפי שציינו קודם, כרגע, כל שרתי ה-MCP הם למעשה תהליכים מקומיים.
+
+### איך להשתמש בכלים
+
+השימוש בכלי ניתוח הרגשות שלנו (או כל כלי MCP אחר) הוא פשוט. אתה פשוט מעביר את `this.availableTools` להשלמת צ'אט ה-LLM שלך, בנוסף למערך ההודעות הרגיל שלך:
+
+```ts
+const stream = this.client.chatCompletionStream({
+	provider: this.provider,
+	model: this.model,
+	messages,
+	tools: this.availableTools,
+	tool_choice: "auto",
+});
+```
+
+`tool_choice: "auto"` הוא הפרמטר שאתה מעביר כדי שה-LLM יצור אפס, אחת, או מספר קריאות לכלים.
+
+בעת ניתוח או הזרמת הפלט, ה-LLM יצור כמה קריאות לכלים (כלומר, שם פונקציה וכמה ארגומנטים מקודדי JSON), שאתה (כמפתח) צריך לחשב. לקוח ה-SDK של MCP שוב הופך את זה לקל מאוד; יש לו שיטת `client.callTool()`:
+
+```ts
+const toolName = toolCall.function.name;
+const toolArgs = JSON.parse(toolCall.function.arguments);
+
+const toolMessage: ChatCompletionInputMessageTool = {
+	role: "tool",
+	tool_call_id: toolCall.id,
+	content: "",
+	name: toolName,
+};
+
+/// קבל את הסשן המתאים לכלי זה
+const client = this.clients.get(toolName);
+if (client) {
+	const result = await client.callTool({ name: toolName, arguments: toolArgs });
+	toolMessage.content = result.content[0].text;
+} else {
+	toolMessage.content = `Error: No session found for tool: ${toolName}`;
+}
+```
+
+אם ה-LLM בוחר להשתמש בכלי, קוד זה ינתב אוטומטית את הקריאה לשרת ה-MCP, יבצע את הניתוח, ויחזיר את התוצאה בחזרה ל-LLM.
+
+לבסוף אתה תוסיף את הודעת הכלי שנוצרה למערך `messages` שלך ובחזרה ל-LLM.
+
+## הסוכן שלנו ב-50 שורות קוד 🤯
+
+עכשיו שיש לנו לקוח MCP המסוגל להתחבר לשרתי MCP שרירותיים כדי לקבל רשימות של כלים ומסוגל להזריק אותם ולנתח אותם מההיסק של ה-LLM, טוב... מהו סוכן?
+
+> ברגע שיש לך לקוח היסק עם סט של כלים, אז סוכן הוא רק לולאת while מעליו.
+
+ביתר פירוט, סוכן הוא פשוט שילוב של:
+- רמז מערכת
+- לקוח היסק LLM
+- לקוח MCP לחיבור סט של כלים אליו ממספר שרתי MCP
+- זרימת בקרה בסיסית (ראה למטה את לולאת ה-while)
+
+> [!TIP]
+> קובץ הקוד השלם של `Agent.ts` נמצא [כאן](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/Agent.ts).
+
+מחלקת Agent שלנו פשוט מרחיבה את McpClient:
+
+```ts
+export class Agent extends McpClient {
+	private readonly servers: StdioServerParameters[];
+	protected messages: ChatCompletionInputMessage[];
+
+	constructor({
+		provider,
+		model,
+		apiKey,
+		servers,
+		prompt,
+	}: {
+		provider: InferenceProvider;
+		model: string;
+		apiKey: string;
+		servers: StdioServerParameters[];
+		prompt?: string;
+	}) {
+		super({ provider, model, apiKey });
+		this.servers = servers;
+		this.messages = [
+			{
+				role: "system",
+				content: prompt ?? DEFAULT_SYSTEM_PROMPT,
+			},
+		];
+	}
+}
+```
+
+כברירת מחדל, אנחנו משתמשים ברמז מערכת פשוט מאוד בהשראת זה שהשותף במדריך רמזים של [GPT-4.1](https://cookbook.openai.com/examples/gpt4-1_prompting_guide).
+
+למרות שזה מגיע מ-OpenAI 😈, המשפט הזה בפרט חל על יותר ויותר מודלים, הן סגורים והן פתוחים:
+
+> אנו מעודדים מפתחים להשתמש בלעדית בשדה tools להעברת כלים, במקום להזריק תיאורי כלים באופן ידני לרמז שלך ולכתוב מנתח נפרד לקריאות לכלים, כפי שחלק דיווחו שעשו בעבר.
+
+כלומר, אנחנו לא צריכים לספק רשימות מפורמטות בקפידה של דוגמאות לשימוש בכלים ברמז. הפרמטר `tools: this.availableTools` מספיק, וה-LLM ידע כיצד להשתמש בכלי מערכת הקבצים.
+
+טעינת הכלים על הסוכן היא פשוט חיבור לשרתי ה-MCP שאנחנו רוצים (במקביל כי זה כל כך קל לעשות ב-JS):
+
+```ts
+async loadTools(): Promise<void> {
+	await Promise.all(this.servers.map((s) => this.addMcpServer(s)));
+}
+```
+
+אנחנו מוסיפים שני כלים נוספים (מחוץ ל-MCP) שיכולים לשמש את ה-LLM לזרימת הבקרה של הסוכן שלנו:
+
+```ts
+const taskCompletionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "task_complete",
+		description: "Call this tool when the task given by the user is complete",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const askQuestionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "ask_question",
+		description: "Ask a question to the user to get more info required to solve or clarify their problem.",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const exitLoopTools = [taskCompletionTool, askQuestionTool];
+```
+
+כאשר קוראים לכל אחד מהכלים האלה, הסוכן ישבור את הלולאה שלו ויחזיר שליטה למשתמש לקלט חדש.
+
+### לולאת ה-while השלמה
+
+ראו את לולאת ה-while השלמה שלנו.🎉
+
+העיקרון של לולאת ה-while העיקרית של הסוכן שלנו הוא שאנחנו פשוט מבצעים איטרציה עם ה-LLM מתחלפים בין קריאת כלים והזנת תוצאות הכלים אליו, ואנחנו עושים זאת **עד שה-LLM מתחיל להגיב עם שתי הודעות שאינן כלים ברצף**.
+
+זוהי לולאת ה-while השלמה:
+
+```ts
+let numOfTurns = 0;
+let nextTurnShouldCallTools = true;
+while (true) {
+	try {
+		yield* this.processSingleTurnWithTools(this.messages, {
+			exitLoopTools,
+			exitIfFirstChunkNoTool: numOfTurns > 0 && nextTurnShouldCallTools,
+			abortSignal: opts.abortSignal,
+		});
+	} catch (err) {
+		if (err instanceof Error && err.message === "AbortError") {
+			return;
+		}
+		throw err;
+	}
+	numOfTurns++;
+	const currentLast = this.messages.at(-1)!;
+	if (
+		currentLast.role === "tool" &&
+		currentLast.name &&
+		exitLoopTools.map((t) => t.function.name).includes(currentLast.name)
+	) {
+		return;
+	}
+	if (currentLast.role !== "tool" && numOfTurns > MAX_NUM_TURNS) {
+		return;
+	}
+	if (currentLast.role !== "tool" && nextTurnShouldCallTools) {
+		return;
+	}
+	if (currentLast.role === "tool") {
+		nextTurnShouldCallTools = false;
+	} else {
+		nextTurnShouldCallTools = true;
+	}
+}
+```
