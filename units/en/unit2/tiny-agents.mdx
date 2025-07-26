@@ -65,6 +65,7 @@ Let's setup a project with a basic Tiny Agent.
 ```bash
 mkdir my-agent
 touch my-agent/agent.json
+cd my-agent
 ```
 
 The JSON file will look like this:
@@ -76,13 +77,11 @@ The JSON file will look like this:
 	"servers": [
 		{
 			"type": "stdio",
-			"config": {
-				"command": "npx",
-				"args": [
-					"mcp-remote",
-					"http://localhost:7860/gradio_api/mcp/sse" // This is the MCP Server we created in the previous section
-				]
-			}
+			"command": "npx",
+			"args": [
+				"mcp-remote",
+				"http://localhost:7860/gradio_api/mcp/sse"
+			]
 		}
 	]
 }
@@ -91,7 +90,7 @@ The JSON file will look like this:
 We can then run the agent with the following command:
 
 ```bash
-npx @huggingface/tiny-agents run ./my-agent
+npx @huggingface/tiny-agents run agent.json
 ```
 
 </hfoption>
@@ -114,13 +113,11 @@ The JSON file will look like this:
 	"servers": [
 		{
 			"type": "stdio",
-			"config": {
-				"command": "npx",
-				"args": [
-					"mcp-remote", 
-					"http://localhost:7860/gradio_api/mcp/sse"
-				]
-			}
+			"command": "npx.cmd",
+			"args": [
+				"mcp-remote",
+				"http://localhost:7860/gradio_api/mcp/sse"
+			]
 		}
 	]
 }
@@ -154,13 +151,11 @@ We could also use an open source model running locally with Tiny Agents. If we s
 	"servers": [
 		{
 			"type": "stdio",
-			"config": {
-				"command": "npx",
-				"args": [
-					"mcp-remote",
-					"http://localhost:1234/v1/mcp/sse"
-				]
-			}
+			"command": "npx",
+			"args": [
+				"mcp-remote",
+				"http://localhost:1234/v1/mcp/sse"
+			]
 		}
 	]
 }
