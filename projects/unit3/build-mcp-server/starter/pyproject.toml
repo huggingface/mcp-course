@@ -5,7 +5,10 @@ description = "MCP server for PR template suggestions - Starter Code"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "mcp[cli]>=1.0.0",
+    "fastmcp>=2.11.2",
+    "mcp>=1.12.4",
+    "pydantic>=2.11.7",
+    "pydantic-core>=2.33.2",
 ]
 
 [project.optional-dependencies]
