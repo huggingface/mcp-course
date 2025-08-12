@@ -311,16 +311,18 @@ Create an agent configuration file at `my-agent/agent.json`:
 ```json
 {
 	"model": "Qwen/Qwen2.5-72B-Instruct",
-	"provider": "nebius",
-	"servers": [
-		{
-			"type": "stdio",
-			"config": {
-				"command": "npx",
-				"args": ["@playwright/mcp@latest"]
-			}
-		}
-	]
+    "provider": "nebius",
+    "servers": [
+        {
+            "type": "stdio",
+            "command": "npm",
+            "args": [
+                "exec",
+                "-y",
+                "@playwright/mcp@latest"
+            ]
+        }
+    ]
 }
 ```
 
