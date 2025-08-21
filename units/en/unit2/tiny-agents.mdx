@@ -75,13 +75,9 @@ The JSON file will look like this:
 	"provider": "nebius",
 	"servers": [
 		{
-			"type": "stdio",
-			"config": {
-				"command": "npx",
-				"args": [
-					"mcp-remote",
-					"http://localhost:7860/gradio_api/mcp/sse" // This is the MCP Server we created in the previous section
-				]
+         "type": "sse",
+         "url": "http://localhost:7860/gradio_api/mcp/sse"
+        }
 			}
 		}
 	]
