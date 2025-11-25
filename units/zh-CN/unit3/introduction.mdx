@@ -1,0 +1,26 @@
+# 高级 MCP 开发：为 Claude Code 构建自定义工作流服务器
+
+欢迎来到第三单元！在本单元中，我们将构建一个实用的 MCP 服务器，通过学习所有三种 MCP 原语来增强 Claude Code 的自定义开发工作流。
+
+如果你想听听 MCP 创建者的介绍，这里有一个他们制作的视频：
+
+<Youtube id="CQywdSdi5iA" />
+
+在这个视频中，Theo Chu、David Soria Parra 和 Alex Albert 深入探讨了模型上下文协议（MCP），这个正在改变 AI 应用程序如何连接外部数据和工具的标准。
+
+## 你将构建什么
+
+**PR Agent 工作流服务器** - 一个 MCP 服务器，演示如何让 Claude Code 具备团队感知和工作流智能：
+
+- **智能 PR 管理**：使用 MCP 工具根据代码变更自动选择 PR 模板
+- **CI/CD 监控**：通过 Cloudflare Tunnel 和标准化提示词跟踪 GitHub Actions
+- **团队沟通**：Slack 通知演示所有 MCP 原语协同工作
+
+## 真实世界案例研究
+
+我们将实现每个开发团队都会面临的实际场景：
+
+**之前**：开发者手动创建 PR，等待 Actions 完成，手动检查结果，记得通知团队成员
+
+**之后**：连接到你的工作流服务器的 Claude Code 可以智能地：
+- 根据更改的文件建议正确的 PR 模板

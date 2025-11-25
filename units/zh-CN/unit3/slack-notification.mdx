@@ -1,0 +1,367 @@
+# 模块 3：Slack 通知
+
+## 沟通鸿沟危机
+
+CodeCraft Studios 的第三周。你的自动化系统已经开始改变团队的工作方式：
+- **PR 助手**（模块 1）：开发者正在编写清晰、有帮助的拉取请求描述
+- **CI/CD 监控器**（模块 2）：团队能立即发现测试失败，防止 bug 进入生产环境
+
+团队感觉更有信心了……直到周一早上带来了新的危机。
+
+前端团队（Emma 和 Jake）整个周末都在调试一个棘手的 API 集成问题。他们尝试了所有方法：检查网络调用、验证请求格式，甚至重写了错误处理。最后，在周日凌晨 2 点，他们发现后端团队在周五就修复了这个确切的问题，并将修复部署到了预发布环境——但忘记通知了。
+
+"我们浪费了 12 个小时解决一个已经被修复的问题！"Emma 沮丧地说。
+
+与此同时，设计团队上周完成了新用户引导流程的插图，但前端团队不知道它们已经准备好了。那些精美的资源仍然闲置着，而团队却在使用临时设计。
+
+团队意识到他们有信息孤岛问题。每个人都在努力工作，但他们没有有效地沟通正在发生的事情。
+
+**你的任务**：通过智能 Slack 通知完成自动化系统，自动让整个团队了解重要的进展。
+
+## 你将构建什么
+
+这个最终模块完成了 CodeCraft Studios 的转型。你将集成工具和提示词来创建一个智能通知系统，该系统会发送关于 CI/CD 事件的格式化 Slack 消息，展示所有 MCP 原语如何在真实场景中协同工作。
+
+在模块 1 和 2 的基础上，你将添加最后一块拼图：
+- **Slack webhook 工具**，用于向团队频道发送消息
+- **两个通知提示词**，智能地格式化 CI 事件
+- **完整集成**，展示所有 MCP 原语协同工作
+
+### 演示视频：完整的自动化系统！🎉
+
+<Youtube id="sX5qrbDG-oY" />
+
+**最后一块拼图**：观看你的完整自动化系统如何防止困扰 Emma 和 Jake 的周一早晨意外！
+
+**你将看到的内容**：
+- **Claude 的智能工作流** - 注意 Claude 如何分解任务：☐ 检查事件 → ☐ 发送通知
+- **实时 MCP 工具运行** - `get_recent_actions_events` 拉取最新的 CI 数据，然后 `send_slack_notification` 发送警报
+- **并排演示** - Slack 频道并行打开，显示 Claude 发送时出现的格式化消息
+
+**智能通知**：Claude 不只是向团队发送垃圾信息——它精心制作了一个专业的警报，包含：
+- 🚨 清晰的紧急指示器和表情符号
+- **详细的失败分析**（test-auth-service ❌、test-api ❌、test-frontend ⏳）
+- **可操作的链接**，指向流水线运行和拉取请求
+- **每个人需要的上下文** - 仓库、PR #1 "各种改进"、提交哈希
+
+**为什么这很重要**：还记得沟通鸿沟危机吗？不再有了！这个系统确保当 `demo-bad-pr` 分支的 CI 失败时，整个团队立即知道。不再有周末调试已经被修复的问题！
+
+**完整的旅程**：从模块 1 的 PR 混乱到模块 3 的智能团队通知——你已经构建了一个改变 CodeCraft Studios 协作方式的系统。周末战士变成了知情的团队成员！🚀
+
+## 学习目标
+
+在本模块结束时，你将理解：
+1. 如何使用 MCP 工具集成外部 API
+2. 如何结合工具和提示词实现完整的工作流
+3. 如何使用 Slack markdown 格式化富文本消息
+4. 所有 MCP 原语如何在实践中协同工作
+
+## 前置条件
+
+你需要前面模块的所有内容，以及：
+- **完成模块 1 和 2** - 本模块直接扩展你现有的 MCP 服务器
+- **一个 Slack 工作区**，你可以在其中创建传入 webhook（个人工作区也可以）
+- **REST API 的基本理解** - 你将向 Slack 的 webhook 端点发送 HTTP 请求
+
+## 核心概念
+
+### MCP 集成模式
+
+本模块演示了完整的工作流：
+1. **事件** → GitHub Actions webhook（来自模块 2）
+2. **提示词** → 将事件格式化为可读消息
+3. **工具** → 将格式化的消息发送到 Slack
+4. **结果** → 专业的团队通知
+
+### Slack Markdown 格式化
+
+你将使用 [Slack 的 markdown](https://api.slack.com/reference/surfaces/formatting) 来创建富文本消息：
+- [`*粗体文本*`](https://api.slack.com/reference/surfaces/formatting#visual-styles) 用于强调
+- [`_斜体文本_`](https://api.slack.com/reference/surfaces/formatting#visual-styles) 用于细节
+- [`` `代码块` ``](https://api.slack.com/reference/surfaces/formatting#inline-code) 用于技术信息
+- [`> 引用文本`](https://api.slack.com/reference/surfaces/formatting#quotes) 用于摘要
+- [表情符号](https://api.slack.com/reference/surfaces/formatting#emoji)：✅ ❌ 🚀 ⚠️
+- [链接](https://api.slack.com/reference/surfaces/formatting#linking-urls)：`<https://github.com/user/repo|仓库>`
+
+## 项目结构
+
+```
+slack-notification/
+├── starter/          # 你的起点
+│   ├── server.py     # 模块 1+2 代码 + TODO
+│   ├── webhook_server.py  # 来自模块 2
+│   ├── pyproject.toml
+│   └── README.md
+└── solution/         # 完整实现
+    ├── server.py     # 完整的 Slack 集成
+    ├── webhook_server.py
+    └── README.md
+```
+
+## 实现步骤
+
+### 步骤 1：设置 Slack 集成（10 分钟）
+
+1. 创建 Slack webhook：
+   - 访问 [Slack API Apps](https://api.slack.com/apps)
+   - 创建新应用 → "从头开始"（[创建应用指南](https://api.slack.com/authentication/basics#creating)）
+   - 应用名称："MCP Course Notifications"
+   - 选择你的工作区
+   - 进入"功能" → "[传入 Webhooks](https://api.slack.com/messaging/webhooks)"
+   - [激活传入 webhooks](https://api.slack.com/messaging/webhooks#enable_webhooks)
+   - 点击"添加新的 Webhook 到工作区"
+   - 选择频道并授权（[Webhook 设置指南](https://api.slack.com/messaging/webhooks#getting_started)）
+   - 复制 webhook URL
+
+2. 测试 webhook 是否工作（遵循 [webhook 发布示例](https://api.slack.com/messaging/webhooks#posting_with_webhooks)）：
+   ```bash
+   curl -X POST -H 'Content-type: application/json' \
+     --data '{"text":"Hello from MCP Course!"}' \
+     YOUR_WEBHOOK_URL
+   ```
+
+3. 设置环境变量：
+   ```bash
+   export SLACK_WEBHOOK_URL="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+   ```
+
+   **⚠️ 安全提示**：webhook URL 是一个敏感的密钥，授予向你的 Slack 频道发布消息的权限。始终：
+   - 将其存储为环境变量，永远不要在代码中硬编码
+   - 永远不要将 webhook URL 提交到版本控制（添加到 .gitignore）
+   - 像对待密码一样对待它 - 任何拥有此 URL 的人都可以向你的频道发送消息
+
+> [!WARNING]
+> **安全警报**：Webhook URL 是敏感凭证！任何拥有你的 webhook URL 的人都可以向你的 Slack 频道发送消息。始终将它们存储为环境变量，永远不要提交到版本控制。
+
+### 步骤 2：添加 Slack 工具（15 分钟）
+
+现在你有了一个可工作的 webhook，你将向模块 2 的现有 server.py 添加一个新的 MCP 工具。这个工具将通过向 webhook URL 发送 HTTP 请求来处理向 Slack 发送通知。
+
+> [!TIP]
+> **注意**：起始代码包含了模块 1 和 2 的所有改进（输出限制、webhook 处理）。专注于新的 Slack 集成！
+
+将此工具添加到你的 server.py：
+
+**`send_slack_notification`**：
+- 接受一个消息字符串参数
+- 从环境变量读取 webhook URL
+- 向 Slack webhook 发送 POST 请求
+- 返回成功/失败消息
+- 处理基本错误情况
+
+```python
+import os
+import requests
+from mcp.types import TextContent
+
+@mcp.tool()
+def send_slack_notification(message: str) -> str:
+    """向团队 Slack 频道发送格式化通知。"""
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+    if not webhook_url:
+        return "错误：未设置 SLACK_WEBHOOK_URL 环境变量"
+    
+    try:
+        # TODO: 向 webhook_url 发送 POST 请求
+        # TODO: 在 JSON 负载中包含消息，并设置 "mrkdwn": true
+        # TODO: 处理响应并返回状态
+        pass
+    except Exception as e:
+        return f"发送消息时出错：{str(e)}"
+```
+
+### 步骤 3：创建格式化提示词（15 分钟）
+
+接下来，你将向服务器添加 MCP 提示词——这就是魔法发生的地方！这些提示词将与 Claude 协作，自动将你的 GitHub webhook 数据格式化为结构良好的 Slack 消息。记住模块 1 中提到的，提示词提供了 Claude 可以一致使用的可重用指令。
+
+实现两个生成 Slack 格式化消息的提示词：
+
+1. **`format_ci_failure_alert`**：
+   ```python
+   @mcp.prompt()
+   def format_ci_failure_alert() -> str:
+       """为 CI/CD 失败创建 Slack 警报。"""
+       return """将此 GitHub Actions 失败格式化为 Slack 消息：
+
+   使用此模板：
+   :rotating_light: *CI 失败警报* :rotating_light:
+   
+   CI 工作流失败：
+   *工作流*：workflow_name
+   *分支*：branch_name
+   *状态*：失败
+   *查看详情*：<LOGS_LINK|查看日志>
+   
+   请检查日志并解决任何问题。
+   
+   使用 Slack markdown 格式，保持简洁以便团队快速扫描。"""
+   ```
+
+2. **`format_ci_success_summary`**：
+   ```python
+   @mcp.prompt()
+   def format_ci_success_summary() -> str:
+       """创建庆祝成功部署的 Slack 消息。"""
+       return """将此成功的 GitHub Actions 运行格式化为 Slack 消息：
+
+   使用此模板：
+   :white_check_mark: *部署成功* :white_check_mark:
+   
+   [仓库名称] 部署成功完成
+   
+   *变更：*
+   - 关键功能或修复 1
+   - 关键功能或修复 2
+   
+   *链接：*
+   <PR_LINK|查看变更>
+   
+   保持庆祝但信息丰富。使用 Slack markdown 格式。"""
+   ```
+
+### 步骤 4：测试完整工作流（10 分钟）
+
+现在到了激动人心的部分——测试你的完整 MCP 工作流！你将让所有三个组件协同工作：来自模块 2 的 webhook 捕获、来自本模块的提示词格式化，以及 Slack 通知。
+
+1. 启动所有服务（就像模块 2 一样，但现在有了 Slack 集成）：
+   ```bash
+   # 终端 1：启动 webhook 服务器
+   python webhook_server.py
+   
+   # 终端 2：启动 MCP 服务器
+   uv run server.py
+   
+   # 终端 3：启动 Cloudflare Tunnel
+   cloudflared tunnel --url http://localhost:8080
+   ```
+
+2. 使用 Claude Code 测试完整集成：
+   - **配置 GitHub webhook**，使用 tunnel URL（与模块 2 相同）
+   - **推送变更**以触发 GitHub Actions
+   - **询问 Claude** 检查最近的事件并使用你的提示词格式化它们
+   - **让 Claude 发送**使用你的 Slack 工具格式化的消息
+   - **验证**通知出现在你的 Slack 频道中
+
+### 步骤 5：验证集成（5 分钟）
+
+你可以在不设置真实 GitHub 仓库的情况下测试你的实现！查看 `manual_test.md` 获取模拟 GitHub webhook 事件的 curl 命令。
+
+**理解 webhook 事件流：**
+- 你的 webhook 服务器（来自模块 2）捕获 GitHub 事件并将它们存储在 `github_events.json` 中
+- 你的 MCP 工具从此文件读取以获取最近的 CI/CD 活动
+- Claude 使用你的格式化提示词创建可读消息
+- 你的 Slack 工具将格式化的消息发送到你的团队频道
+- 这创建了一个完整的管道：GitHub → 本地存储 → Claude 分析 → Slack 通知
+
+**快速测试工作流：**
+1. 使用 curl 向你的 webhook 服务器发送虚假的 GitHub 事件
+2. 让 Claude 检查最近的事件并格式化它们
+3. 将格式化的消息发送到 Slack
+4. 验证端到端的一切工作正常
+
+**手动测试替代方案：**为了在不设置 GitHub 的情况下获得完整的测试体验，请遵循 `manual_test.md` 中的逐步 curl 命令。
+
+## Claude Code 中的示例工作流
+
+```
+用户："检查最近的 CI 事件并通知团队任何失败"
+
+Claude：
+1. 使用 get_recent_actions_events（来自模块 2）
+2. 发现工作流失败
+3. 使用 format_ci_failure_alert 提示词创建消息
+4. 使用 send_slack_notification 工具发送它
+5. 报告："已向 #dev-team 频道发送失败警报"
+```
+
+## 预期的 Slack 消息输出
+
+**失败警报：**
+```
+🚨 *CI 失败警报* 🚨
+
+CI 工作流失败：
+*工作流*：CI（运行 #42）
+*分支*：feature/slack-integration
+*状态*：失败
+*查看详情*：<https://github.com/user/mcp-course/actions/runs/123|查看日志>
+
+请检查日志并解决任何问题。
+```
+
+**成功摘要：**
+```
+✅ *部署成功* ✅
+
+mcp-course 部署成功完成
+
+*变更：*
+- 添加了团队通知系统
+- 集成了 MCP 工具和提示词
+
+*链接：*
+<https://github.com/user/mcp-course/pull/42|查看变更>
+```
+
+## 常见问题
+
+### Webhook URL 问题
+- 验证环境变量设置正确
+- 在集成之前直接使用 curl 测试 webhook
+- 确保 Slack 应用具有适当的权限
+
+### 消息格式化
+- [Slack markdown](https://api.slack.com/reference/surfaces/formatting) 与 GitHub markdown 不同
+- **重要**：使用 `*文本*` 表示粗体（不是 `**文本**`）
+- 在 webhook 负载中包含 `"mrkdwn": true` 以实现正确的格式化
+- 在自动化之前手动测试消息格式
+- 正确处理提交消息中的特殊字符（[格式化参考](https://api.slack.com/reference/surfaces/formatting#escaping)）
+
+### 网络错误
+- 向 webhook 请求添加基本的超时处理（[webhook 错误处理](https://api.slack.com/messaging/webhooks#handling_errors)）
+- 从工具返回有意义的错误消息
+- 如果请求失败，检查互联网连接
+
+## 关键要点
+
+你现在已经构建了一个完整的 MCP 工作流，展示了：
+- **工具**用于外部 API 集成（Slack webhooks）
+- **提示词**用于智能消息格式化
+- **集成**所有 MCP 原语协同工作
+- **真实世界应用**，团队可以实际使用
+
+这展示了 MCP 在构建实用开发自动化工具方面的强大功能！
+
+> [!TIP]
+> **关键学习**：你现在已经构建了一个完整的 MCP 工作流，将工具（用于外部 API 调用）与提示词（用于一致的格式化）结合起来。这种工具 + 提示词的模式是高级 MCP 开发的基础，可以应用于许多其他自动化场景。
+
+## 下一步
+
+恭喜！你已经完成了单元 3 的最后一个模块，并构建了一个完整的端到端自动化系统。你在所有三个模块中的旅程为你提供了以下实践经验：
+
+- **模块 1**：MCP 工具和智能数据分析
+- **模块 2**：实时 webhooks 和 MCP 提示词
+- **模块 3**：外部 API 集成和工作流完成
+
+### 接下来做什么：
+1. **测试你的完整系统** - 尝试触发真实的 GitHub 事件并观察完整的管道工作
+2. **尝试自定义** - 修改 Slack 消息格式或添加新的通知类型
+3. **查看单元 3 结论** - 反思你学到的一切并探索下一步
+4. **分享你的成功** - 向团队成员展示 MCP 如何自动化你的开发工作流
+
+你现在拥有了使用 MCP 构建智能自动化系统的坚实基础！
+
+### 转型完成！
+CodeCraft Studios 已经从混乱的开发转变为一台运转良好的机器。你构建的自动化系统处理：
+- **智能 PR 描述**，帮助审查者理解变更
+- **实时 CI/CD 监控**，在失败到达生产环境之前捕获它们
+- **智能团队通知**，自动让每个人保持知情
+
+团队现在可以专注于构建优秀的产品，而不是与流程问题作斗争。你已经学会了可以应用于任何自动化挑战的高级 MCP 模式！
+
+## 其他资源
+
+- [Slack 传入 Webhooks 文档](https://api.slack.com/messaging/webhooks)
+- [Slack 消息格式化指南](https://api.slack.com/reference/surfaces/formatting)
+- [MCP 工具文档](https://modelcontextprotocol.io/docs/concepts/tools)
+- [MCP 提示词指南](https://modelcontextprotocol.io/docs/concepts/prompts)

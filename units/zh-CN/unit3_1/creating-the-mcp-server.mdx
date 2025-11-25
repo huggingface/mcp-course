@@ -1,0 +1,93 @@
+# 创建 MCP 服务器
+
+MCP 服务器是我们 Pull Request 代理的核心。它提供了代理将用于与 Hugging Face Hub 交互的工具，特别是用于读取和更新模型仓库标签。在本节中，我们将使用 FastMCP 和 Hugging Face Hub Python SDK 构建服务器。
+
+## 理解 MCP 服务器架构
+
+我们的 MCP 服务器提供两个基本工具：
+
+| 工具 | 描述 |
+| --- | --- |
+| `get_current_tags` | 从模型仓库检索现有标签 |
+| `add_new_tag` | 通过 pull request 向仓库添加新标签 |
+
+这些工具抽象了 Hub API 交互的复杂性，为我们的代理提供了一个简洁的工作接口。
+
+![MCP 服务器工具](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/architecture.png)
+
+## 完整的 MCP 服务器实现
+
+让我们逐步创建 `mcp_server.py` 文件。我们将逐步构建，以便您理解每个组件以及它们如何协同工作。
+
+### 1. 导入和配置
+
+首先，让我们设置所有必要的导入和配置。
+
+```python
+#!/usr/bin/env python3
+"""
+使用 FastMCP 的 HuggingFace Hub 标签操作简化 MCP 服务器
+"""
+
+import os
+import json
+from fastmcp import FastMCP
+from huggingface_hub import HfApi, model_info, ModelCard, ModelCardData
+from huggingface_hub.utils import HfHubHTTPError
+from dotenv import load_dotenv
+
+load_dotenv()
+```
+
+上面的导入为我们提供了构建 MCP 服务器所需的一切。`FastMCP` 提供服务器框架，而 `huggingface_hub` 导入为我们提供了与模型仓库交互的工具。
+
+`load_dotenv()` 调用会自动从 `.env` 文件加载环境变量，使得在开发过程中管理 API 令牌等秘密信息变得容易。
+
+> [!TIP]
+> 如果您使用 uv，可以在项目根目录创建一个 `.env` 文件，如果使用 `uv run` 运行服务器，则不需要使用 `load_dotenv()`。
+
+接下来，我们将使用必要的凭据配置服务器并创建 FastMCP 实例：
+
+```python
+# 配置
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+# 初始化 HF API 客户端
+hf_api = HfApi(token=HF_TOKEN) if HF_TOKEN else None
+
+# 创建 FastMCP 服务器
+mcp = FastMCP("hf-tagging-bot")
+```
+
+这个配置块做了三件重要的事情：
+1. 从环境变量中检索 Hugging Face 令牌
+2. 创建一个经过身份验证的 API 客户端（仅在令牌可用时）
+3. 使用描述性名称初始化我们的 FastMCP 服务器
+
+`hf_api` 的条件创建确保即使没有令牌，我们的服务器也可以启动，这对于测试基本结构很有用。
+
+### 2. 获取当前标签工具
+
+现在让我们实现第一个工具 - `get_current_tags`。此工具从模型仓库检索现有标签：
+
+```python
+@mcp.tool()
+def get_current_tags(repo_id: str) -> str:
+    """从 HuggingFace 模型仓库获取当前标签"""
+    print(f"🔧 get_current_tags 调用，repo_id: {repo_id}")
+
+    if not hf_api:
+        error_result = {"error": "HF token not configured"}
+        json_str = json.dumps(error_result)
+        print(f"❌ 没有 HF API 令牌 - 返回: {json_str}")
+        return json_str
+```
+
+函数从验证开始 - 检查我们是否有经过身份验证的 API 客户端。注意我们返回的是 JSON 字符串而不是 Python 对象。这对于 MCP 通信至关重要。
+
+> [!TIP]
+> 所有 MCP 工具必须返回字符串，而不是 Python 对象。这就是为什么我们使用 `json.dumps()` 将结果转换为 JSON 字符串。这确保了 MCP 服务器和客户端之间可靠的数据交换。
+
+让我们继续 `get_current_tags` 函数的主要逻辑：
+
+```python

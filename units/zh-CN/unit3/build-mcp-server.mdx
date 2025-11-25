@@ -1,0 +1,365 @@
+# 模块 1：构建 MCP 服务器
+
+## CodeCraft Studios 的 PR 混乱
+
+这是你在 CodeCraft Studios 的第一周，你正在目睹一些让每个开发者都感到头疼的事情。团队的拉取请求看起来是这样的：
+
+- "stuff"（一些东西）
+- "more changes"（更多更改）
+- "fix"（修复）
+- "update things"（更新内容）
+
+与此同时，代码审查积压越来越多，因为审查者无法理解发生了什么变化或为什么要这样做。后端团队的 Sarah 花了 30 分钟试图弄清楚"various improvements"（各种改进）实际上是什么意思，而前端的 Mike 不得不翻阅 47 个文件来理解一个"small fix"（小修复）。
+
+团队知道他们需要更好的 PR 描述，但每个人都忙于交付功能，没时间写详细的说明。他们需要一个既能提供帮助又不会拖慢进度的解决方案。
+
+**你的任务**：构建一个智能 PR 代理，自动分析代码变更并建议有用的描述。
+
+### 演示视频：PR 问题实况 😬
+
+<Youtube id="tskAUPWFPP0" />
+
+**你将看到**：CodeCraft Studios 的一个真实 PR，标题为"various improvements"（各种改进），描述只是简单地说"Fixed some stuff and made updates"（修复了一些东西并做了更新）。很经典，对吧？
+
+**困惑时刻**：观看团队成员的挣扎：
+- **Sarah**（3 小时前）："修复了什么？我看到 User 模型有变化，但无法判断这是在解决 bug 还是添加功能"
+- **Jamie**（3 小时前）："有 8 个文件分布在 4 个服务中……这些更改有关联吗？我在审查时应该关注什么？"
+
+**痛点**：演示视频展示了实际的差异——8 个文件分散在多个服务中，完全没有上下文。审查者必须自己拼凑故事，浪费宝贵的时间，可能还会错过关键问题。
+
+**为什么这很重要**：这正是你的 MCP 服务器将要解决的 PR 混乱！在本模块结束时，你将把这些神秘的 PR 转变为清晰、可操作的描述，让每个人的生活更轻松。
+
+## 你将构建什么
+
+在第一个模块中，你将创建 CodeCraft Studios 自动化系统的基础：一个 MCP 服务器，它将改变团队编写拉取请求的方式。本模块专注于核心 MCP 概念，你将在模块 2 和 3 中进一步构建。
+
+### 演示视频：你的 PR 代理拯救世界！🚀
+
+<Youtube id="OaAWJLvnlqc" />
+
+**解决方案实况**：观看你的 MCP 服务器如何将 PR 混乱转变为清晰：
+1. **`analyze_file_changes`** - 获取所有更改（8 个文件中的 453 行！）
+2. **`get_pr_templates`** - 向 Claude 展示 7 个可选模板
+3. **`suggest_template`** - Claude 选择"Feature"（功能）（明智的选择！）
+
+**你将看到**：Claude 不仅仅是选择一个模板——它还会：
+- 写一个清晰的摘要，说明实际发生了什么变化
+- 发现安全问题（哎呀，未加密的密码！）
+- 创建一个后续工作的待办事项列表
+- 甚至优先考虑需要首先修复的内容
+
+**"哇"时刻** ✨：在短短几秒钟内，你的 MCP 服务器帮助 Claude 将同一个分支转变为一个真正解释发生了什么的 PR。不再有困惑的审查者，不再有"这是做什么的？"的评论。
+
+**这就是你将构建的**：一个将 PR 恐惧转变为 PR 喜悦的工具——让我们开始吧！
+
+## 你将学到什么
+
+在这个基础模块中，你将掌握：
+- **如何使用 FastMCP 创建基本的 MCP 服务器** - 模块 2 和 3 的构建块
+- **实现用于数据检索和分析的 MCP 工具** - 你将在整个单元 3 中使用的核心原语
+- **让 Claude 基于原始数据做出智能决策** - 所有 MCP 开发的关键原则
+- **测试和验证你的 MCP 服务器** - 构建可靠工具的基本技能
+
+## 概述
+
+你的 PR 代理将使用 MCP 开发的一个关键原则来解决 CodeCraft Studios 的问题：不是硬编码关于什么是好 PR 的僵化规则，而是向 Claude 提供原始 git 数据，让它智能地建议适当的描述。
+
+这种方法有效是因为：
+- **灵活分析**：Claude 可以理解简单规则遗漏的上下文
+- **自然语言**：建议感觉像人类，而不是机器人
+- **适应性强**：适用于任何代码库或编码风格
+
+你将实现三个基本工具，为整个自动化系统建立模式：
+
+1. **analyze_file_changes** - 检索 git diff 信息和更改的文件（数据收集）
+2. **get_pr_templates** - 列出可用的 PR 模板（资源管理）
+3. **suggest_template** - 允许 Claude 推荐最合适的模板（智能决策）
+
+## 入门
+
+### 前置条件
+
+- Python 3.10 或更高版本
+- 已安装 Git 和一个用于测试的 git 仓库
+- uv 包管理器（[安装指南](https://docs.astral.sh/uv/getting-started/installation/)）
+
+### 起始代码
+
+克隆起始代码仓库：
+
+```bash
+git clone https://github.com/huggingface/mcp-course.git
+```
+
+导航到起始代码目录：
+
+```bash
+cd mcp-course/projects/unit3/build-mcp-server/starter
+```
+
+安装依赖：
+
+> [!TIP]
+> 你可能想为这个项目创建一个虚拟环境：
+>
+> ```bash
+> uv venv .venv
+> source .venv/bin/activate # 在 Windows 上使用：.venv\Scripts\activate
+> ```
+
+```bash
+uv sync --all-extras
+```
+
+### 你的任务
+
+这是你第一次动手 MCP 开发体验！打开 `server.py` 并按照 TODO 注释实现三个工具。起始代码提供了基本结构 - 你需要：
+
+1. **实现 `analyze_file_changes`** 来运行 git 命令并返回 diff 数据
+   - ⚠️ **重要**：你可能会遇到令牌限制错误（每个响应最多 25,000 个令牌）
+   - 这是一个真实世界的约束，教你正确的输出管理
+   - 请参阅下面的"处理大型输出"部分了解解决方案
+   - ⚠️ **注意**：Git 命令默认在 MCP 服务器的目录中运行。有关详细信息，请参阅下面的"工作目录注意事项"
+2. **实现 `get_pr_templates`** 来管理和返回 PR 模板
+3. **实现 `suggest_template`** 来将更改类型映射到模板
+
+不要担心把所有事情都做得完美 - 随着你在本单元的进展，你将完善这些技能。
+
+### 设计理念
+
+与基于文件扩展名或僵化模式对更改进行分类的传统系统不同，你的实现应该：
+
+- 向 Claude 提供原始 git 数据（差异、文件列表、统计信息）
+- 让 Claude 分析实际的代码更改
+- 允许 Claude 做出智能的模板建议
+- 保持逻辑简单 - Claude 处理复杂性
+
+> [!TIP]
+> **MCP 理念**：不要在工具中构建复杂的逻辑，而是向 Claude 提供丰富的数据，让它的智能做出决策。这使你的代码比传统的基于规则的系统更简单、更灵活。
+
+## 测试你的实现
+
+### 1. 验证你的代码
+
+运行验证脚本来检查你的实现：
+
+```bash
+uv run python validate_starter.py
+```
+
+### 2. 运行单元测试
+
+使用提供的测试套件测试你的实现：
+
+```bash
+uv run pytest test_server.py -v
+```
+
+### 3. 使用 Claude Code 测试
+
+直接在 Claude Code 中配置你的服务器：
+
+```bash
+# 将 MCP 服务器添加到 Claude Code
+claude mcp add pr-agent -- uv --directory /absolute/path/to/starter run server.py
+
+# 验证服务器已配置
+claude mcp list
+```
+
+然后：
+1. 在 git 仓库中进行一些更改
+2. 询问 Claude："你能分析我的更改并建议一个 PR 模板吗？"
+3. 观看 Claude 使用你的工具提供智能建议
+
+> [!WARNING]
+> **常见的第一个错误**：如果你收到"MCP tool response exceeds maximum allowed tokens (25000)"（MCP 工具响应超过最大允许令牌数 (25000)），这是预期的！大型仓库可以生成大量差异。这是一个宝贵的学习时刻 - 请参阅"处理大型输出"部分了解解决方案。
+
+## 常见模式
+
+### 工具实现模式
+
+```python
+@mcp.tool()
+async def tool_name(param1: str, param2: bool = True) -> str:
+    """Claude 的工具描述。
+    
+    Args:
+        param1: 参数描述
+        param2: 带默认值的可选参数
+    """
+    # 你的实现
+    result = {"key": "value"}
+    return json.dumps(result)
+```
+
+### 错误处理
+
+始终优雅地处理潜在错误：
+
+```python
+try:
+    result = subprocess.run(["git", "diff"], capture_output=True, text=True)
+    return json.dumps({"output": result.stdout})
+except Exception as e:
+    return json.dumps({"error": str(e)})
+```
+
+> [!WARNING]
+> **错误处理**：始终从你的工具返回有效的 JSON，即使是错误。Claude 需要结构化数据来理解出了什么问题，并向用户提供有用的响应。
+
+### 处理大型输出（关键学习时刻！）
+
+> [!WARNING]
+> **真实世界约束**：MCP 工具每个响应有 25,000 个令牌的限制。大型 git 差异很容易超过这个限制 10 倍或更多！这是生产 MCP 开发的关键课程。
+
+在实现 `analyze_file_changes` 时，你可能会遇到这个错误：
+```
+Error: MCP tool response (262521 tokens) exceeds maximum allowed tokens (25000)
+```
+
+**为什么会发生这种情况：**
+- 单个文件更改可能有数千行
+- 企业仓库通常有大规模重构
+- Git 差异默认包含完整上下文
+- JSON 编码增加了开销
+
+这教会我们一个重要原则：**始终在设计工具时考虑输出限制**。这是解决方案：
+
+```python
+@mcp.tool()
+async def analyze_file_changes(base_branch: str = "main", 
+                              include_diff: bool = True,
+                              max_diff_lines: int = 500) -> str:
+    """使用智能输出限制分析文件更改。
+    
+    Args:
+        base_branch: 要比较的分支
+        include_diff: 是否包含实际差异
+        max_diff_lines: 要包含的最大差异行数（默认 500）
+    """
+    try:
+        # 获取差异
+        result = subprocess.run(
+            ["git", "diff", f"{base_branch}...HEAD"],
+            capture_output=True, 
+            text=True
+        )
+        
+        diff_output = result.stdout
+        diff_lines = diff_output.split('\n')
+        
+        # 如果需要，智能截断
+        if len(diff_lines) > max_diff_lines:
+            truncated_diff = '\n'.join(diff_lines[:max_diff_lines])
+            truncated_diff += f"\n\n... 输出已截断。显示 {len(diff_lines)} 行中的 {max_diff_lines} 行 ..."
+            diff_output = truncated_diff
+        
+        # 获取摘要统计信息
+        stats_result = subprocess.run(
+            ["git", "diff", "--stat", f"{base_branch}...HEAD"],
+            capture_output=True,
+            text=True
+        )
+        
+        return json.dumps({
+            "stats": stats_result.stdout,
+            "total_lines": len(diff_lines),
+            "diff": diff_output if include_diff else "使用 include_diff=true 查看差异",
+            "files_changed": self._get_changed_files(base_branch)
+        })
+        
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+```
+
+**大型输出的最佳实践：**
+1. **实现分页**：将大型结果分成页面
+2. **添加过滤选项**：让用户请求特定文件或目录
+3. **首先提供摘要**：在完整内容之前返回统计信息
+4. **使用渐进式披露**：从高级信息开始，允许深入了解
+5. **设置合理的默认值**：默认为适用于大多数情况的合理限制
+
+## 工作目录注意事项
+
+默认情况下，MCP 服务器在其安装目录中运行命令，而不是在 Claude 的当前工作目录中。这意味着你的 git 命令可能会分析错误的仓库！
+
+为了解决这个问题，MCP 提供了 [roots](https://modelcontextprotocol.io/docs/concepts/roots) - 一种让客户端通知服务器相关目录的方式。Claude Code 自动提供其工作目录作为 root。
+
+以下是如何在你的工具中访问它：
+
+```python
+@mcp.tool()
+async def analyze_file_changes(...):
+    # 从 roots 获取 Claude 的工作目录
+    context = mcp.get_context()
+    roots_result = await context.session.list_roots()
+    
+    # 从 FileUrl 对象中提取路径
+    working_dir = roots_result.roots[0].uri.path
+    
+    # 用于所有 git 命令
+    result = subprocess.run(
+        ["git", "diff", "--name-status"],
+        capture_output=True,
+        text=True,
+        cwd=working_dir  # 在 Claude 的目录中运行！
+    )
+```
+
+这确保你的工具在 Claude 实际工作的仓库上操作，而不是 MCP 服务器的安装位置。
+
+## 故障排除
+
+- **导入错误**：确保你已运行 `uv sync`
+- **Git 错误**：确保你在 git 仓库中
+- **无输出**：MCP 服务器通过 stdio 通信 - 使用 Claude Desktop 测试
+- **JSON 错误**：所有工具必须返回有效的 JSON 字符串
+- **超过令牌限制**：这对于大型差异是预期的！如上所示实现输出限制
+- **"响应太大"错误**：添加 `max_diff_lines` 参数或设置 `include_diff=false`
+- **Git 命令在错误的目录中运行**：MCP 服务器默认在其安装目录中运行，而不是 Claude 的工作目录。要解决这个问题，使用 [MCP roots](https://modelcontextprotocol.io/docs/concepts/roots) 访问 Claude 的当前目录：
+  ```python
+  # 从 roots 获取 Claude 的工作目录
+  context = mcp.get_context()
+  roots_result = await context.session.list_roots()
+  working_dir = roots_result.roots[0].uri.path  # FileUrl 对象有 .path 属性
+  
+  # 在 subprocess 调用中使用它
+  subprocess.run(["git", "diff"], cwd=working_dir)
+  ```
+  Claude Code 自动提供其工作目录作为 root，允许你的 MCP 服务器在正确的位置操作。
+
+## 下一步
+
+恭喜！你已经构建了你的第一个带有工具的 MCP 服务器 - 这是单元 3 中所有后续内容的基础。
+
+### 你在模块 1 中完成的工作：
+- **创建了 MCP 工具**，为 Claude 提供结构化数据
+- **实现了核心 MCP 理念** - 让 Claude 从原始数据做出智能决策
+- **构建了一个实用的 PR 代理**，可以分析代码更改并建议模板
+- **了解了真实世界的约束** - 25,000 令牌限制以及如何处理它
+- **建立了测试模式**，包括验证脚本和单元测试
+
+### 你可以重用的关键模式：
+- **数据收集工具**，从外部来源收集信息
+- **智能分析**，Claude 处理原始数据以做出决策
+- **输出管理** - 截断大型响应同时保持有用性
+- **错误处理**，返回结构化的 JSON 响应
+- **测试策略**，用于 MCP 服务器开发
+
+### 接下来做什么：
+1. **查看解决方案**，在 `/projects/unit3/build-mcp-server/solution/` 中查看不同的实现方法
+2. **比较你的实现**与提供的解决方案 - 没有单一的"正确"方法来解决问题
+3. **彻底测试你的工具** - 尝试不同类型的代码更改，看看 Claude 如何适应
+4. **继续模块 2**，你将添加实时 webhook 功能，并学习用于工作流标准化的 MCP 提示
+
+模块 2 将直接建立在你在这里创建的服务器上，添加动态事件处理来补充你的静态文件分析工具！
+
+### 故事继续...
+随着你的 PR 代理工作，CodeCraft Studios 的开发人员已经在编写更好的拉取请求。但下周，你将面临一个新挑战：关键的 CI/CD 失败在未被注意的情况下溜走了。模块 2 将添加实时监控，在这些问题到达生产环境之前捕获它们。
+
+## 其他资源
+
+- [MCP 文档](https://modelcontextprotocol.io/)
+- [FastMCP 指南](https://modelcontextprotocol.io/quickstart/server)
+- 解决方案演练：`unit3/build-mcp-server-solution-walkthrough.md`

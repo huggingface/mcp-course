@@ -1,0 +1,263 @@
+# 使用 MCP 和 Hugging Face Hub 构建微型智能体
+
+现在我们已经在 Gradio 中构建了 MCP 服务器，并学习了如何创建 MCP 客户端，让我们通过构建一个能够无缝与情感分析工具交互的智能体来完成端到端应用程序。本节基于 [Tiny Agents](https://huggingface.co/blog/tiny-agents) 项目，该项目展示了一种超级简单的方式来部署可以连接到我们的 Gradio 情感分析服务器等服务的 MCP 客户端。
+
+在第二单元的最后练习中，我们将引导您了解如何实现 TypeScript (JS) 和 Python MCP 客户端，这些客户端可以与任何 MCP 服务器通信，包括我们在前面章节中构建的基于 Gradio 的情感分析服务器。这完成了我们的端到端 MCP 应用程序流程：从构建暴露情感分析工具的 Gradio MCP 服务器，到创建可以使用此工具及其他功能的灵活智能体。
+
+![meme](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/thumbnail.jpg)
+<figcaption>图片来源 https://x.com/adamdotdev</figcaption>
+
+## 安装
+
+让我们安装构建微型智能体所需的包。
+
+> [!TIP]
+> 一些 MCP 客户端，特别是 Claude Desktop，尚不支持基于 SSE 的 MCP 服务器。在这些情况下，您可以使用 [mcp-remote](https://github.com/geelen/mcp-remote) 等工具。首先安装 Node.js。然后，将以下内容添加到您自己的 MCP 客户端配置中：
+
+Tiny Agent 可以在命令行环境中运行 MCP 服务器。为此，我们需要安装 `npm` 并使用 `npx` 运行服务器。**Python 和 JavaScript 都需要这些。**
+
+让我们使用 `npm` 安装 `npx`。如果您没有安装 `npm`，请查看 [npm 文档](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)。
+
+```bash
+# 安装 npx
+npm install -g npx
+```
+
+然后，我们需要安装 `mcp-remote` 包。
+
+```bash
+npm i mcp-remote
+```
+
+<hfoptions id="tiny-agents">
+<hfoption id="typescript">
+
+对于 JavaScript，我们需要安装 `tiny-agents` 包。
+
+```bash
+npm install @huggingface/tiny-agents
+```
+
+</hfoption>
+<hfoption id="python">
+
+对于 Python，您需要安装带有 `mcp` 额外组件的最新版本 `huggingface_hub`，以获取所有必要的组件。
+
+```bash
+pip install "huggingface_hub[mcp]>=0.32.0"
+```
+
+</hfoption>
+</hfoptions>
+
+## 命令行中的 Tiny Agents MCP 客户端
+
+让我们重复 [第一单元](https://huggingface.co/learn/mcp-course/unit1/mcp-clients#tiny-agents-clients) 中的示例来创建一个基本的 Tiny Agent。Tiny Agents 可以基于 JSON 配置文件从命令行创建 MCP 客户端。
+
+<hfoptions id="tiny-agents">
+<hfoption id="typescript">
+
+让我们设置一个带有基本 Tiny Agent 的项目。
+
+```bash
+mkdir my-agent
+touch my-agent/agent.json
+cd my-agent
+```
+
+JSON 文件将如下所示：
+
+```json
+{
+	"model": "Qwen/Qwen2.5-72B-Instruct",
+	"provider": "nebius",
+	"servers": [
+		{
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"mcp-remote",
+				"http://localhost:7860/gradio_api/mcp/sse"
+			]
+		}
+	]
+}
+```
+
+然后我们可以使用以下命令运行智能体：
+
+```bash
+npx @huggingface/tiny-agents run agent.json
+```
+
+</hfoption>
+<hfoption id="python">
+
+让我们设置一个带有基本 Tiny Agent 的项目。
+
+```bash
+mkdir my-agent
+touch my-agent/agent.json
+cd my-agent
+```
+
+JSON 文件将如下所示：
+
+```json
+{
+	"model": "Qwen/Qwen2.5-72B-Instruct",
+	"provider": "nebius",
+	"servers": [
+		{
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"mcp-remote", 
+				"http://localhost:7860/gradio_api/mcp/sse"
+			]
+		}
+	]
+}
+```
+
+然后我们可以使用以下命令运行智能体：
+
+```bash
+tiny-agents run agent.json
+```
+
+</hfoption>
+</hfoptions>
+
+这里我们有一个可以连接到 Gradio MCP 服务器的基本 Tiny Agent。它包括模型、提供商和服务器配置。
+
+| 字段 | 描述 |
+|-------|-------------|
+| `model` | 智能体使用的开源模型 |
+| `provider` | 智能体使用的推理提供商 |
+| `servers` | 智能体使用的服务器。我们将为 Gradio MCP 服务器使用 `mcp-remote` 服务器。 |
+
+> [!TIP]
+> 我们也可以使用 Tiny Agents 在本地运行的开源模型。如果我们启动本地推理服务器
+>
+> ```json
+> {
+> 	"model": "Qwen/Qwen3-32B",
+> 	"endpointUrl": "http://localhost:1234/v1",
+> 	"servers": [
+> 		{
+> 			"type": "stdio",
+> 			"command": "npx",
+> 			"args": [
+> 				"mcp-remote",
+> 				"http://localhost:1234/v1/mcp/sse"
+> 			]
+> 		}
+> 	]
+> }
+> ```
+>
+>
+> 这里我们有一个可以连接到本地模型的 Tiny Agent。它包括模型、端点 URL（`http://localhost:1234/v1`）和服务器配置。端点应该是与 OpenAI 兼容的端点。
+
+## 自定义 Tiny Agents MCP 客户端
+
+现在我们了解了 Tiny Agents 和 Gradio MCP 服务器，让我们看看它们如何协同工作！MCP 的优势在于它为智能体提供了一种标准化的方式来与任何兼容 MCP 的服务器交互，包括我们在前面章节中构建的基于 Gradio 的情感分析服务器。
+
+### 将 Gradio 服务器与 Tiny Agents 一起使用
+
+要将我们的 Tiny Agent 连接到我们在本单元前面构建的 Gradio 情感分析服务器，我们只需将其添加到服务器列表中。以下是我们如何修改智能体配置：
+
+<hfoptions id="tiny-agents">
+<hfoption id="typescript">
+
+```ts
+const agent = new Agent({
+    provider: process.env.PROVIDER ?? "nebius",
+    model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+    apiKey: process.env.HF_TOKEN,
+    servers: [
+        // ... 现有服务器 ...
+        {
+            command: "npx",
+            args: [
+                "mcp-remote",
+                "http://localhost:7860/gradio_api/mcp/sse"  // 您的 Gradio MCP 服务器
+            ]
+        }
+    ],
+});
+```
+
+</hfoption>
+<hfoption id="python">
+
+```python
+import os
+
+from huggingface_hub import Agent
+
+agent = Agent(
+    model="Qwen/Qwen2.5-72B-Instruct",
+    provider="nebius",
+    servers=[
+        {
+            "command": "npx",
+            "args": [
+                "mcp-remote",
+                "http://localhost:7860/gradio_api/mcp/sse"  # 您的 Gradio MCP 服务器
+            ]
+        }
+    ],
+)
+```
+
+</hfoption>
+</hfoptions>
+
+现在我们的智能体可以与其他工具一起使用情感分析工具！例如，它可以：
+1. 使用文件系统服务器从文件中读取文本
+2. 使用我们的 Gradio 服务器分析其情感
+3. 将结果写回文件
+
+### 部署注意事项
+
+当将 Gradio MCP 服务器部署到 Hugging Face Spaces 时，您需要更新智能体配置中的服务器 URL，使其指向您部署的空间：
+
+
+```json
+{
+    command: "npx",
+    args: [
+        "mcp-remote",
+        "https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse"
+    ]
+}
+```
+
+
+这允许您的智能体从任何地方使用情感分析工具，而不仅仅是本地！
+
+## 结论：我们完整的端到端 MCP 应用程序
+
+在本单元中，我们从理解 MCP 基础知识到构建完整的端到端应用程序：
+
+1. 我们创建了一个暴露情感分析工具的 Gradio MCP 服务器
+2. 我们学习了如何使用 MCP 客户端连接到此服务器
+3. 我们在 TypeScript 和 Python 中构建了一个可以与我们的工具交互的微型智能体
+
+这展示了模型上下文协议的强大之处 - 我们可以使用我们熟悉的框架（如 Gradio）创建专门的工具，通过标准化接口（MCP）暴露它们，然后让智能体无缝地使用这些工具以及其他功能。
+
+我们构建的完整流程允许智能体：
+- 连接到多个工具提供商
+- 动态发现可用工具
+- 使用我们的自定义情感分析工具
+- 将其与文件系统访问和网页浏览等其他功能结合使用
+
+这种模块化方法正是 MCP 在构建灵活的 AI 应用程序方面如此强大的原因。
+
+## 下一步
+
+- 查看 [Python](https://huggingface.co/blog/python-tiny-agents) 和 [TypeScript](https://huggingface.co/blog/tiny-agents) 中的 Tiny Agents 博客文章
+- 查看 [Tiny Agents 文档](https://huggingface.co/docs/huggingface.js/main/en/tiny-agents/README)
+- 使用 Tiny Agents 构建一些东西！

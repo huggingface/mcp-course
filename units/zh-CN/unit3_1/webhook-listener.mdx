@@ -1,0 +1,496 @@
+# Webhook 监听器
+
+Webhook 监听器是我们 Pull Request Agent 的入口点。当 Hugging Face Hub 上创建或更新讨论时，它会接收实时事件，触发我们基于 MCP 的标签工作流。在本节中，我们将使用 FastAPI 实现一个 webhook 处理器。
+
+## 理解 Webhook 集成
+
+遵循 [Hugging Face Webhooks 指南](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md)，我们的 webhook 监听器会验证传入的请求并实时处理讨论事件。
+
+![Webhook 创建](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
+
+### Webhook 事件流程
+
+理解 webhook 流程对于构建可靠的监听器至关重要：
+
+1. **用户操作**：有人在模型仓库讨论中创建评论
+2. **Hub 事件**：Hugging Face 生成 webhook 事件
+3. **Webhook 传递**：Hub 向我们的端点发送 POST 请求
+4. **身份验证**：我们验证 webhook 密钥
+5. **处理**：从评论内容中提取标签
+6. **操作**：使用 MCP 工具为新标签创建 pull request
+
+> [!TIP]
+> Webhooks 是推送通知 - Hugging Face Hub 主动向你的应用程序发送事件，而不是你轮询变更。这使得能够实时响应讨论和评论。
+
+## FastAPI Webhook 应用
+
+让我们逐步构建 webhook 监听器，从基础开始，逐步构建完整的处理逻辑。
+
+### 1. 应用设置
+
+首先，让我们设置基本的 FastAPI 应用程序，包含所有必要的导入和配置：
+
+```python
+import os
+import json
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+```
+
+这些导入为我们提供了构建健壮 webhook 处理器所需的一切。`FastAPI` 提供 Web 框架，`BackgroundTasks` 启用异步处理，类型导入帮助进行数据验证。
+
+现在让我们配置应用程序：
+
+```python
+# 配置
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+# 用于已处理操作的简单存储
+tag_operations_store: List[Dict[str, Any]] = []
+
+app = FastAPI(title="HF Tagging Bot")
+app.add_middleware(CORSMiddleware, allow_origins=["*"])
+```
+
+此配置设置了：
+- **Webhook 密钥**：用于验证传入的 webhooks
+- **HF token**：用于与 Hub API 进行身份验证
+- **操作存储**：用于监控已处理操作的内存存储
+- **CORS 中间件**：允许 Web 界面的跨域请求
+
+> [!TIP]
+> `tag_operations_store` 列表跟踪最近的 webhook 处理操作。这对于调试和监控很有用，但在生产环境中，你可能想使用数据库或限制此列表的大小。
+
+### 2. Webhook 数据模型
+
+基于 [Hugging Face webhook 文档](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md)，我们需要理解 webhook 数据结构：
+
+```python
+class WebhookEvent(BaseModel):
+    event: Dict[str, str]          # 包含操作和范围信息
+    comment: Dict[str, Any]        # 评论内容和元数据
+    discussion: Dict[str, Any]     # 讨论信息
+    repo: Dict[str, str]           # 仓库详情
+```
+
+这个 Pydantic 模型帮助我们理解 webhook 结构。
+
+我们关心的关键字段是：
+- `event.action`：通常为新评论的 "create"
+- `event.scope`：通常为评论事件的 "discussion.comment"
+- `comment.content`：实际的评论文本
+- `repo.name`：发表评论的仓库
+
+### 3. 核心 Webhook 处理器
+
+现在是主要的 webhook 处理器 - 这是重要部分发生的地方。让我们将其分解为易于理解的部分：
+
+```python
+@app.post("/webhook")
+async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
+    """
+    处理来自 Hugging Face Hub 的传入 webhooks
+    遵循以下模式：https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md
+    """
+    print("🔔 收到 Webhook！")
+    
+    # 步骤 1：验证 webhook 密钥（安全性）
+    webhook_secret = request.headers.get("X-Webhook-Secret")
+    if webhook_secret != WEBHOOK_SECRET:
+        print("❌ 无效的 webhook 密钥")
+        return {"error": "incorrect secret"}, 400
+```
+
+第一步是安全验证。我们检查 `X-Webhook-Secret` 头部与我们配置的密钥是否匹配，以确保 webhook 是合法的。
+
+> [!TIP]
+> 始终验证 webhook 密钥！没有这个检查，任何人都可以向你的应用程序发送虚假的 webhook 请求。密钥充当 Hugging Face 和你的应用程序之间的共享密码。
+
+接下来，让我们解析和验证 webhook 数据：
+
+```python
+    # 步骤 2：解析 webhook 数据
+    try:
+        webhook_data = await request.json()
+        print(f"📥 Webhook 数据：{json.dumps(webhook_data, indent=2)}")
+    except Exception as e:
+        print(f"❌ 解析 webhook 数据时出错：{str(e)}")
+        return {"error": "invalid JSON"}, 400
+    
+    # 步骤 3：验证事件结构
+    event = webhook_data.get("event", {})
+    if not event:
+        print("❌ webhook 中没有事件数据")
+        return {"error": "missing event data"}, 400
+```
+
+这个解析步骤优雅地处理潜在的 JSON 错误，并验证我们有预期的事件结构。
+
+现在是事件过滤逻辑：
+
+```python
+    # 步骤 4：检查这是否是讨论评论创建
+    # 遵循 webhook 指南模式：
+    if (
+        event.get("action") == "create" and 
+        event.get("scope") == "discussion.comment"
+    ):
+        print("✅ 有效的讨论评论创建事件")
+        
+        # 在后台处理以快速返回给 Hub
+        background_tasks.add_task(process_webhook_comment, webhook_data)
+        
+        return {
+            "status": "accepted",
+            "message": "Comment processing started",
+            "timestamp": datetime.now().isoformat()
+        }
+    else:
+        print(f"ℹ️ 忽略事件：action={event.get('action')}, scope={event.get('scope')}")
+        return {
+            "status": "ignored",
+            "reason": "Not a discussion comment creation"
+        }
+```
+
+这个过滤确保我们只处理我们关心的事件 - 新的讨论评论。我们忽略其他事件，如仓库创建、模型上传等。
+
+我们使用 FastAPI 的 `background_tasks.add_task()` 异步处理 webhook。这允许我们快速返回响应（几秒钟内），而实际的标签处理在后台进行。
+
+> [!TIP]
+> Webhook 端点应在 10 秒内响应，否则发送平台可能会认为它们失败了。使用后台任务确保快速响应，同时允许复杂的处理异步进行。
+
+### 4. 评论处理逻辑
+
+现在让我们实现核心评论处理函数，它执行实际的标签提取和 MCP 工具使用：
+
+```python
+async def process_webhook_comment(webhook_data: Dict[str, Any]):
+    """
+    处理 webhook 评论以检测和添加标签
+    与我们的 MCP 客户端集成以进行 Hub 交互
+    """
+    print("🏷️ 开始 process_webhook_comment...")
+    
+    try:
+        # 提取评论和仓库信息
+        comment_content = webhook_data["comment"]["content"]
+        discussion_title = webhook_data["discussion"]["title"]
+        repo_name = webhook_data["repo"]["name"]
+        discussion_num = webhook_data["discussion"]["num"]
+        comment_author = webhook_data["comment"]["author"].get("id", "unknown")
+        
+        print(f"📝 来自 {comment_author} 的评论：{comment_content}")
+        print(f"📰 讨论：{discussion_title}")
+        print(f"📦 仓库：{repo_name}")
+```
+
+这个初始部分从 webhook 数据中提取所有相关信息。我们获取评论内容和讨论标题，因为标签可能在任一位置被提及。
+
+接下来，我们提取和处理标签：
+
+```python
+        # 从评论和标题中提取潜在标签
+        comment_tags = extract_tags_from_text(comment_content)
+        title_tags = extract_tags_from_text(discussion_title)
+        all_tags = list(set(comment_tags + title_tags))
+        
+        print(f"🔍 找到标签：{all_tags}")
+        
+        # 存储操作以供监控
+        operation = {
+            "timestamp": datetime.now().isoformat(),
+            "repo_name": repo_name,
+            "discussion_num": discussion_num,
+            "comment_author": comment_author,
+            "extracted_tags": all_tags,
+            "comment_preview": comment_content[:100] + "..." if len(comment_content) > 100 else comment_content,
+            "status": "processing"
+        }
+        tag_operations_store.append(operation)
+```
+
+我们合并来自两个来源的标签，并创建一个操作记录用于监控。这个记录跟踪每个 webhook 处理操作的进度。
+
+> [!TIP]
+> 存储操作记录对于调试和监控至关重要。当出现问题时，你可以查看最近的操作以了解发生了什么以及为什么。
+
+现在是 MCP agent 集成：
+
+```python
+        if not all_tags:
+            operation["status"] = "no_tags"
+            operation["message"] = "No recognizable tags found"
+            print("❌ 没有找到要处理的标签")
+            return
+        
+        # 获取 MCP agent 进行标签处理
+        agent = await get_agent()
+        if not agent:
+            operation["status"] = "error"
+            operation["message"] = "Agent not configured (missing HF_TOKEN)"
+            print("❌ 没有可用的 agent")
+            return
+        
+        # 处理每个提取的标签
+        operation["results"] = []
+        for tag in all_tags:
+            try:
+                print(f"🤖 为仓库 '{repo_name}' 处理标签 '{tag}'")
+                
+                # 为 agent 创建提示以处理标签
+                prompt = f"""
+                分析仓库 '{repo_name}' 并确定是否应添加标签 '{tag}'。
+                
+                首先，使用 get_current_tags 检查当前标签。
+                如果 '{tag}' 尚未存在且它是有效标签，则使用 add_new_tag 添加它。
+                
+                仓库：{repo_name}
+                要处理的标签：{tag}
+                
+                提供所做操作的清晰摘要。
+                """
+                
+                response = await agent.run(prompt)
+                print(f"🤖 Agent 对 '{tag}' 的响应：{response}")
+                
+                # 解析响应并存储结果
+                tag_result = {
+                    "tag": tag,
+                    "response": response,
+                    "timestamp": datetime.now().isoformat()
+                }
+                operation["results"].append(tag_result)
+                
+            except Exception as e:
+                error_msg = f"❌ 处理标签 '{tag}' 时出错：{str(e)}"
+                print(error_msg)
+                operation["results"].append({
+                    "tag": tag,
+                    "error": str(e),
+                    "timestamp": datetime.now().isoformat()
+                })
+        
+        operation["status"] = "completed"
+        print(f"✅ 完成处理 {len(all_tags)} 个标签")
+```
+
+这部分处理核心业务逻辑：
+1. **验证**：确保我们有要处理的标签和可用的 agent
+2. **处理**：对于每个标签，为 agent 创建自然语言提示
+3. **记录**：存储所有结果以供监控和调试
+4. **错误处理**：优雅地处理单个标签的错误
+
+agent 提示经过精心设计，以指示 AI 确切要采取的步骤：首先检查当前标签，然后在适当时添加新标签。
+
+
+### 5. 健康检查和监控端点
+
+除了 webhook 处理器，我们还需要用于监控和调试的端点。让我们添加这些必要的端点：
+
+```python
+@app.get("/")
+async def root():
+    """根端点，包含基本信息"""
+    return {
+        "name": "HF Tagging Bot",
+        "status": "running",
+        "description": "Webhook listener for automatic model tagging",
+        "endpoints": {
+            "webhook": "/webhook",
+            "health": "/health",
+            "operations": "/operations"
+        }
+    }
+```
+
+根端点提供关于你的服务及其可用端点的基本信息。
+
+```python
+@app.get("/health")
+async def health_check():
+    """用于监控的健康检查端点"""
+    agent = await get_agent()
+    
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "components": {
+            "webhook_secret": "configured" if WEBHOOK_SECRET else "missing",
+            "hf_token": "configured" if HF_TOKEN else "missing",
+            "mcp_agent": "ready" if agent else "not_ready"
+        }
+    }
+```
+
+健康检查端点验证你的所有组件是否正确配置。这对于生产监控至关重要。
+
+```python
+@app.get("/operations")
+async def get_operations():
+    """获取最近的标签操作以供监控"""
+    # 返回最后 50 个操作
+    recent_ops = tag_operations_store[-50:] if tag_operations_store else []
+    return {
+        "total_operations": len(tag_operations_store),
+        "recent_operations": recent_ops
+    }
+```
+
+操作端点让你查看最近的 webhook 处理活动，这对于调试和监控非常宝贵。
+
+> [!TIP]
+> 健康检查和监控端点对于生产部署至关重要。它们帮助你快速识别配置问题并监控应用程序的活动，而无需深入日志。
+
+## 在 Hugging Face Hub 上配置 Webhook
+
+现在我们的 webhook 监听器已准备就绪，让我们在 Hugging Face Hub 上配置它。这是我们将应用程序连接到真实仓库事件的地方。
+
+### 1. 在设置中创建 Webhook
+
+遵循 [webhook 设置指南](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot)：
+
+![Webhook 设置](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
+
+导航到你的 [Hugging Face 设置](https://huggingface.co/settings/webhooks) 并配置：
+
+1. **目标仓库**：指定要监控的仓库
+2. **Webhook URL**：你部署的应用程序端点（例如，`https://your-space.hf.space/webhook`）
+3. **密钥**：使用与你的 `WEBHOOK_SECRET` 环境变量相同的密钥
+4. **事件**：订阅"社区（PR 和讨论）"事件
+
+> [!TIP]
+> 在为许多仓库配置 webhooks 之前，先从一两个测试仓库开始。这让你在扩展之前验证应用程序是否正常工作。
+
+### 2. Space URL 配置
+
+对于 Hugging Face Spaces 部署，你需要获取直接 URL：
+
+![直接 URL](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/direct-url.png)
+
+过程是：
+1. 在你的 Space 设置中点击"嵌入此 Space"
+2. 复制"直接 URL"
+3. 附加 `/webhook` 以创建你的 webhook 端点
+4. 使用此 URL 更新你的 webhook 配置
+
+例如，如果你的 Space URL 是 `https://username-space-name.hf.space`，你的 webhook 端点将是 `https://username-space-name.hf.space/webhook`。
+
+![Space URL](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/direct-url.png)
+
+## 测试 Webhook 监听器
+
+在部署到生产环境之前，测试至关重要。让我们了解不同的测试方法：
+
+### 1. 本地测试
+
+你可以使用简单的脚本在本地测试 webhook 处理器：
+
+```python
+# test_webhook_local.py
+import requests
+import json
+
+# 匹配 webhook 格式的测试数据
+test_webhook_data = {
+    "event": {
+        "action": "create",
+        "scope": "discussion.comment"
+    },
+    "comment": {
+        "content": "This model needs tags: pytorch, transformers",
+        "author": {"id": "test-user"}
+    },
+    "discussion": {
+        "title": "Missing tags",
+        "num": 1
+    },
+    "repo": {
+        "name": "test-user/test-model"
+    }
+}
+
+# 发送测试 webhook
+response = requests.post(
+    "http://localhost:8000/webhook",
+    json=test_webhook_data,
+    headers={"X-Webhook-Secret": "your-test-secret"}
+)
+
+print(f"状态：{response.status_code}")
+print(f"响应：{response.json()}")
+```
+
+这个脚本模拟真实的 webhook 请求，允许你测试处理器而无需等待真实事件。
+
+### 2. 用于开发的模拟端点
+
+你还可以向 FastAPI 应用程序添加模拟端点以便于测试：
+
+```python
+@app.post("/simulate_webhook")
+async def simulate_webhook(
+    repo_name: str, 
+    discussion_title: str, 
+    comment_content: str
+) -> str:
+    """模拟 webhook 用于测试目的"""
+    
+    # 创建模拟 webhook 数据
+    mock_webhook_data = {
+        "event": {
+            "action": "create",
+            "scope": "discussion.comment"
+        },
+        "comment": {
+            "content": comment_content,
+            "author": {"id": "test-user"}
+        },
+        "discussion": {
+            "title": discussion_title,
+            "num": 999
+        },
+        "repo": {
+            "name": repo_name
+        }
+    }
+    
+    # 处理模拟的 webhook
+    await process_webhook_comment(mock_webhook_data)
+    
+    return f"已为 {repo_name} 处理模拟 webhook"
+```
+
+这个端点使得通过应用程序的界面测试不同场景变得容易。
+
+> [!TIP]
+> 模拟端点在开发期间非常有用。它们让你测试不同的标签组合和边缘情况，而无需创建实际的仓库讨论。
+
+## 预期的 Webhook 结果
+
+当一切正常工作时，你应该看到类似讨论机器人示例的结果：
+
+![讨论结果](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/discussion-result.png)
+
+<!-- 这显示了机器人响应讨论评论，创建 PR -->
+
+这个截图显示了成功的 webhook 处理，其中机器人响应讨论评论创建了一个 pull request。
+
+## 下一步
+
+有了我们实现的 webhook 监听器，我们现在拥有：
+
+1. **安全的 webhook 验证**，遵循 Hugging Face 最佳实践
+2. **实时事件处理**，带有后台任务处理
+3. **MCP 集成**，用于智能标签管理
+4. **监控和调试**能力
+
+在下一节中，我们将把所有内容集成到一个完整的 Pull Request Agent 中，演示从 webhook 到 PR 创建的完整工作流。
+
+> [!TIP]
+> 始终快速返回 webhook 响应（10 秒内）以避免超时。对于较长的处理操作（如 MCP 工具执行和 pull request 创建），使用后台任务。

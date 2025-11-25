@@ -1,0 +1,124 @@
+# 设置项目
+
+在本节中，我们将为Pull Request代理设置开发环境。
+
+> [!TIP]
+> 我们将使用现代Python工具，通过`uv`进行依赖管理并创建必要的配置文件。如果你不熟悉`uv`，可以在[这里](https://docs.astral.sh/uv/)了解更多信息。
+
+
+## 项目结构
+
+让我们从创建项目目录并了解文件结构开始：
+
+```bash
+git clone https://huggingface.co/spaces/mcp-course/tag-this-repo
+```
+
+我们最终的项目结构将如下所示：
+
+```
+hf-pr-agent/
+├── mcp_server.py              # 核心MCP服务器及标签工具
+├── app.py                     # FastAPI webhook监听器和代理
+├── requirements.txt           # Python依赖项
+├── pyproject.toml             # 项目配置
+├── env.example                # 环境变量模板
+├── cleanup.py                 # 开发实用工具
+```
+
+## 依赖项和配置
+
+让我们逐步了解项目的依赖项和配置。
+
+### 1. Python项目配置
+
+我们将使用`uv`创建`pyproject.toml`文件来定义我们的项目：
+
+> [!TIP]
+> 如果你还没有安装`uv`，可以按照[这里](https://docs.astral.sh/uv/getting-started/installation/)的说明进行安装。
+
+```toml
+[project]
+name = "mcp-course-unit3-example"
+version = "0.1.0"
+description = "FastAPI and Gradio app for Hugging Face Hub discussion webhooks"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "gradio>=4.0.0",
+    "huggingface-hub[mcp]>=0.32.0",
+    "pydantic>=2.0.0",
+    "python-multipart>=0.0.6",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "fastmcp>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+```
+
+为了与各种部署平台兼容，相同的内容在`requirements.txt`中重复。
+
+要创建虚拟环境，请运行：
+
+```bash
+uv venv
+source .venv/bin/activate # 或在Windows上使用 .venv/Scripts/activate
+```
+
+要安装依赖项，请运行：
+
+```bash
+uv sync
+```
+
+### 2. 环境配置
+
+创建`env.example`来记录所需的环境变量：
+
+```bash
+# Hugging Face API令牌（必需）
+# 从以下地址获取：https://huggingface.co/settings/tokens
+HF_TOKEN=hf_your_token_here
+
+# Webhook密钥（生产环境必需）
+# 使用强随机字符串
+WEBHOOK_SECRET=your-webhook-secret-here
+
+# 代理使用的模型（可选）
+HF_MODEL=owner/model
+
+# MCP代理的提供商（可选）
+HF_PROVIDER=huggingface
+```
+
+你需要从[这里](https://huggingface.co/settings/tokens)获取你的Hugging Face API令牌。
+
+你还需要生成一个webhook密钥。可以通过运行以下命令来完成：
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+然后你需要根据`env.example`文件将webhook密钥添加到你的`.env`文件中。
+
+## 下一步
+
+设置好项目结构和环境后，我们准备：
+
+1. **创建MCP服务器** - 实现核心标签功能
+2. **构建Webhook监听器** - 处理传入的讨论事件
+3. **集成代理** - 将MCP工具与webhook处理连接
+4. **测试和部署** - 验证功能并部署到Spaces
+
+在下一节中，我们将深入创建处理所有Hugging Face Hub交互的MCP服务器。
+
+> [!TIP]
+> 保护好你的`.env`文件，永远不要将其提交到版本控制系统。应该将`.env`文件添加到你的`.gitignore`文件中，以防止意外暴露密钥。

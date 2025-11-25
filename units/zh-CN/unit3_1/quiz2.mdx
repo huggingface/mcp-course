@@ -1,0 +1,173 @@
+# 测验 2：拉取请求代理集成
+
+测试你对完整拉取请求代理系统的知识，包括 MCP 客户端集成和 webhook 处理。
+
+### Q1: 在拉取请求代理架构中，webhook 监听器的主要目的是什么？
+
+<Question
+  choices={[
+    {
+      text: "提供用于管理拉取请求的用户界面",
+      explain: "webhook 监听器处理 GitHub 事件，而不是用户界面。"
+    },
+    {
+      text: "实时接收和处理 Hugging Face Hub 讨论评论事件",
+      explain: "正确！webhook 监听器响应 Hub 讨论事件以触发代理操作。",
+      correct: true
+    },
+    {
+      text: "将拉取请求数据永久存储在数据库中",
+      explain: "虽然它可能处理 PR 数据，但其主要角色是事件处理，而不是存储。"
+    },
+    {
+      text: "使用 Hugging Face Hub 对用户进行身份验证",
+      explain: "webhook 监听器处理事件，而不是用户身份验证。"
+    }
+  ]}
+/>
+
+### Q2: 在基于代理的 MCP 客户端实现中，客户端如何连接到 MCP 服务器？
+
+<Question
+  choices={[
+    {
+      text: "通过同一进程中的直接函数调用",
+      explain: "代理使用子进程通信，而不是直接函数调用。"
+    },
+    {
+      text: "使用 stdio 连接类型与作为子进程的 MCP 服务器通信",
+      explain: "正确！代理使用 'python mcp_server.py' 启动 MCP 服务器，并通过 stdin/stdout 进行通信。",
+      correct: true
+    },
+    {
+      text: "通过将文件写入共享目录",
+      explain: "MCP 使用实时通信，而不是基于文件的通信。"
+    },
+    {
+      text: "通过 HTTP REST API 调用",
+      explain: "stdio 连接类型不使用 HTTP - 它使用标准输入/输出流。"
+    }
+  ]}
+/>
+
+### Q3: 为什么 webhook 处理器使用 FastAPI 的 `background_tasks.add_task()` 而不是同步处理请求？
+
+<Question
+  choices={[
+    {
+      text: "为了减少服务器内存使用",
+      explain: "后台任务不一定会减少内存使用。"
+    },
+    {
+      text: "为了符合 Hugging Face Hub 的要求",
+      explain: "虽然 Hub 期望及时响应，但这不是 Hub 的特定要求。"
+    },
+    {
+      text: "为了快速返回响应（10 秒内），同时允许在后台进行复杂的标签处理",
+      explain: "正确！webhook 端点必须快速响应，否则发送平台会认为失败。",
+      correct: true
+    },
+    {
+      text: "为了使多个 webhook 请求能够并行处理",
+      explain: "虽然这确实支持并行处理，但主要原因是响应时间要求。"
+    }
+  ]}
+/>
+
+### Q4: 在 webhook 处理器中验证 `X-Webhook-Secret` 头的目的是什么？
+
+<Question
+  choices={[
+    {
+      text: "识别哪个仓库发送了 webhook",
+      explain: "仓库信息来自 webhook 负载，而不是密钥头。"
+    },
+    {
+      text: "防止未经授权的请求并确保 webhook 来自 Hugging Face 的合法性",
+      explain: "正确！共享密钥充当 Hugging Face 和你的应用程序之间的身份验证。",
+      correct: true
+    },
+    {
+      text: "解码 webhook 负载数据",
+      explain: "密钥用于身份验证，而不是解码负载数据。"
+    },
+    {
+      text: "确定使用哪些 MCP 工具",
+      explain: "工具选择基于 webhook 内容，而不是密钥头。"
+    }
+  ]}
+/>
+
+### Q5: 在代理实现中，当调用 `await agent_instance.load_tools()` 时会发生什么？
+
+<Question
+  choices={[
+    {
+      text: "从 Hugging Face Hub 下载工具",
+      explain: "这些工具是本地 MCP 服务器工具，不是从 Hub 下载的。"
+    },
+    {
+      text: "发现并使连接的服务器提供的 MCP 工具（get_current_tags 和 add_new_tag）可用",
+      explain: "正确！这会发现 MCP 服务器提供的工具，并使它们可供代理的推理引擎使用。",
+      correct: true
+    },
+    {
+      text: "启动 FastAPI webhook 服务器",
+      explain: "load_tools() 专门用于 MCP 工具发现，而不是启动 web 服务器。"
+    },
+    {
+      text: "使用 Hugging Face API 进行身份验证",
+      explain: "身份验证发生在代理创建期间，而不是在工具加载期间。"
+    }
+  ]}
+/>
+
+### Q6: 代理在处理自然语言指令时如何智能地使用 MCP 工具？
+
+<Question
+  choices={[
+    {
+      text: "随机调用可用工具，直到某个工具有效",
+      explain: "代理使用推理来确定调用哪些工具以及按什么顺序调用。"
+    },
+    {
+      text: "总是先调用 get_current_tags，然后调用 add_new_tag",
+      explain: "虽然这可能是常见模式，但代理会根据指令推理使用哪些工具。"
+    },
+    {
+      text: "对指令进行推理并确定调用哪些工具以及按什么顺序调用",
+      explain: "正确！代理可以理解复杂的指令并自动创建工具执行计划。",
+      correct: true
+    },
+    {
+      text: "需要在指令中指定显式的函数调用",
+      explain: "代理可以处理自然语言指令，无需显式的函数规范。"
+    }
+  ]}
+/>
+
+### Q7: 什么过滤逻辑决定 webhook 事件是否应触发标签处理？
+
+<Question
+  choices={[
+    {
+      text: "无论类型如何，所有 webhook 事件都会被处理",
+      explain: "处理器会过滤事件，只处理相关的事件。"
+    },
+    {
+      text: "仅处理 action='create' 且 scope='discussion.comment' 的事件",
+      explain: "正确！这确保我们只处理新的讨论评论，忽略其他 Hub 事件。",
+      correct: true
+    },
+    {
+      text: "仅处理来自已验证仓库所有者的事件",
+      explain: "过滤基于事件类型，而不是用户验证状态。"
+    },
+    {
+      text: "仅处理评论中包含"tag"一词的事件",
+      explain: "事件过滤发生在内容分析之前 - 我们首先按事件类型过滤。"
+    }
+  ]}
+/>
+
+恭喜你完成了这个测验 🥳！如果你需要复习任何内容，请花时间重新访问本章以巩固你的知识。
