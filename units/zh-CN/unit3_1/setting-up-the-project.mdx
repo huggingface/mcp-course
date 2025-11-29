@@ -1,47 +1,46 @@
-# 设置项目
+# 项目基础设定
 
-在本节中，我们将为Pull Request代理设置开发环境。
+在本节中，我们将为我们的“PR代理 (Pull Request Agent)”搭建好开发环境。
 
 > [!TIP]
-> 我们将使用现代Python工具，通过`uv`进行依赖管理并创建必要的配置文件。如果你不熟悉`uv`，可以在[这里](https://docs.astral.sh/uv/)了解更多信息。
-
+> 我们将采用现代化的 Python 工具链，使用 `uv` 来管理依赖项并创建必要的配置文件。如果您对 `uv` 不熟悉，可以查阅[官方文档](https://docs.astral.sh/uv/)来了解更多信息。
 
 ## 项目结构
 
-让我们从创建项目目录并了解文件结构开始：
+让我们从克隆项目目录开始，并熟悉其文件结构：
 
 ```bash
 git clone https://huggingface.co/spaces/mcp-course/tag-this-repo
 ```
 
-我们最终的项目结构将如下所示：
+最终，我们的项目结构将如下所示：
 
 ```
 hf-pr-agent/
-├── mcp_server.py              # 核心MCP服务器及标签工具
-├── app.py                     # FastAPI webhook监听器和代理
-├── requirements.txt           # Python依赖项
+├── mcp_server.py              # 核心 MCP 服务器及标签工具
+├── app.py                     # FastAPI Webhook 监听器和代理
+├── requirements.txt           # Python 依赖项
 ├── pyproject.toml             # 项目配置
 ├── env.example                # 环境变量模板
-├── cleanup.py                 # 开发实用工具
+├── cleanup.py                 # 用于开发的实用工具
 ```
 
-## 依赖项和配置
+## 依赖项与配置
 
-让我们逐步了解项目的依赖项和配置。
+现在，我们来逐步了解项目的依赖项和配置。
 
-### 1. Python项目配置
+### 1. Python 项目配置
 
-我们将使用`uv`创建`pyproject.toml`文件来定义我们的项目：
+我们将使用 `uv` 来管理 `pyproject.toml` 文件，以定义我们的项目。
 
 > [!TIP]
-> 如果你还没有安装`uv`，可以按照[这里](https://docs.astral.sh/uv/getting-started/installation/)的说明进行安装。
+> 如果您尚未安装 `uv`，可以按照[此处的说明](https://docs.astral.sh/uv/getting-started/installation/)进行安装。
 
 ```toml
 [project]
 name = "mcp-course-unit3-example"
 version = "0.1.0"
-description = "FastAPI and Gradio app for Hugging Face Hub discussion webhooks"
+description = "一个用于处理 Hugging Face Hub 讨论区 Webhook 的 FastAPI 和 Gradio 应用"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -64,13 +63,13 @@ build-backend = "hatchling.build"
 packages = ["src"]
 ```
 
-为了与各种部署平台兼容，相同的内容在`requirements.txt`中重复。
+为了与各种部署平台保持兼容，我们在 `requirements.txt` 文件中也保留了相同的内容。
 
 要创建虚拟环境，请运行：
 
 ```bash
 uv venv
-source .venv/bin/activate # 或在Windows上使用 .venv/Scripts/activate
+source .venv/bin/activate # 在 Windows 上，请使用 .venv/Scripts/activate
 ```
 
 要安装依赖项，请运行：
@@ -81,44 +80,45 @@ uv sync
 
 ### 2. 环境配置
 
-创建`env.example`来记录所需的环境变量：
+创建一个名为 `env.example` 的文件来记录所需的环境变量：
 
 ```bash
-# Hugging Face API令牌（必需）
-# 从以下地址获取：https://huggingface.co/settings/tokens
+# Hugging Face API 令牌（必需）
+# 从 https://huggingface.co/settings/tokens 获取
 HF_TOKEN=hf_your_token_here
 
-# Webhook密钥（生产环境必需）
-# 使用强随机字符串
+# Webhook 密钥（生产环境必需）
+# 使用一个强随机字符串
 WEBHOOK_SECRET=your-webhook-secret-here
 
 # 代理使用的模型（可选）
 HF_MODEL=owner/model
 
-# MCP代理的提供商（可选）
+# MCP 代理的提供商（可选）
 HF_PROVIDER=huggingface
 ```
 
-你需要从[这里](https://huggingface.co/settings/tokens)获取你的Hugging Face API令牌。
+您需要从[此处](https://huggingface.co/settings/tokens)获取您的 Hugging Face API 令牌。
 
-你还需要生成一个webhook密钥。可以通过运行以下命令来完成：
+您还需要生成一个 Webhook 密钥。可以通过运行以下命令来完成：
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-然后你需要根据`env.example`文件将webhook密钥添加到你的`.env`文件中。
+然后，您需要根据 `env.example` 文件的内容，将生成的 Webhook 密钥添加到您的 `.env` 文件中。
+
+> [!WARNING]
+> **保护好您的 `.env` 文件**
+> `env.example` 只是一个模板。您需要创建一个名为 `.env` 的新文件，并将您的实际密钥填入其中。切勿将 `.env` 文件提交到版本控制系统。请务必将 `.env` 添加到您的 `.gitignore` 文件中，以防止意外泄露敏感信息。
 
 ## 下一步
 
-设置好项目结构和环境后，我们准备：
+项目结构和环境都已设置完毕，我们已准备好进入下一步：
 
-1. **创建MCP服务器** - 实现核心标签功能
-2. **构建Webhook监听器** - 处理传入的讨论事件
-3. **集成代理** - 将MCP工具与webhook处理连接
-4. **测试和部署** - 验证功能并部署到Spaces
+1. **创建 MCP 服务器** - 实现核心的标签管理功能。
+2. **构建 Webhook 监听器** - 处理传入的讨论事件。
+3. **集成 AI 代理** - 将 MCP 工具与 Webhook 处理逻辑连接起来。
+4. **测试与部署** - 验证功能并将其部署到 Hugging Face Spaces。
 
-在下一节中，我们将深入创建处理所有Hugging Face Hub交互的MCP服务器。
-
-> [!TIP]
-> 保护好你的`.env`文件，永远不要将其提交到版本控制系统。应该将`.env`文件添加到你的`.gitignore`文件中，以防止意外暴露密钥。
+在下一节中，我们将深入探讨如何创建负责处理所有 Hugging Face Hub 交互的 MCP 服务器。

@@ -1,6 +1,6 @@
 # 测验 2：MCP SDK
 
-测试你对 MCP SDK 及其功能的了解。
+测试一下您对 MCP SDK 及其功能的了解程度。
 
 ### 问题 1：MCP SDK 的主要目的是什么？
 
@@ -8,20 +8,20 @@
   choices={[
     {
       text: "定义 MCP 协议规范",
-      explain: "SDK 实现协议，而不是定义协议。规范是独立的。"
+      explain: "SDK 负责实现协议，而不是定义协议。协议规范是独立于 SDK 的。"
     },
     {
-      text: "使实现 MCP 客户端和服务器变得更容易",
-      explain: "正确！SDK 抽象了底层协议细节。",
+      text: "简化 MCP 客户端和服务器的实现过程",
+      explain: "正确！SDK 抽象了底层的协议细节，让开发更简单。",
       correct: true
     },
     {
       text: "为 MCP 交互提供可视化界面",
-      explain: "虽然某些工具可能提供此功能（如 MCP Inspector），但这不是 SDK 本身的主要目的。"
+      explain: "虽然某些工具 (如 MCP Inspector) 可能提供此功能，但它并非 SDK 本身的主要目的。"
     },
     {
       text: "替代对编程语言的需求",
-      explain: "SDK 是在编程语言中使用的库。"
+      explain: "SDK 是在特定编程语言中使用的库，而不是替代品。"
     }
   ]}
 />
@@ -31,95 +31,95 @@
 <Question
   choices={[
     {
-      text: "优化 MCP 服务器",
-      explain: "这超出了 MCP SDK 的范围，SDK 专注于协议实现。"
+      text: "优化 MCP 服务器性能",
+      explain: "这超出了 MCP SDK 的范围，SDK 专注于协议的实现。"
     },
     {
       text: "定义新的 AI 算法",
-      explain: "这超出了 MCP SDK 的范围，SDK 专注于协议实现。"
+      explain: "这同样超出了 MCP SDK 的范围，SDK 专注于协议的实现。"
     },
     {
-      text: "消息序列化/反序列化",
-      explain: "正确！这是处理 JSON-RPC 消息的核心功能。",
+      text: "消息的序列化与反序列化",
+      explain: "正确！这是处理 JSON-RPC 消息的核心功能之一。",
       correct: true
     },
     {
       text: "托管大型语言模型",
-      explain: "MCP 支持连接到 LLM，但 SDK 本身不托管它们。"
+      explain: "MCP 支持连接到 LLM，但 SDK 本身并不负责托管它们。"
     }
   ]}
 />
 
-### 问题 3：根据提供的文本，哪家公司维护 MCP 的官方 Python SDK？
+### 问题 3：根据课程内容，哪家公司维护着 MCP 的官方 Python SDK？
 
 <Question
   choices={[
     {
       text: "Google",
-      explain: "文本中列出的维护者是 Anthropic。"
+      explain: "课程中提到的 Python SDK 维护者是 Anthropic。"
     },
     {
       text: "Anthropic",
-      explain: "正确！课程材料表明 Anthropic 维护 Python SDK。",
+      explain: "正确！课程材料明确指出 Anthropic 维护着 Python SDK。",
       correct: true
     },
     {
       text: "Microsoft",
-      explain: "根据文本，Microsoft 维护 C# SDK。"
+      explain: "根据课程内容，Microsoft 维护的是 C# SDK。"
     },
     {
       text: "JetBrains",
-      explain: "根据文本，JetBrains 维护 Kotlin SDK。"
+      explain: "根据课程内容，JetBrains 维护的是 Kotlin SDK。"
     }
   ]}
 />
 
-### 问题 4：使用名为 `server.py` 的 Python 文件启动开发 MCP 服务器的命令是什么？
+### 问题 4：使用名为 `server.py` 的 Python 文件启动一个用于开发的 MCP 服务器的命令是什么？
 
 <Question
   choices={[
     {
       text: "python server.py run",
-      explain: "虽然你使用 `python` 运行 Python 脚本，但 MCP 有特定的 CLI 命令。"
+      explain: "虽然您使用 `python` 来运行 Python 脚本，但 MCP 有一个特定的 CLI 命令来启动开发服务器。"
     },
     {
       text: "mcp start server.py",
-      explain: "命令是 `mcp dev`，而不是 `mcp start`。"
+      explain: "正确的命令是 `mcp dev`，而不是 `mcp start`。"
     },
     {
       text: "mcp dev server.py",
-      explain: "正确！此命令初始化开发服务器。",
+      explain: "正确！此命令用于初始化开发服务器。",
       correct: true
     },
     {
       text: "serve mcp server.py",
-      explain: "这不是课程材料中显示的标准 MCP CLI 命令。"
+      explain: "这不是课程材料中展示的标准 MCP CLI 命令。"
     }
   ]}
 />
 
-### 问题 5：JSON-RPC 2.0 在 MCP 中的作用是什么？
+### 问题 5：JSON-RPC 2.0 在 MCP 中扮演什么角色？
 
 <Question
   choices={[
     {
       text: "作为远程通信的主要传输机制",
-      explain: "HTTP+SSE 或 Streamable HTTP 是传输机制；JSON-RPC 是消息格式。"
+      explain: "HTTP+SSE 或可流式 HTTP 是传输机制；而 JSON-RPC 是消息格式。"
     },
     {
       text: "作为客户端和服务器之间所有通信的消息格式",
-      explain: "正确！MCP 使用 JSON-RPC 2.0 来构建消息。",
+      explain: "正确！MCP 使用 JSON-RPC 2.0 来构建所有通信的消息。",
       correct: true
     },
     {
       text: "作为调试 AI 模型的工具",
-      explain: "虽然其人类可读的特性有助于调试通信，但它本身不是 AI 模型的调试工具。"
+      explain: "虽然其人类可读的特性有助于调试通信过程，但它本身并非用于调试 AI 模型的工具。"
     },
     {
-      text: "作为定义工具和资源等 AI 能力的方法",
-      explain: "能力由它们自己的模式定义；JSON-RPC 用于调用它们并交换数据。"
+      text: "作为定义工具和资源等 AI 功能的方法",
+      explain: "功能由其自身的模式 (schema) 来定义；JSON-RPC 则用于调用这些功能并交换数据。"
     }
   ]}
 />
 
-恭喜你完成本测验 🥳！如果你需要复习任何内容，请花时间重新访问本章以巩固你的知识。
+恭喜您完成本次测验 🥳！如果您需要复习任何内容，请随时回顾本章的知识点以加深理解。

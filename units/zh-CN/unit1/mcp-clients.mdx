@@ -1,73 +1,69 @@
 # MCP 客户端
 
-现在我们已经对模型上下文协议有了基本的了解，可以探索 MCP 客户端在模型上下文协议生态系统中的重要作用。
+现在我们已经对模型上下文协议有了基本的了解，是时候来探索 MCP 客户端在整个生态系统中的重要作用了。
 
-在第一单元的这一部分，我们将探索 MCP 客户端在模型上下文协议生态系统中的重要作用。
+在本节中，您将：
 
-在本节中，你将：
-
-* 理解什么是 MCP 客户端以及它们在 MCP 架构中的作用
-* 了解 MCP 客户端的关键职责
-* 探索主要的 MCP 客户端实现
-* 了解如何连接到 Hugging Face MCP 服务器和内置工具
-* 查看 MCP 客户端使用的实际示例
+*   理解什么是 MCP 客户端及其在 MCP 架构中的作用
+*   了解 MCP 客户端的关键职责
+*   探索主流的 MCP 客户端实现
+*   学习如何连接到 Hugging Face MCP 服务器及其内置工具
+*   通过实际示例了解 MCP 客户端的使用方法
 
 > [!TIP]
-> 在本页中，我们将展示如何使用 JSON 表示法以几种不同方式设置 MCP 客户端的示例。目前，我们将使用 `path/to/server.py` 这样的*示例*来表示 MCP 服务器的路径。在下一单元中，我们将使用真实的 MCP 服务器来实现。
+> 在本页中，我们将使用 JSON 格式的示例来展示配置 MCP 客户端的几种不同方式。目前，我们会使用像 `path/to/server.py` 这样的*占位符*来代表 MCP 服务器的路径。在下一单元中，我们将使用真实的 MCP 服务器进行实践。
 >
-> 现在，请专注于理解 MCP 客户端的表示法。我们将在下一单元中实现 MCP 服务器。
+> 现在，请专注于理解 MCP 客户端的配置格式。我们将在下一单元中实现具体的 MCP 服务器。
 
 ## 理解 MCP 客户端
 
-MCP 客户端是充当 AI 应用程序（主机）和 MCP 服务器提供的外部功能之间桥梁的关键组件。可以将主机视为你的主应用程序（如 AI 助手或 IDE），而客户端则是该主机内负责处理 MCP 通信的专用模块。
+MCP 客户端是连接 AI 应用 (宿主) 与 MCP 服务器所提供的外部功能的关键组件。您可以将宿主视为您的主应用程序 (例如 AI 助手或 IDE)，而客户端则是该宿主内部负责处理 MCP 通信的专用模块。
 
 ## 用户界面客户端
 
-让我们首先探索可用于 MCP 的用户界面客户端。
+让我们首先来探索一些可用的图形化 MCP 客户端。
 
 ### 聊天界面客户端
 
-- Claude Desktop（Anthropic）
+-   Claude Desktop (Anthropic)
 
 ### 交互式开发客户端
 
-- 带有 MCP 的 VS Code 扩展（例如 Continue）
-- Cursor IDE（内置 MCP 客户端）
-- Zed 编辑器
+-   支持 MCP 的 VS Code 扩展 (例如 Continue)
+-   Cursor IDE (内置 MCP 客户端)
+-   Zed 编辑器
 
-这些客户端支持连接到多个 MCP 服务器并实时调用工具。
+这些客户端都支持同时连接到多个 MCP 服务器，并实时调用它们提供的工具。
 
 ## 快速连接到 Hugging Face MCP 服务器
 
-Hugging Face 提供了一个托管的 MCP 服务器，内置了用于探索模型、数据集、Spaces 和论文的工具。
+Hugging Face 提供了一个托管的 MCP 服务器，其中内置了用于探索模型、数据集、Space 和论文的工具。
 
-1. 登录后访问 https://huggingface.co/settings/mcp。
-2. 选择你的 MCP 兼容客户端（例如 VS Code、Cursor、Zed、Claude Desktop）。
-3. 将生成的配置片段复制到客户端的 MCP 配置中。
-4. 重启或重新加载你的客户端。你应该会看到"Hugging Face"已连接。
+1.  登录后访问 https://huggingface.co/settings/mcp。
+2.  选择您正在使用的、兼容 MCP 的客户端 (例如 VS Code、Cursor、Zed、Claude Desktop)。
+3.  将生成的配置代码片段复制到客户端的 MCP 配置文件中。
+4.  重启或重新加载您的客户端。您应该能看到 “Hugging Face” 出现在已连接的服务器列表中。
 
-提示：优先使用生成的片段而不是手写配置；它是针对每个客户端定制的。
+提示：请优先使用自动生成的代码片段，而不是手动编写配置，因为它已针对每个客户端进行了适配。
 
 ## 配置 MCP 客户端
 
-现在我们已经介绍了 MCP 协议的核心，让我们看看如何配置你的 MCP 服务器和客户端。
+现在我们已经了解了 MCP 协议的核心，让我们看看如何配置您的 MCP 服务器和客户端。
 
-有效部署 MCP 服务器和客户端需要正确的配置。
+要有效地部署 MCP 服务器和客户端，正确的配置至关重要。
 
 > [!TIP]
-> MCP 规范仍在不断发展，因此配置方法可能会发生变化。我们将重点关注当前的配置最佳实践。
+> MCP 规范仍在不断发展，因此配置方法将来可能会发生变化。我们将重点关注当前推荐的最佳实践。
 
 ### MCP 配置文件
 
-MCP 主机使用配置文件来管理服务器连接。这些文件定义了哪些服务器可用以及如何连接到它们。
+MCP 宿主使用配置文件来管理服务器连接。这些文件定义了哪些服务器可用，以及如何连接到它们。
 
-幸运的是，配置文件非常简单，易于理解，并且在主要的 MCP 主机之间保持一致。
+幸运的是，这些配置文件非常简单直观，并且在主流的 MCP 宿主之间保持着良好的一致性。
 
 #### `mcp.json` 结构
 
-MCP 的标准配置文件名为 `mcp.json`。以下是基本结构：
-
-这是 `mcp.json` 的基本结构，可以传递给 Claude Desktop、Cursor 或 VS Code 等应用程序。
+MCP 的标准配置文件名为 `mcp.json`。以下是其基本结构，可用于 Claude Desktop、Cursor 或 VS Code 等应用。
 
 ```json
 {
@@ -76,18 +72,18 @@ MCP 的标准配置文件名为 `mcp.json`。以下是基本结构：
       "name": "Server Name",
       "transport": {
         "type": "stdio|sse",
-        // 传输特定配置
+        // 针对不同传输方式的特定配置
       }
     }
   ]
 }
 ```
 
-在这个示例中，我们有一个带有名称和传输类型的单个服务器。传输类型是 `stdio` 或 `sse`。
+在这个示例中，我们定义了一个服务器，包含其名称和传输类型 (`stdio` 或 `sse`)。
 
-#### stdio 传输的配置
+#### stdio 传输配置
 
-对于使用 stdio 传输的本地服务器，配置包括启动服务器进程的命令和参数：
+对于使用 stdio 传输的本地服务器，配置中需要包含启动服务器进程的命令和参数：
 
 ```json
 {
@@ -97,18 +93,18 @@ MCP 的标准配置文件名为 `mcp.json`。以下是基本结构：
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/file_explorer_server.py"] // 这是一个示例，我们将在下一单元中使用真实服务器
+        "args": ["/path/to/file_explorer_server.py"] // 这是一个示例，我们将在下一单元中使用真实的服务器
       }
     }
   ]
 }
 ```
 
-在这里，我们有一个名为"File Explorer"的服务器，它是一个本地脚本。
+在这里，我们定义了一个名为 “File Explorer” 的服务器，它是一个本地的 Python 脚本。
 
-#### HTTP+SSE 传输的配置
+#### HTTP+SSE 传输配置
 
-对于使用 HTTP+SSE 传输的远程服务器，配置包括服务器 URL：
+对于使用 HTTP+SSE 传输的远程服务器，配置中需要包含服务器的 URL：
 
 ```json
 {
@@ -124,9 +120,9 @@ MCP 的标准配置文件名为 `mcp.json`。以下是基本结构：
 }
 ```
 
-#### 配置中的环境变量
+#### 在配置中设置环境变量
 
-可以使用 `env` 字段将环境变量传递给服务器进程。以下是如何在服务器代码中访问它们：
+您可以使用 `env` 字段将环境变量传递给服务器进程。以下是在服务器代码中访问它们的方法：
 
 <hfoptions id="env-variables">
 <hfoption id="python">
@@ -139,9 +135,9 @@ import os
 # 访问环境变量
 github_token = os.environ.get("GITHUB_TOKEN")
 if not github_token:
-    raise ValueError("GITHUB_TOKEN environment variable is required")
+    raise ValueError("需要设置 GITHUB_TOKEN 环境变量")
 
-# 在服务器代码中使用令牌
+# 在服务器代码中使用 token
 def make_github_request():
     headers = {"Authorization": f"Bearer {github_token}"}
     # ... 其余代码
@@ -156,10 +152,10 @@ def make_github_request():
 // 访问环境变量
 const githubToken = process.env.GITHUB_TOKEN;
 if (!githubToken) {
-    throw new Error("GITHUB_TOKEN environment variable is required");
+    throw new Error("需要设置 GITHUB_TOKEN 环境变量");
 }
 
-// 在服务器代码中使用令牌
+// 在服务器代码中使用 token
 function makeGithubRequest() {
     const headers = { "Authorization": `Bearer ${githubToken}` };
     // ... 其余代码
@@ -169,7 +165,7 @@ function makeGithubRequest() {
 </hfoption>
 </hfoptions>
 
-`mcp.json` 中相应的配置如下所示：
+相应的 `mcp.json` 配置如下所示：
 
 ```json
 {
@@ -179,7 +175,7 @@ function makeGithubRequest() {
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/github_server.py"], // 这是一个示例，我们将在下一单元中使用真实服务器
+        "args": ["/path/to/github_server.py"], // 这是一个示例，我们将在下一单元中使用真实的服务器
         "env": {
           "GITHUB_TOKEN": "your_github_token"
         }
@@ -191,11 +187,11 @@ function makeGithubRequest() {
 
 ### 配置示例
 
-让我们看一些实际的配置场景：
+让我们来看一些实际的配置场景：
 
 #### 场景 1：本地服务器配置
 
-在这个场景中，我们有一个本地服务器，它是一个 Python 脚本，可能是文件资源管理器或代码编辑器。
+在这个场景中，我们有一个本地服务器，它是一个 Python 脚本，功能可能是文件浏览器或代码编辑器。
 
 ```json
 {
@@ -205,7 +201,7 @@ function makeGithubRequest() {
       "transport": {
         "type": "stdio",
         "command": "python",
-        "args": ["/path/to/file_explorer_server.py"] // 这是一个示例，我们将在下一单元中使用真实服务器
+        "args": ["/path/to/file_explorer_server.py"] // 这是一个示例，我们将在下一单元中使用真实的服务器
       }
     }
   ]
@@ -223,43 +219,43 @@ function makeGithubRequest() {
       "name": "Weather API",
       "transport": {
         "type": "sse",
-        "url": "https://example.com/mcp-server" // 这是一个示例，我们将在下一单元中使用真实服务器
+        "url": "https://example.com/mcp-server" // 这是一个示例，我们将在下一单元中使用真实的服务器
       }
     }
   ]
 }
 ```
 
-正确的配置对于成功部署 MCP 集成至关重要。通过理解这些方面，你可以在 AI 应用程序和外部功能之间创建稳健可靠的连接。
+正确的配置对于成功部署 MCP 集成至关重要。通过理解这些配置，您可以在 AI 应用和外部功能之间建立稳固可靠的连接。
 
-在下一节中，我们将探索 Hugging Face Hub 上可用的 MCP 服务器生态系统，以及如何在那里发布你自己的服务器。
+在下一节中，我们将探索 Hugging Face Hub 上可用的 MCP 服务器生态系统，并学习如何在 Hub 上发布您自己的服务器。
 
 ## Tiny Agents 客户端
 
-现在，让我们探索如何在代码中使用 MCP 客户端。
+现在，让我们来探索如何在代码中使用 MCP 客户端。
 
-你还可以使用 tiny agents 作为 MCP 客户端，直接从代码连接到 MCP 服务器。Tiny agents 提供了一种简单的方法来创建可以使用 MCP 服务器工具的 AI 代理。
+您还可以使用 Tiny Agents 作为 MCP 客户端，直接从代码中连接到 MCP 服务器。Tiny Agents 提供了一种简单的方法来创建可以使用 MCP 服务器工具的 AI 代理。
 
-Tiny Agent 可以在命令行环境中运行 MCP 服务器。为此，我们需要安装 `npm` 并使用 `npx` 运行服务器。**Python 和 JavaScript 都需要这些。**
+Tiny Agents 可以在命令行环境中运行 MCP 服务器。为此，我们需要安装 `npm` 并使用 `npx` 来运行服务器。**无论您使用 Python 还是 JavaScript，都需要这两个工具。**
 
-让我们使用 `npm` 安装 `npx`。如果你没有安装 `npm`，请查看 [npm 文档](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)。
+让我们使用 `npm` 来安装 `npx`。如果您尚未安装 `npm`，请查阅 [npm 文档](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)。
 
-### 设置
+### 环境设置
 
-首先，如果你没有安装 `npx`，我们需要安装它。你可以使用以下命令：
+首先，如果您没有安装 `npx`，请使用以下命令进行安装：
 
 ```bash
 # 安装 npx
 npm install -g npx
 ```
 
-然后，我们需要安装带有 MCP 支持的 huggingface_hub 包。这将允许我们运行 MCP 服务器和客户端。
+然后，我们需要安装带有 MCP 支持的 `huggingface_hub` 包。这将允许我们运行 MCP 服务器和客户端。
 
 ```bash
 pip install "huggingface_hub[mcp]>=0.32.0"
 ```
 
-然后，我们需要登录到 Hugging Face Hub 以访问 MCP 服务器。你可以使用 `huggingface-cli` 命令行工具来完成此操作。你需要一个[登录令牌](https://huggingface.co/docs/huggingface_hub/v0.32.3/en/quick-start#authentication)来执行此操作。
+接下来，我们需要登录到 Hugging Face Hub 以访问 MCP 服务器。您可以使用 `huggingface-cli` 命令行工具来完成此操作。您需要一个[登录令牌](https://huggingface.co/docs/huggingface_hub/v0.32.3/en/quick-start#authentication)来执行此操作。
 
 ```bash
 huggingface-cli login
@@ -267,31 +263,31 @@ huggingface-cli login
 
 ### 配置访问令牌权限
 
-创建 Hugging Face 访问令牌并登录后，你需要确保令牌具有与推理提供商一起工作的适当权限。
+创建 Hugging Face 访问令牌并登录后，您需要确保该令牌具有与推理服务提供商交互的适当权限。
 
 > [!WARNING]
-> **重要：** 如果跳过此步骤，在使用托管模型运行 tiny agents 时可能会遇到身份验证错误。
+> **重要提示：** 如果跳过此步骤，在使用托管模型运行 `tiny-agents` 时可能会遇到身份验证错误。
 
-1. 访问你的 [Hugging Face 访问令牌页面](https://huggingface.co/settings/tokens)
-2. 找到你的 MCP 令牌并点击旁边的三个点（⋮）
-3. 选择**"编辑权限"**
-4. 在**推理**部分下，勾选以下选项：
-   - **"调用推理提供商"**
-5. 保存更改
+1.  访问您的 [Hugging Face 访问令牌页面](https://huggingface.co/settings/tokens)。
+2.  找到您的 MCP 令牌，然后点击旁边的三个点 (⋮)。
+3.  选择 **“编辑权限”**。
+4.  在 **推理** 部分下，勾选以下选项：
+    -   **“调用推理提供商”**
+5.  保存更改。
 
-此权限是必需的，因为 tiny agents 需要通过 Nebius 等提供商对托管模型（如 `Qwen/Qwen2.5-72B-Instruct`）进行 API 调用。
+此权限是必需的，因为 Tiny Agents 需要通过 Nebius 等提供商对托管模型 (例如 `Qwen/Qwen2.5-72B-Instruct`) 进行 API 调用。
 
 <hfoptions id="language">
 <hfoption id="python">
 
 ### 连接到 MCP 服务器
 
-现在，让我们创建一个代理配置文件 `agent.json`。
+现在，让我们创建一个名为 `agent.json` 的代理配置文件。
 
 ```json
 {
     "name": "playwright-agent",
-    "description": "Agent with Playwright MCP server",
+    "description": "一个集成了 Playwright MCP 服务器的代理",
     "model": "Qwen/Qwen2.5-72B-Instruct",
     "provider": "nebius",
     "servers": [
@@ -304,9 +300,9 @@ huggingface-cli login
 }
 ```
 
-在这个配置中，我们使用 `@playwright/mcp` MCP 服务器。这是一个可以使用 Playwright 控制浏览器的 MCP 服务器。
+在此配置中，我们使用了 `@playwright/mcp` 这个 MCP 服务器，它可以使用 Playwright 来控制浏览器。
 
-现在你可以运行代理：
+现在，您可以运行该代理了：
 
 ```bash
 tiny-agents run agent.json
@@ -314,7 +310,7 @@ tiny-agents run agent.json
 </hfoption>
 <hfoption id="javascript">
 
-首先，使用 [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) 安装 tiny agents 包。
+首先，使用 [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) 安装 `tiny-agents` 包。
 
 ```bash
 npm install @huggingface/tiny-agents
@@ -322,14 +318,14 @@ npm install @huggingface/tiny-agents
 
 ### 连接到 MCP 服务器
 
-创建一个代理项目目录并创建一个 `agent.json` 文件。
+创建一个代理项目目录，并在其中创建一个 `agent.json` 文件。
 
 ```bash
 mkdir my-agent
 touch my-agent/agent.json
 ```
 
-在 `my-agent/agent.json` 创建一个代理配置文件：
+在 `my-agent/agent.json` 中创建代理配置文件：
 
 ```json
 {
@@ -345,7 +341,7 @@ touch my-agent/agent.json
 }
 ```
 
-现在你可以运行代理：
+现在，您可以运行该代理了：
 
 ```bash
 npx @huggingface/tiny-agents run ./my-agent
@@ -354,25 +350,25 @@ npx @huggingface/tiny-agents run ./my-agent
 </hfoption>
 </hfoptions>
 
-在下面的视频中，我们运行代理并要求它在浏览器中打开一个新标签页。
+在下面的视频中，我们运行了代理，并要求它在浏览器中打开一个新标签页。
 
-以下示例展示了一个配置为通过 Nebius 推理提供商使用 [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) 模型的网页浏览代理，它配备了 playwright MCP 服务器，可以使用网页浏览器！代理配置通过指定 [Hugging Face 数据集 `tiny-agents/tiny-agents` 中的路径](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser)来加载。
+以下示例展示了一个配置为通过 Nebius 推理服务使用 [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) 模型的网页浏览代理。它配备了 Playwright MCP 服务器，可以使用浏览器进行操作！该代理的配置通过指定 [Hugging Face 数据集 `tiny-agents/tiny-agents` 中的路径](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser)来加载。
 
 <video controls autoplay loop>
   <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/python-tiny-agents/web_browser_agent.mp4" type="video/mp4">
 </video>
 
-当你运行代理时，你会看到它加载，列出从连接的 MCP 服务器发现的工具。然后，它就准备好接收你的提示了！
+当您运行代理时，您会看到它加载并列出从已连接的 MCP 服务器发现的工具。然后，它就准备好接收您的指令了！
 
-此演示中使用的提示：
+此演示中使用的提示词：
 
-> 在 Brave Search 上搜索 HF 推理提供商，打开第一个结果，然后给我 Hugging Face 支持的推理提供商列表
+> 在 Brave Search 上搜索 “HF inference providers”，打开第一个结果，然后告诉我 Hugging Face 支持的推理服务提供商列表。
 
 ## 下一步
 
-现在你已经了解了 MCP 客户端，你可以：
-* 探索特定的 MCP 服务器实现
-* 学习创建自定义 MCP 客户端
-* 深入了解高级 MCP 集成模式
+现在您已经了解了 MCP 客户端，您可以：
+*   探索特定的 MCP 服务器实现
+*   学习创建自定义的 MCP 客户端
+*   深入了解更高级的 MCP 集成模式
 
-让我们继续模型上下文协议的学习之旅！
+让我们继续模型上下文协议学习之旅吧！
