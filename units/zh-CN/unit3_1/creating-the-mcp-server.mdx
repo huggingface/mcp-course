@@ -1,32 +1,32 @@
-# 创建 MCP 服务器
+# 构建 MCP 服务器
 
-MCP 服务器是我们 Pull Request 代理的核心。它提供了代理将用于与 Hugging Face Hub 交互的工具，特别是用于读取和更新模型仓库标签。在本节中，我们将使用 FastMCP 和 Hugging Face Hub Python SDK 构建服务器。
+MCP 服务器是我们拉取请求（Pull Request）代理的核心。它为代理提供了与 Hugging Face Hub 交互所需的核心工具，特别是读取和更新模型仓库标签的功能。在本节中，我们将一起使用 FastMCP 和 Hugging Face Hub Python SDK 来构建这个服务器。
 
-## 理解 MCP 服务器架构
+## 理解 MCP 服务器的架构
 
-我们的 MCP 服务器提供两个基本工具：
+我们的 MCP 服务器将提供两个核心工具：
 
-| 工具 | 描述 |
+| 工具名 | 功能描述 |
 | --- | --- |
-| `get_current_tags` | 从模型仓库检索现有标签 |
-| `add_new_tag` | 通过 pull request 向仓库添加新标签 |
+| `get_current_tags` | 从指定的模型仓库中检索现有的所有标签。 |
+| `add_new_tag` | 通过创建一个拉取请求，向指定的模型仓库添加一个新标签。 |
 
-这些工具抽象了 Hub API 交互的复杂性，为我们的代理提供了一个简洁的工作接口。
+这些工具将与 Hub API 交互的复杂过程封装起来，为我们的 AI 代理提供了一个简洁、高效的工作接口。
 
 ![MCP 服务器工具](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/architecture.png)
 
-## 完整的 MCP 服务器实现
+## 逐步实现 MCP 服务器
 
-让我们逐步创建 `mcp_server.py` 文件。我们将逐步构建，以便您理解每个组件以及它们如何协同工作。
+现在，让我们一步步创建 `mcp_server.py` 文件。我们会循序渐进地构建，确保您能理解每个组件及其协同工作的方式。
 
-### 1. 导入和配置
+### 1. 导入依赖与配置环境
 
-首先，让我们设置所有必要的导入和配置。
+首先，设置所有必要的导入和基础配置。
 
 ```python
 #!/usr/bin/env python3
 """
-使用 FastMCP 的 HuggingFace Hub 标签操作简化 MCP 服务器
+一个简化的 MCP 服务器，使用 FastMCP 对 Hugging Face Hub 的标签进行操作。
 """
 
 import os
@@ -36,26 +36,28 @@ from huggingface_hub import HfApi, model_info, ModelCard, ModelCardData
 from huggingface_hub.utils import HfHubHTTPError
 from dotenv import load_dotenv
 
+# 从 .env 文件加载环境变量
 load_dotenv()
 ```
 
-上面的导入为我们提供了构建 MCP 服务器所需的一切。`FastMCP` 提供服务器框架，而 `huggingface_hub` 导入为我们提供了与模型仓库交互的工具。
+这些导入语句为构建 MCP 服务器提供了所有必需的模块。`FastMCP` 提供了服务器框架，而 `huggingface_hub` 库则为我们提供了与模型仓库交互的利器。
 
-`load_dotenv()` 调用会自动从 `.env` 文件加载环境变量，使得在开发过程中管理 API 令牌等秘密信息变得容易。
+`load_dotenv()` 会自动从项目根目录下的 `.env` 文件中加载环境变量。这使得在开发过程中管理 API 令牌等敏感信息变得既简单又安全。
 
 > [!TIP]
-> 如果您使用 uv，可以在项目根目录创建一个 `.env` 文件，如果使用 `uv run` 运行服务器，则不需要使用 `load_dotenv()`。
+> 如果您正在使用 `uv`，它能自动加载 `.env` 文件。当您在项目根目录创建了 `.env` 文件后，直接使用 `uv run` 运行服务器即可，无需显式调用 `load_dotenv()`。
 
-接下来，我们将使用必要的凭据配置服务器并创建 FastMCP 实例：
+接下来，我们将配置服务器所需的凭证，并初始化 FastMCP 实例：
 
 ```python
 # 配置
 HF_TOKEN = os.getenv("HF_TOKEN")
 
 # 初始化 HF API 客户端
+# 仅当 HF_TOKEN 可用时，才创建一个经过身份验证的 API 客户端
 hf_api = HfApi(token=HF_TOKEN) if HF_TOKEN else None
 
-# 创建 FastMCP 服务器
+# 创建 FastMCP 服务器实例
 mcp = FastMCP("hf-tagging-bot")
 ```
 
@@ -64,30 +66,150 @@ mcp = FastMCP("hf-tagging-bot")
 2. 创建一个经过身份验证的 API 客户端（仅在令牌可用时）
 3. 使用描述性名称初始化我们的 FastMCP 服务器
 
-`hf_api` 的条件创建确保即使没有令牌，我们的服务器也可以启动，这对于测试基本结构很有用。
+`hf_api` 的条件式创建确保了即使在没有提供令牌的情况下，服务器也能成功启动。这在测试服务器基本结构时非常有用。
 
-### 2. 获取当前标签工具
+### 2. 实现 `get_current_tags` 工具
 
-现在让我们实现第一个工具 - `get_current_tags`。此工具从模型仓库检索现有标签：
+现在，让我们来实现第一个工具——`get_current_tags`。该工具用于从模型仓库中检索所有现有的标签。
 
 ```python
 @mcp.tool()
 def get_current_tags(repo_id: str) -> str:
-    """从 HuggingFace 模型仓库获取当前标签"""
-    print(f"🔧 get_current_tags 调用，repo_id: {repo_id}")
+    """从指定的 Hugging Face 模型仓库中获取当前的所有标签。"""
+    print(f"🔧 [工具调用] get_current_tags, repo_id: {repo_id}")
 
     if not hf_api:
-        error_result = {"error": "HF token not configured"}
-        json_str = json.dumps(error_result)
-        print(f"❌ 没有 HF API 令牌 - 返回: {json_str}")
+        error_result = {"error": "Hugging Face token 未配置"}
+        json_str = json.dumps(error_result, ensure_ascii=False)
+        print(f"❌ 未配置 HF API 令牌 - 返回: {json_str}")
         return json_str
 ```
 
 函数从验证开始 - 检查我们是否有经过身份验证的 API 客户端。注意我们返回的是 JSON 字符串而不是 Python 对象。这对于 MCP 通信至关重要。
 
 > [!TIP]
-> 所有 MCP 工具必须返回字符串，而不是 Python 对象。这就是为什么我们使用 `json.dumps()` 将结果转换为 JSON 字符串。这确保了 MCP 服务器和客户端之间可靠的数据交换。
+> **MCP 核心原则**：所有 MCP 工具的返回值都必须是字符串。这就是为什么我们总是使用 `json.dumps()` 将 Python 字典或列表等结构化数据转换为 JSON 字符串。这确保了在 MCP 服务器和客户端之间进行可靠、标准化的数据交换。
 
-让我们继续 `get_current_tags` 函数的主要逻辑：
+接下来，我们继续完成 `get_current_tags` 函数的主要逻辑：
 
 ```python
+    try:
+        # 获取模型信息
+        info = model_info(repo_id, token=HF_TOKEN)
+        
+        # 提取标签
+        tags = info.tags if hasattr(info, 'tags') else []
+        
+        # 构建并返回成功的 JSON 结果
+        success_result = {"tags": tags}
+        json_str = json.dumps(success_result, ensure_ascii=False)
+        print(f"✅ 成功获取标签 - 返回: {json_str}")
+        return json_str
+        
+    except HfHubHTTPError as e:
+        # 处理 Hub API 的特定错误
+        error_result = {"error": f"Hub API 请求失败: {e}"}
+        json_str = json.dumps(error_result, ensure_ascii=False)
+        print(f"❌ Hub API 错误 - 返回: {json_str}")
+        return json_str
+        
+    except Exception as e:
+        # 处理其他所有未知错误
+        error_result = {"error": f"发生未知错误: {e}"}
+        json_str = json.dumps(error_result, ensure_ascii=False)
+        print(f"❌ 未知错误 - 返回: {json_str}")
+        return json_str
+```
+
+这段代码包含了健壮的错误处理：
+- 它能捕获 `huggingface_hub` 库可能抛出的特定 HTTP 错误。
+- 它也能捕获任何其他意外的异常，确保服务器的稳定运行。
+
+### 3. 实现 `add_new_tag` 工具
+
+现在我们来实现第二个工具，`add_new_tag`。这个工具负责通过创建一个新的拉取请求来向模型仓库添加标签。
+
+```python
+@mcp.tool()
+def add_new_tag(repo_id: str, tag: str, pr_title: str) -> str:
+    """通过在 Hugging Face Hub 上创建拉取请求来为模型仓库添加新标签。"""
+    print(f"🔧 [工具调用] add_new_tag, repo_id: {repo_id}, tag: {tag}")
+    
+    if not hf_api:
+        error_result = {"error": "Hugging Face token 未配置，无法访问 Hub API。"}
+        json_str = json.dumps(error_result, ensure_ascii=False)
+        print(f"❌ 未配置 HF API 令牌 - 返回错误: {json_str}")
+        return json_str
+```
+
+和 `get_current_tags` 一样，我们首先检查 API 客户端是否已配置。
+
+接下来是核心逻辑。这段代码有些复杂，因为它需要处理模型卡（`README.md`）的元数据。
+
+```python
+    try:
+        # 步骤 1: 获取现有的模型卡
+        card_path = hf_api.hf_hub_download(repo_id, "README.md")
+        card = ModelCard.load(card_path)
+        
+        # 步骤 2: 更新标签
+        if card.data.tags:
+            if tag not in card.data.tags:
+                card.data.tags.append(tag)
+        else:
+            card.data.tags = [tag]
+            
+        # 步骤 3: 更新模型卡内容
+        card.save(card_path)
+        
+        # 步骤 4: 创建一个拉取请求
+        pr_url = hf_api.upload_file(
+            path_or_fileobj=card_path,
+            path_in_repo="README.md",
+            repo_id=repo_id,
+            commit_message=pr_title,
+            pr=1
+        )
+        
+        # 构建并返回成功的 JSON 结果
+        success_result = {"status": "success", "pr_url": pr_url}
+        json_str = json.dumps(success_result, ensure_ascii=False)
+        print(f"✅ 成功创建 PR - 返回: {json_str}")
+        return json_str
+        
+    except HfHubHTTPError as e:
+        error_result = {"error": f"Hub API 请求失败: {e}"}
+        json_str = json.dumps(error_result, ensure_ascii=False)
+        print(f"❌ Hub API 错误 - 返回: {json_str}")
+        return json_str
+        
+    except Exception as e:
+        error_result = {"error": f"发生未知错误: {e}"}
+        json_str = json.dumps(error_result, ensure_ascii=False)
+        print(f"❌ 未知错误 - 返回: {json_str}")
+        return json_str
+```
+
+这个函数通过以下步骤精心编排了与 Hub 的交互：
+1.  **下载模型卡**：获取 `README.md` 文件。
+2.  **更新标签**：将新标签添加到模型卡的元数据中。
+3.  **保存变更**：将更新后的内容写回本地文件。
+4.  **创建拉取请求**：将修改后的 `README.md` 文件上传，并创建一个 PR 来提交变更。
+
+### 4. 运行服务器
+
+最后，我们需要添加一小段代码来启动我们的 MCP 服务器。
+
+```python
+if __name__ == "__main__":
+    print("🚀 启动 Hugging Face 标签 MCP 服务器...")
+    mcp.run()
+```
+
+这个标准的 Python `if __name__ == "__main__"` 代码块确保只有在直接运行此脚本时，服务器才会启动。
+
+## 最终代码
+
+将以上所有部分组合在一起，您就得到了一个功能完整的 `mcp_server.py` 文件。这个服务器已经准备好接收来自我们 AI 代理的请求，并代表它与 Hugging Face Hub 进行交互。
+
+在下一节中，我们将构建一个 Webhook 监听器，以便实时响应 Hub 上的事件。

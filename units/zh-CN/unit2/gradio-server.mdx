@@ -60,7 +60,7 @@ def sentiment_analysis(text: str) -> str:
 demo = gr.Interface(
     fn=sentiment_analysis,
     inputs=gr.Textbox(placeholder="输入要分析的文本..."),
-    outputs=gr.Textbox(),  # 从 gr.JSON() 更改为 gr.Textbox()
+    outputs=gr.Textbox(),  # 从 gr.JSON() 改为 gr.Textbox()
     title="文本情感分析",
     description="使用 TextBlob 分析文本的情感"
 )

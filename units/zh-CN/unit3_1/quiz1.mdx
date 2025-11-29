@@ -1,99 +1,99 @@
 # 测验 1：MCP 服务器实现
 
-测试你对 Pull Request Agent 的 MCP 服务器概念和实现的理解。
+测试您对拉取请求代理的 MCP 服务器概念和实现的理解。
 
-### Q1: 在 Pull Request Agent 架构中，MCP 服务器的主要作用是什么？
+### Q1: 在我们的拉取请求代理架构中，MCP 服务器的核心作用是什么？
 
 <Question
   choices={[
     {
-      text: "托管应用程序的用户界面",
-      explain: "MCP 服务器提供后端功能，而不是用户界面。"
+      text: "托管应用的用户界面",
+      explain: "不完全对。MCP 服务器主要提供后端功能，而非用户界面。"
     },
     {
-      text: "公开 AI 代理可以用来与 GitHub 交互的工具和资源",
-      explain: "接近了，但这个项目专注于 Hugging Face Hub，而不是 GitHub。"
+      text: "提供 AI 代理可以用来与 GitHub 交互的工具",
+      explain: "很接近，但这个项目我们专注于 Hugging Face Hub，而不是 GitHub。"
     },
     {
-      text: "公开用于读取和更新 Hugging Face Hub 上模型仓库标签的工具",
-      explain: "正确！MCP 服务器提供 get_current_tags 和 add_new_tag 工具用于 Hub 交互。",
+      text: "提供用于读取和更新 Hugging Face Hub 上模型仓库标签的工具",
+      explain: "完全正确！MCP 服务器提供了 get_current_tags 和 add_new_tag 这两个工具，用于与 Hub 进行交互。",
       correct: true
     },
     {
-      text: "在 pull request 数据上训练 AI 模型",
-      explain: "MCP 服务器提供运行时功能，而不是模型训练功能。"
+      text: "在拉取请求数据上训练一个 AI 模型",
+      explain: "不对。MCP 服务器提供的是运行时能力，而非模型训练功能。"
     }
   ]}
 />
 
-### Q2: 在 FastMCP 实现中，为什么所有 MCP 工具函数必须返回字符串而不是 Python 对象？
+### Q2: 在 FastMCP 的实现中，为什么所有 MCP 工具函数都必须返回字符串，而不是 Python 对象？
 
 <Question
   choices={[
     {
-      text: "通过减少内存使用来提高性能",
-      explain: "虽然字符串可能更节省内存，但这不是主要原因。"
+      text: "通过减少内存使用来提升性能",
+      explain: "虽然字符串可能在某些情况下更节省内存，但这不是主要原因。"
     },
     {
-      text: "确保 MCP 服务器和客户端之间可靠的数据交换",
-      explain: "正确！MCP 协议要求字符串响应，所以我们使用 json.dumps() 来序列化数据。",
+      text: "确保 MCP 服务器和客户端之间进行可靠、标准化的数据交换",
+      explain: "正确！MCP 协议要求所有工具的响应都是字符串。因此，我们使用 json.dumps() 来序列化结构化数据。",
       correct: true
     },
     {
-      text: "使代码更容易调试",
-      explain: "虽然 JSON 字符串是可读的，但这不是主要的技术要求。"
+      text: "让代码的调试过程更容易",
+      explain: "虽然可读的 JSON 字符串有助于调试，但这并非协议设定的技术要求。"
     },
     {
-      text: "符合 Hugging Face Hub API 要求",
-      explain: "这是 MCP 协议的要求，不是特定于 Hub API 的。"
+      text: "为了符合 Hugging Face Hub API 的要求",
+      explain: "这是 MCP 协议自身的要求，与特定的 Hub API 无关。"
     }
   ]}
 />
 
-### Q3: 在实现 `add_new_tag` 工具时，在创建 pull request 之前检查标签是否已存在的目的是什么？
+### Q3: 在实现 `add_new_tag` 工具时，为何在创建拉取请求（PR）前要先检查标签是否已存在？
 
 <Question
   choices={[
     {
-      text: "减少 API 调用并提高性能",
-      explain: "虽然这有助于性能，但这不是检查的主要原因。"
+      text: "减少 API 调用次数以提升性能",
+      explain: "这确实是好处之一，但并非最主要的原因。"
     },
     {
-      text: "防止创建重复的 pull request 并提供更好的用户反馈",
-      explain: "正确！这个验证防止不必要的 PR 并返回有意义的状态消息。",
+      text: "避免创建重复的拉取请求，并提供更明确的用户反馈",
+      explain: "完全正确！这个验证步骤可以防止不必要的 PR，并能返回更有意义的状态消息。",
       correct: true
     },
     {
-      text: "遵守 Hugging Face Hub 的速率限制",
-      explain: "虽然避免不必要的调用有助于速率限制，但这不是主要目的。"
+      text: "为了遵守 Hugging Face Hub 的 API 调用频率限制",
+      explain: "避免不必要的调用确实有助于遵守频率限制，但这并非此项检查的主要目的。"
     },
     {
-      text: "确保标签格式有效",
-      explain: "标签验证与检查是否已存在是分开的。"
+      text: "确保标签的格式是有效的",
+      explain: "标签的格式验证是一个独立的逻辑，与检查标签是否已存在是两回事。"
     }
   ]}
 />
 
-### Q4: 在 MCP 服务器实现中，当模型仓库没有现有的 README.md 文件时会发生什么？
+### Q4: 在我们的 MCP 服务器实现中，如果一个模型仓库没有 `README.md` 文件，会发生什么？
 
 <Question
   choices={[
     {
-      text: "add_new_tag 工具将失败并报错",
-      explain: "实现优雅地处理了这种情况。"
+      text: "`add_new_tag` 工具将会失败并报错",
+      explain: "实际上，我们的实现能够优雅地处理这种情况。"
     },
     {
-      text: "该工具使用 ModelCardData 创建一个新的 ModelCard 并继续添加标签",
-      explain: "正确！代码处理 HfHubHTTPError 并在不存在时创建新的模型卡片。",
+      text: "该工具会使用 `ModelCardData` 创建一个新的模型卡片，然后继续添加标签",
+      explain: "正确！代码会捕获 HfHubHTTPError 异常，并在模型卡片不存在时创建一个新的。",
       correct: true
     },
     {
-      text: "该工具跳过添加标签并返回警告",
-      explain: "该工具不会跳过操作 - 它会创建所需的内容。"
+      text: "该工具会跳过添加标签的操作，并返回一个警告",
+      explain: "工具不会跳过操作，而是会主动创建所需的文件。"
     },
     {
-      text: "该工具自动创建带有占位符内容的默认 README",
-      explain: "它创建最小的模型卡片结构，而不是占位符内容。"
+      text: "该工具会自动创建一个包含占位符内容的默认 README 文件",
+      explain: "它会创建一个最小化的模型卡片结构，而不是一个通用的占位符文件。"
     }
   ]}
 />
@@ -107,13 +107,13 @@
       explain: "设置 create_pr=True 会创建 pull request，而不是直接提交到主分支。"
     },
     {
-      text: "它自动创建 pull request，而不是直接提交到主分支",
-      explain: "正确！这启用了审查工作流程并遵循仓库治理实践。",
+      text: "它会自动创建一个 PR，而不是直接提交变更到主分支",
+      explain: "正确！这种做法支持了代码审查的工作流，并遵循了良好的仓库治理实践。",
       correct: true
     },
     {
-      text: "它创建一个只有仓库所有者可以看到的私有分支",
-      explain: "Pull request 对仓库协作者可见，并且可以是公开的。"
+      text: "它会创建一个只有仓库所有者才能看到的私有分支",
+      explain: "PR 对所有仓库协作者都是可见的，并非私有。"
     },
     {
       text: "它在创建提交之前验证提交",
@@ -122,28 +122,28 @@
   ]}
 />
 
-### Q6: 为什么 MCP 服务器实现在整个代码中使用带有表情符号的详细日志记录？
+### Q6: 为什么我们的 MCP 服务器在整个代码中都使用了包含表情符号的详细日志记录？
 
 <Question
   choices={[
     {
-      text: "让代码对开发者来说更有趣和吸引力",
-      explain: "虽然表情符号在视觉上很吸引人，但有一个更实际的原因。"
+      text: "为了让代码对开发者来说更有趣、更吸引人",
+      explain: "虽然表情符号在视觉上很友好，但这里有一个更实际的原因。"
     },
     {
-      text: "当服务器响应 Hub 事件自主运行时，帮助调试和监控",
-      explain: "正确！由于代理自动响应 webhook，详细的日志对于故障排除至关重要。",
+      text: "当服务器自主响应 Hub 事件时，这有助于调试和监控",
+      explain: "完全正确！由于代理是自动响应 Webhook 的，因此详细的日志对于追踪问题和理解其行为至关重要。",
       correct: true
     },
     {
-      text: "符合 FastMCP 日志记录要求",
-      explain: "FastMCP 不要求特定的日志格式或表情符号。"
+      text: "为了符合 FastMCP 的日志记录要求",
+      explain: "FastMCP 并没有规定特定的日志格式或要求使用表情符号。"
     },
     {
-      text: "减少日志文件中的文本量",
-      explain: "表情符号不会显著减少日志文件大小，这也不是主要目标。"
+      text: "为了减少日志文件中的文本量",
+      explain: "表情符号并不会显著减小日志文件的体积，这也不是主要目的。"
     }
   ]}
 />
 
-恭喜你完成了这个测验 🥳！如果你需要复习任何内容，请花时间重新访问本章以巩固你的知识。
+恭喜您完成了本次测验 🥳！如果您对任何问题感到不确定，不妨花些时间回顾本章内容，以巩固您的知识。
