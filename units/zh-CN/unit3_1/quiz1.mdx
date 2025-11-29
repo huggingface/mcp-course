@@ -1,8 +1,8 @@
 # 测验 1：MCP 服务器实现
 
-测试您对拉取请求代理的 MCP 服务器概念和实现的理解。
+测试您对 PR Agent 的 MCP 服务器概念和实现的理解。
 
-### Q1: 在我们的拉取请求代理架构中，MCP 服务器的核心作用是什么？
+### Q1: 在我们的拉取请求 Agent 架构中，MCP 服务器的核心作用是什么？
 
 <Question
   choices={[
@@ -11,7 +11,7 @@
       explain: "不完全对。MCP 服务器主要提供后端功能，而非用户界面。"
     },
     {
-      text: "提供 AI 代理可以用来与 GitHub 交互的工具",
+      text: "提供 AI Agent 可以用来与 GitHub 交互的工具",
       explain: "很接近，但这个项目我们专注于 Hugging Face Hub，而不是 GitHub。"
     },
     {
@@ -132,7 +132,7 @@
     },
     {
       text: "当服务器自主响应 Hub 事件时，这有助于调试和监控",
-      explain: "完全正确！由于代理是自动响应 Webhook 的，因此详细的日志对于追踪问题和理解其行为至关重要。",
+      explain: "完全正确！由于 Agent 是自动响应 Webhook 的，因此详细的日志对于追踪问题和理解其行为至关重要。",
       correct: true
     },
     {

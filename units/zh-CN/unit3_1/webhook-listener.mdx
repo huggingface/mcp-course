@@ -1,6 +1,6 @@
 # 实现 Webhook 监听器
 
-Webhook 监听器是我们“拉取请求代理”的入口。当 Hugging Face Hub 上的讨论被创建或更新时，它会接收实时事件，从而触发我们基于 MCP 的智能标签工作流。在本节中，我们将使用 FastAPI 来实现一个功能强大的 Webhook 处理器。
+Webhook 监听器是我们“PR Agent”的入口。当 Hugging Face Hub 上的讨论被创建或更新时，它会接收实时事件，从而触发我们基于 MCP 的智能标签工作流。在本节中，我们将使用 FastAPI 来实现一个功能强大的 Webhook 处理器。
 
 ## 理解 Webhook 集成
 
@@ -231,7 +231,7 @@ async def process_webhook_comment(webhook_data: Dict[str, Any]):
             return
         
         # 获取 MCP Agent 实例
-        agent = await get_agent()
+       agent = await get_agent()
         if not agent:
             operation["status"] = "error"
             operation["message"] = "Agent not configured (missing HF_TOKEN)"
@@ -315,7 +315,7 @@ async def root():
 @app.get("/health")
 async def health_check():
     """用于监控的健康检查端点"""
-    agent = await get_agent()
+   agent = await get_agent()
     
     return {
         "status": "healthy",

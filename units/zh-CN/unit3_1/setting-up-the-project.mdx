@@ -1,6 +1,6 @@
 # 项目基础设定
 
-在本节中，我们将为我们的“PR代理 (Pull Request Agent)”搭建好开发环境。
+在本节中，我们将为我们的“PR Agent” (Pull Request Agent) 搭建好开发环境。
 
 > [!TIP]
 > 我们将采用现代化的 Python 工具链，使用 `uv` 来管理依赖项并创建必要的配置文件。如果您对 `uv` 不熟悉，可以查阅[官方文档](https://docs.astral.sh/uv/)来了解更多信息。
@@ -18,7 +18,7 @@ git clone https://huggingface.co/spaces/mcp-course/tag-this-repo
 ```
 hf-pr-agent/
 ├── mcp_server.py              # 核心 MCP 服务器及标签工具
-├── app.py                     # FastAPI Webhook 监听器和代理
+├── app.py                     # FastAPI Webhook 监听器和 Agent 
 ├── requirements.txt           # Python 依赖项
 ├── pyproject.toml             # 项目配置
 ├── env.example                # 环境变量模板
@@ -91,10 +91,10 @@ HF_TOKEN=hf_your_token_here
 # 使用一个强随机字符串
 WEBHOOK_SECRET=your-webhook-secret-here
 
-# 代理使用的模型（可选）
+# Agent 使用的模型（可选）
 HF_MODEL=owner/model
 
-# MCP 代理的提供商（可选）
+# MCP 的提供商（可选）
 HF_PROVIDER=huggingface
 ```
 
@@ -118,7 +118,7 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 1. **创建 MCP 服务器** - 实现核心的标签管理功能。
 2. **构建 Webhook 监听器** - 处理传入的讨论事件。
-3. **集成 AI 代理** - 将 MCP 工具与 Webhook 处理逻辑连接起来。
+3. **集成 AI Agent ** - 将 MCP 工具与 Webhook 处理逻辑连接起来。
 4. **测试与部署** - 验证功能并将其部署到 Hugging Face Spaces。
 
 在下一节中，我们将深入探讨如何创建负责处理所有 Hugging Face Hub 交互的 MCP 服务器。

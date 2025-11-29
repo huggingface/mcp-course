@@ -234,7 +234,7 @@ function makeGithubRequest() {
 
 现在，让我们来探索如何在代码中使用 MCP 客户端。
 
-您还可以使用 Tiny Agents 作为 MCP 客户端，直接从代码中连接到 MCP 服务器。Tiny Agents 提供了一种简单的方法来创建可以使用 MCP 服务器工具的 AI 代理。
+您还可以使用 Tiny Agents 作为 MCP 客户端，直接从代码中连接到 MCP 服务器。Tiny Agents 提供了一种简单的方法来创建可以使用 MCP 服务器工具的 AI Agent 。
 
 Tiny Agents 可以在命令行环境中运行 MCP 服务器。为此，我们需要安装 `npm` 并使用 `npx` 来运行服务器。**无论您使用 Python 还是 JavaScript，都需要这两个工具。**
 
@@ -282,12 +282,12 @@ huggingface-cli login
 
 ### 连接到 MCP 服务器
 
-现在，让我们创建一个名为 `agent.json` 的代理配置文件。
+现在，让我们创建一个名为 `agent.json` 的 Agent 配置文件。
 
 ```json
 {
     "name": "playwright-agent",
-    "description": "一个集成了 Playwright MCP 服务器的代理",
+    "description": "一个集成了 Playwright MCP 服务器的 Agent ",
     "model": "Qwen/Qwen2.5-72B-Instruct",
     "provider": "nebius",
     "servers": [
@@ -302,7 +302,7 @@ huggingface-cli login
 
 在此配置中，我们使用了 `@playwright/mcp` 这个 MCP 服务器，它可以使用 Playwright 来控制浏览器。
 
-现在，您可以运行该代理了：
+现在，您可以运行该 Agent 了：
 
 ```bash
 tiny-agents run agent.json
@@ -318,14 +318,14 @@ npm install @huggingface/tiny-agents
 
 ### 连接到 MCP 服务器
 
-创建一个代理项目目录，并在其中创建一个 `agent.json` 文件。
+创建一个 Agent 项目目录，并在其中创建一个 `agent.json` 文件。
 
 ```bash
 mkdir my-agent
 touch my-agent/agent.json
 ```
 
-在 `my-agent/agent.json` 中创建代理配置文件：
+在 `my-agent/agent.json` 中创建 Agent 配置文件：
 
 ```json
 {
@@ -341,7 +341,7 @@ touch my-agent/agent.json
 }
 ```
 
-现在，您可以运行该代理了：
+现在，您可以运行该 Agent 了：
 
 ```bash
 npx @huggingface/tiny-agents run ./my-agent
@@ -350,15 +350,15 @@ npx @huggingface/tiny-agents run ./my-agent
 </hfoption>
 </hfoptions>
 
-在下面的视频中，我们运行了代理，并要求它在浏览器中打开一个新标签页。
+在下面的视频中，我们运行了 Agent ，并要求它在浏览器中打开一个新标签页。
 
-以下示例展示了一个配置为通过 Nebius 推理服务使用 [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) 模型的网页浏览代理。它配备了 Playwright MCP 服务器，可以使用浏览器进行操作！该代理的配置通过指定 [Hugging Face 数据集 `tiny-agents/tiny-agents` 中的路径](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser)来加载。
+以下示例展示了一个配置为通过 Nebius 推理服务使用 [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) 模型的网页浏览 Agent 。它配备了 Playwright MCP 服务器，可以使用浏览器进行操作！该 Agent 的配置通过指定 [Hugging Face 数据集 `tiny-agents/tiny-agents` 中的路径](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser)来加载。
 
 <video controls autoplay loop>
   <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/python-tiny-agents/web_browser_agent.mp4" type="video/mp4">
 </video>
 
-当您运行代理时，您会看到它加载并列出从已连接的 MCP 服务器发现的工具。然后，它就准备好接收您的指令了！
+当您运行 Agent 时，您会看到它加载并列出从已连接的 MCP 服务器发现的工具。然后，它就准备好接收您的指令了！
 
 此演示中使用的提示词：
 

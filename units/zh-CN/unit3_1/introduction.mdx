@@ -1,8 +1,8 @@
-# 在 Hugging Face Hub 上构建一个 Pull Request Agent (拉取请求代理)
+# 在 Hugging Face Hub 上构建一个拉取请求智能体 (Pull Request Agent)
 
 欢迎来到 MCP 课程的第三单元！
 
-在本单元中，我们将从零开始构建一个功能完备的“拉取请求（PR）代理”。这个代理能够智能地分析 Hugging Face 模型仓库中的讨论和评论，并自动为其添加标签。这个真实世界的项目将向您展示如何将 MCP 与 Webhook 监听器和自动化工作流无缝集成。
+在本单元中，我们将从零开始构建一个功能完备的 “拉取请求智能体” (Pull Request Agent, PR Agent)。这个 Agent 能够智能地分析 Hugging Face 模型仓库中的讨论和评论，并自动为其添加标签。这个真实世界的项目将向您展示如何将 MCP 与 Webhook 监听器和自动化工作流无缝集成。
 
 > [!TIP]
 > 本单元将带您体验一个真实的生产级应用场景：您的 MCP 服务器将能够实时响应来自 Hugging Face Hub 的事件，并自动创建 PR 来优化仓库的元数据。
@@ -16,7 +16,7 @@
 - **设计自动化工作流**：为模型仓库建立一套智能的自动标签系统。
 - **部署生产级应用**：将您的整个 Webhook 驱动的应用部署到 Hugging Face Spaces。
 
-完成本单元后，您将拥有一个可以投入使用的 PR 代理，它能持续监控讨论区，并通过 PR 自动优化仓库的元数据。
+完成本单元后，您将拥有一个可以投入使用的 PR Agent ，它能持续监控讨论区，并通过 PR 自动优化仓库的元数据。
 
 ## 前置知识
 
@@ -29,13 +29,13 @@
   - Python 3.11+
   - 一个拥有 API 访问权限的 Hugging Face 账户。
 
-## 我们的拉取请求代理项目
+## 我们的拉取请求 Agent 项目
 
-我们将构建一个由四个主要部分组成的标签代理：MCP 服务器、Webhook 监听器、代理逻辑和部署基础设施。这个代理能根据讨论和评论为模型仓库添加标签，从而为模型作者节省时间——他们将收到可直接合并的 PR，而无需手动为仓库添加标签。
+我们将构建一个由四个主要部分组成的标签 Agent ：MCP 服务器、Webhook 监听器、 Agent 逻辑和部署基础设施。这个 Agent 能根据讨论和评论为模型仓库添加标签，从而为模型作者节省时间——他们将收到可直接合并的 PR，而无需手动为仓库添加标签。
 
-![PR 代理架构](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/architecture.png)
+![PR Agent 架构](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/architecture.png)
 
-上图展示了我们的系统架构：一个可以读写模型标签的 MCP 服务器，一个接收来自 Hugging Face Hub 的 Webhook 的监听器，一个分析讨论并创建 PR 的 AI 代理，以及一个用于将所有服务部署到 Hugging Face Spaces 的基础设施。
+上图展示了我们的系统架构：一个可以读写模型标签的 MCP 服务器，一个接收来自 Hugging Face Hub 的 Webhook 的监听器，一个分析讨论并创建 PR 的 AI Agent ，以及一个用于将所有服务部署到 Hugging Face Spaces 的基础设施。
 
 ### 项目文件概览
 
@@ -44,7 +44,7 @@
 | 文件 | 用途 | 描述 |
 |---|---|---|
 | `mcp_server.py` | **核心 MCP 服务器** | 基于 FastMCP 构建，提供读取和更新模型标签的工具。 |
-| `app.py` | **Webhook 监听器与代理** | 一个 FastAPI 应用，负责接收 Webhook、处理讨论并创建 PR。 |
+| `app.py` | **Webhook 监听器与 Agent ** | 一个 FastAPI 应用，负责接收 Webhook、处理讨论并创建 PR。 |
 | `requirements.txt` | **依赖项** | 项目所需的 Python 包，如 FastMCP、FastAPI 和 huggingface-hub。 |
 | `pyproject.toml` | **项目配置** | 使用 uv 进行依赖管理的现代 Python 打包文件。 |
 | `Dockerfile` | **部署** | 用于在 Hugging Face Spaces 上部署的容器化配置。 |
@@ -62,15 +62,15 @@
 
 ### Webhook 集成
 
-遵循 [Hugging Face Webhooks 指南](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot)，我们的代理将：
+遵循 [Hugging Face Webhooks 指南](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot)，我们的 Agent 将：
 - 监听“讨论评论”事件。
 - 验证 Webhook 签名以确保安全。
 - 处理 `@` 提及和标签建议。
 - 自动创建拉取请求。
 
-### 代理功能
+### Agent 功能
 
-代理将分析讨论内容以：
+ Agent 将分析讨论内容以：
 - 提取明确的标签提及（如 `tag: pytorch`, `#transformers`）。
 - 从自然语言中识别隐含的标签。
 - 根据已知的机器学习/AI 类别验证标签。
@@ -85,7 +85,7 @@
 
 ## Webhook 集成概述
 
-我们的 PR 代理利用了与 Hugging Face 讨论机器人相同的 Webhook 基础设施。下图展示了 Webhook 如何实现实时响应：
+我们的 PR Agent 利用了与 Hugging Face 讨论机器人相同的 Webhook 基础设施。下图展示了 Webhook 如何实现实时响应：
 
 ![Webhook 流程](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
 
@@ -93,8 +93,8 @@ Webhook 流程如下：
 1. **事件触发**：用户在模型仓库的讨论区中创建一条评论。
 2. **Webhook 传递**：Hugging Face 向我们的应用端点发送一个 POST 请求。
 3. **身份验证**：我们验证 Webhook 密钥以确保请求的合法性与安全性。
-4. **处理**：我们的代理分析评论内容，提取标签建议。
-5. **执行操作**：如果找到相关标签，代理将创建一个 PR。
+4. **处理**：我们的 Agent 分析评论内容，提取标签建议。
+5. **执行操作**：如果找到相关标签， Agent 将创建一个 PR。
 6. **快速响应**：Webhook 端点立即返回响应，而创建 PR 的操作则在后台异步进行。
 
 ## 让我们开始吧！
