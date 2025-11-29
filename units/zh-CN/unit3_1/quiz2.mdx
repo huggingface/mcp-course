@@ -1,13 +1,13 @@
 # 测验 2：PR Agent 的集成
 
-测试您对完整的PR Agent 系统的知识，包括 MCP 客户端集成和 Webhook 处理。
+测试您对完整的 PR Agent 系统的知识，包括 MCP 客户端集成和 Webhook 处理。
 
-### Q1: 在我们的PR Agent 架构中，Webhook 监听器的主要目的是什么？
+### Q1: 在我们的 PR Agent 架构中，Webhook 监听器的主要目的是什么？
 
 <Question
   choices={[
     {
-      text: "提供一个用于管理拉取请求的用户界面",
+      text: "提供一个用于管理 PR 的用户界面",
       explain: "不对。Webhook 监听器负责处理来自 GitHub 的事件，而非提供用户界面。"
     },
     {
@@ -16,7 +16,7 @@
       correct: true
     },
     {
-      text: "将拉取请求数据永久存储在数据库中",
+      text: "将 PR 数据永久存储在数据库中",
       explain: "虽然它会处理 PR 数据，但其主要角色是事件处理，而非数据存储。"
     },
     {
