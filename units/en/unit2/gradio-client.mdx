@@ -17,7 +17,11 @@ Let's connect to an example MCP Server that is already running on Hugging Face. 
 from smolagents.mcp_client import MCPClient
 
 with MCPClient(
-    {"url": "https://abidlabs-mcp-tool-http.hf.space/gradio_api/mcp/sse", "transport": "sse",}
+    {
+		"url": "https://abidlabs-mcp-tool-http.hf.space/gradio_api/mcp/sse", 
+		"transport": "sse",
+	},
+    structured_output=False
 ) as tools:
     # Tools from the remote server are available
     print("\n".join(f"{t.name}: {t.description}" for t in tools))
@@ -61,7 +65,11 @@ Next, we'll connect to the MCP Server and get the tools that we can use to answe
 
 ```python
 mcp_client = MCPClient(
-    {"url": "https://abidlabs-mcp-tool-http.hf.space/gradio_api/mcp/sse", "transport": "sse",} # This is the MCP Client we created in the previous section
+    {
+		"url": "https://abidlabs-mcp-tool-http.hf.space/gradio_api/mcp/sse", 
+		"transport": "sse",
+	},
+    structured_output=False # This is the MCP Client we created in the previous section
 )
 tools = mcp_client.get_tools()
 ```
@@ -121,7 +129,6 @@ try:
 
     demo = gr.ChatInterface(
         fn=lambda message, history: str(agent.run(message)),
-        type="messages",
         examples=["Analyze the sentiment of the following text 'This is awesome'"],
         title="Agent with MCP Tools",
         description="This is a simple agent that uses MCP tools to answer questions.",
