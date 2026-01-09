@@ -264,6 +264,13 @@ Then, we will need to log in to the Hugging Face Hub to access the MCP servers. 
 ```bash
 huggingface-cli login
 ```
+(While completing course in 2026) I a get an error while running the huggingface-cli command: The term 'huggingface-cli' is not recognized as the name of a cmdlet, function, script file, or operable program.
+The command that I used - obtained from https://huggingface.co/docs/huggingface_hub/package_reference/cli - 
+```bash
+hf auth login
+```
+- allowed me to login.
+
 ### Configure Access Token Permissions
 
 After creating your Hugging Face access token and logging in, you need to ensure your token has the proper permissions to work with inference providers.
@@ -292,7 +299,7 @@ Now, let's create an agent configuration file `agent.json`.
 {
     "name": "playwright-agent",
     "description": "Agent with Playwright MCP server",
-    "model": "Qwen/Qwen2.5-72B-Instruct",
+    "model": "Qwen/Qwen3-32B",
     "provider": "nebius",
     "servers": [
         {
@@ -333,7 +340,7 @@ Create an agent configuration file at `my-agent/agent.json`:
 
 ```json
 {
-    "model": "Qwen/Qwen2.5-72B-Instruct",
+    "model": "Qwen/Qwen3-32B",
     "provider": "nebius",
     "servers": [
         {
@@ -344,6 +351,11 @@ Create an agent configuration file at `my-agent/agent.json`:
     ]
 }
 ```
+
+The model throws a Value error while running the agent.
+ValueError: Model Qwen/Qwen2.5-72B-Instruct is not supported by provider nebius.
+Qwen/Qwen3-32B - still supported by nebius.
+(I apologize if this is not the right way to make commits, I have never done this before)
 
 Now you can run the agent:
 
@@ -367,6 +379,7 @@ When you run the agent, you'll see it load, listing the tools it has discovered 
 Prompt used in this demo:
 
 > do a Web Search for HF inference providers on Brave Search and open the first result and then give me the list of the inference providers supported on Hugging Face 
+
 
 ## Next Steps
 
