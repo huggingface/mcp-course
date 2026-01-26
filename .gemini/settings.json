@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "pr-agent": {
+      "command": "/Users/tejagutti/Documents/mcp-course/projects/unit3/build-mcp-server/starter/.venv/bin/python",
+      "args": [
+        "/Users/tejagutti/Documents/mcp-course/projects/unit3/build-mcp-server/starter/server.py"
+      ]
+    }
+  }
+}
