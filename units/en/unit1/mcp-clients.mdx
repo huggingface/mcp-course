@@ -259,11 +259,17 @@ Then, we will need to install the huggingface_hub package with the MCP support. 
 pip install "huggingface_hub[mcp]>=0.32.0"
 ```
 
-Then, we will need to log in to the Hugging Face Hub to access the MCP servers. You can do this with the `huggingface-cli` command line tool. You will need a [login token](https://huggingface.co/docs/huggingface_hub/v0.32.3/en/quick-start#authentication) to do this.
+Then, we will need to log in to the Hugging Face Hub to access the MCP servers. You can do this using the Hugging Face CLI. You will need a [login token](https://huggingface.co/docs/huggingface_hub/v0.32.3/en/quick-start#authentication) to do this.
+
 
 ```bash
-huggingface-cli login
+# Login using the new CLI
+hf auth login
 ```
+> **Note**
+> The `huggingface-cli` command has been deprecated and replaced by `hf`.
+> If you encounter a "command not found" error, make sure you have an up-to-date version of `huggingface_hub`.
+
 ### Configure Access Token Permissions
 
 After creating your Hugging Face access token and logging in, you need to ensure your token has the proper permissions to work with inference providers.
