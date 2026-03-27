@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Module 1: Basic MCP Server - Starter Code
-TODO: Implement tools for analyzing git changes and suggesting PR templates
 """
 
 import json
