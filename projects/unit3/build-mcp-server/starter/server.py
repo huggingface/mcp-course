@@ -4,8 +4,6 @@ Module 1: Basic MCP Server - Starter Code
 TODO: Implement tools for analyzing git changes and suggesting PR templates
 """
 
-#This is a starter template meant to be run as-is, so it includes some minimal stub implementations to ensure the server starts successfully.
-
 import json
 import subprocess
 from pathlib import Path
@@ -51,6 +49,10 @@ async def analyze_file_changes(base_branch: str = "main", include_diff: bool = T
         working_dir = roots_result.roots[0].uri.path
     except Exception:
         working_dir = str(Path.cwd())
+
+    # If REPO_PATH was provided, prefer using it as the working directory for git operations
+    if REPO_PATH:
+        working_dir = str(REPO_PATH)
 
     # Get the list of changed files
     proc = subprocess.run(
@@ -104,6 +106,10 @@ async def get_pr_templates() -> str:
         _working_dir = roots_result.roots[0].uri.path
     except Exception:
         _working_dir = str(Path.cwd())
+
+    # prefer REPO_PATH for template lookup when provided
+    if REPO_PATH:
+        _working_dir = str(REPO_PATH)
 
     templates = []
     for template_file in TEMPLATES_DIR.glob("*.md"):
