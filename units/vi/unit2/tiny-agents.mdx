@@ -418,7 +418,7 @@ Giờ thì chúng ta đã hiểu về cả Tiny Agents và Gradio MCP servers, h
 
 ```ts
 const agent = new Agent({
-	provider: process.env.PROVIDER ?? "novita",
+    provider: process.env.PROVIDER ?? "novita",
     model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
     apiKey: process.env.HF_TOKEN,
     servers: [
