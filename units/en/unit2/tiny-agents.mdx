@@ -70,7 +70,7 @@ The JSON file will look like this:
 ```json
 {
 	"model": "Qwen/Qwen2.5-72B-Instruct",
-	"provider": "nebius",
+    "provider": "novita",
 	"servers": [
 		{
 			"type": "stdio",
@@ -106,7 +106,7 @@ The JSON file will look like this:
 ```json
 {
 	"model": "Qwen/Qwen2.5-72B-Instruct",
-	"provider": "nebius",
+    "provider": "novita",
 	"servers": [
 		{
 			"type": "stdio",
@@ -173,7 +173,7 @@ To connect our Tiny Agent to the Gradio sentiment analysis server we built earli
 
 ```ts
 const agent = new Agent({
-    provider: process.env.PROVIDER ?? "nebius",
+    provider: process.env.PROVIDER ?? "novita",
     model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
     apiKey: process.env.HF_TOKEN,
     servers: [
@@ -199,7 +199,7 @@ from huggingface_hub import Agent
 
 agent = Agent(
     model="Qwen/Qwen2.5-72B-Instruct",
-    provider="nebius",
+    provider="novita",
     servers=[
         {
             "command": "npx",
