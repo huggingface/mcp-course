@@ -284,7 +284,7 @@ After creating your Hugging Face access token and logging in, you need to ensure
    - **"Make calls to Inference Providers"**
 5. Save your changes
 
-This permission is required because tiny agents need to make API calls to hosted models like `Qwen/Qwen2.5-72B-Instruct` through providers like Nebius.
+This permission is required because tiny agents need to make API calls to hosted models like `Qwen/Qwen2.5-72B-Instruct` through providers like Novita.
 
 
 <hfoptions id="language">
@@ -299,7 +299,7 @@ Now, let's create an agent configuration file `agent.json`.
     "name": "playwright-agent",
     "description": "Agent with Playwright MCP server",
     "model": "Qwen/Qwen2.5-72B-Instruct",
-    "provider": "nebius",
+    "provider": "novita",
     "servers": [
         {
             "type": "stdio",
@@ -340,7 +340,7 @@ Create an agent configuration file at `my-agent/agent.json`:
 ```json
 {
     "model": "Qwen/Qwen2.5-72B-Instruct",
-    "provider": "nebius",
+    "provider": "novita",
     "servers": [
         {
             "type": "stdio",
@@ -362,7 +362,7 @@ npx @huggingface/tiny-agents run ./my-agent
 
 In the video below, we run the agent and ask it to open a new tab in the browser.
 
-The following example shows a web-browsing agent configured to use the [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) model via Nebius inference provider, and it comes equipped with a playwright MCP server, which lets it use a web browser! The agent config is loaded specifying [its path in the `tiny-agents/tiny-agents`](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser) Hugging Face dataset.
+The following example shows a web-browsing agent configured to use the [Qwen/Qwen2.5-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct) model via Novita inference provider, and it comes equipped with a playwright MCP server, which lets it use a web browser! The agent config is loaded specifying [its path in the `tiny-agents/tiny-agents`](https://huggingface.co/datasets/tiny-agents/tiny-agents/tree/main/celinah/web-browser) Hugging Face dataset.
 
 <video controls autoplay loop>
   <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/python-tiny-agents/web_browser_agent.mp4" type="video/mp4">
