@@ -60,13 +60,13 @@ Với công cụ phân tích cảm xúc Gradio đã kết nối, chúng ta có t
 
 Về cặp mô hình/nhà cung cấp, Agent mẫu của chúng ta mặc định dùng:
 - ["Qwen/Qwen2.5-72B-Instruct"](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
-- chạy trên [Nebius](https://huggingface.co/docs/inference-providers/providers/nebius)
+- chạy trên [Novita](https://huggingface.co/docs/inference-providers/providers/novita)
 
 Tất cả cài đặt này đều có thể tùy chỉnh qua biến môi trường! Ở đây, chúng ta cũng sẽ hướng dẫn cách thêm máy chủ Gradio MCP của mình:
 
 ```ts
 const agent = new Agent({
-	provider: process.env.PROVIDER ?? "nebius",
+	provider: process.env.PROVIDER ?? "novita",
 	model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
 	apiKey: process.env.HF_TOKEN,
 	servers: [
@@ -418,7 +418,7 @@ Giờ thì chúng ta đã hiểu về cả Tiny Agents và Gradio MCP servers, h
 
 ```ts
 const agent = new Agent({
-    provider: process.env.PROVIDER ?? "nebius",
+	provider: process.env.PROVIDER ?? "novita",
     model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
     apiKey: process.env.HF_TOKEN,
     servers: [
