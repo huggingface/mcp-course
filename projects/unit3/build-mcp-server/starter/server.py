@@ -41,28 +41,94 @@ async def analyze_file_changes(base_branch: str = "main", include_diff: bool = T
         base_branch: Base branch to compare against (default: main)
         include_diff: Include the full diff content (default: true)
     """
-    # TODO: Implement this tool
-    # IMPORTANT: MCP tools have a 25,000 token response limit!
-    # Large diffs can easily exceed this. Consider:
-    # - Adding a max_diff_lines parameter (e.g., 500 lines)
-    # - Truncating large outputs with a message
-    # - Returning summary statistics alongside limited diffs
-    
-    # NOTE: Git commands run in the server's directory by default!
-    # To run in Claude's working directory, use MCP roots:
-    # context = mcp.get_context()
-    # roots_result = await context.session.list_roots()
-    # working_dir = roots_result.roots[0].uri.path
-    # subprocess.run(["git", "diff"], cwd=working_dir)
-    
-    return json.dumps({"error": "Not implemented yet", "hint": "Use subprocess to run git commands"})
+    # Implementation
+    try:
+        # Get the working directory (from MCP roots or current directory)
+        working_dir = Path.cwd()
+        if mcp:
+            try:
+                context = mcp.get_context()
+                if context and context.session:
+                    roots_result = await context.session.list_roots()
+                    if roots_result and roots_result.roots:
+                        working_dir = Path(roots_result.roots[0].uri.path)
+            except Exception:
+                # Fallback to current directory if context/roots aren't available
+                pass
+        
+        # 1. Get list of changed files
+        status_cmd = ["git", "diff", "--name-status", base_branch]
+        status_result = subprocess.run(
+            status_cmd, 
+            cwd=working_dir, 
+            capture_output=True, 
+            text=True, 
+            check=False
+        )
+        
+        if status_result.returncode != 0:
+            # Try to fetch if the branch isn't found? Or just return error
+            return json.dumps({
+                "error": f"Git command failed: {status_result.stderr}",
+                "hint": f"Make sure {base_branch} exists and is a valid branch."
+            })
+            
+        changed_files_list = status_result.stdout.strip().split('\n')
+        changed_files = [line.split('\t')[-1] for line in changed_files_list if line]
+        
+        response = {
+            "files_changed": changed_files,
+            "comparison_branch": base_branch
+        }
+        
+        # 2. Get the diff content if requested
+        if include_diff:
+            diff_cmd = ["git", "diff", base_branch]
+            diff_result = subprocess.run(
+                diff_cmd,
+                cwd=working_dir,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            
+            diff_content = diff_result.stdout
+            
+            # Truncate if too large (MCP limit is around 25k tokens, so ~100k chars is safe-ish, but let's be conservative)
+            MAX_CHARS = 50000 
+            if len(diff_content) > MAX_CHARS:
+                diff_content = diff_content[:MAX_CHARS] + "\n... (Diff truncated due to size limits) ..."
+                response["truncated"] = True
+                
+            response["diff"] = diff_content
+            
+        return json.dumps(response, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Unexpected error: {str(e)}"})
 
 
 @mcp.tool()
 async def get_pr_templates() -> str:
     """List available PR templates with their content."""
-    # TODO: Implement this tool
-    return json.dumps({"error": "Not implemented yet", "hint": "Read templates from TEMPLATES_DIR"})
+    # Implementation
+    try:
+        templates = []
+        if TEMPLATES_DIR.exists():
+            for template_file in TEMPLATES_DIR.glob("*.md"):
+                try:
+                    content = template_file.read_text()
+                    templates.append({
+                        "name": template_file.name,
+                        "content": content
+                    })
+                except Exception as e:
+                    # Skip files that can't be read
+                    continue
+        
+        return json.dumps(templates, indent=2)
+    except Exception as e:
+        return json.dumps({"error": f"Failed to list templates: {str(e)}"})
 
 
 @mcp.tool()
@@ -73,8 +139,45 @@ async def suggest_template(changes_summary: str, change_type: str) -> str:
         changes_summary: Your analysis of what the changes do
         change_type: The type of change you've identified (bug, feature, docs, refactor, test, etc.)
     """
-    # TODO: Implement this tool
-    return json.dumps({"error": "Not implemented yet", "hint": "Map change_type to templates"})
+    # Implementation
+    try:
+        # Map common change types to template files
+        type_mapping = {
+            "bug": "bug.md",
+            "fix": "bug.md",
+            "feature": "feature.md",
+            "feat": "feature.md",
+            "docs": "docs.md",
+            "documentation": "docs.md",
+            "refactor": "refactor.md",
+            "test": "test.md",
+            "tests": "test.md",
+            "perf": "performance.md",
+            "performance": "performance.md",
+            "security": "security.md"
+        }
+        
+        # Normalize input
+        normalized_type = change_type.lower().strip()
+        
+        # Determine best template
+        template_name = type_mapping.get(normalized_type, "feature.md") # Default to feature if unknown
+        
+        response = {
+            "recommended_template": template_name,
+            "reasoning": f"Based on the change type '{change_type}', we recommend the {template_name} template.",
+            "change_type_detected": normalized_type
+        }
+        
+        # Try to include content if available
+        template_path = TEMPLATES_DIR / template_name
+        if template_path.exists():
+            response["template_content"] = template_path.read_text()
+            
+        return json.dumps(response, indent=2)
+        
+    except Exception as e:
+        return json.dumps({"error": f"Failed to suggest template: {str(e)}"})
 
 
 if __name__ == "__main__":
