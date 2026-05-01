@@ -1,0 +1,188 @@
+# 将 MCP 与本地及开源模型结合使用
+
+在本节中，我们将使用 Continue 这一工具，将 MCP 与本地及开源模型连接起来。Continue 是一个用于构建 AI 编程助手的工具，可以与 Ollama 等本地工具无缝协作。
+
+## 设置 Continue
+
+您可以从 VS Code Marketplace 安装 Continue。
+
+> [!TIP]
+> *Continue 同样提供了 [JetBrains](https://plugins.jetbrains.com/plugin/22707-continue) 平台的扩展。*
+
+### VS Code 扩展
+
+1.  在 [Visual Studio Marketplace 的 Continue 扩展页面](https://marketplace.visualstudio.com/items?itemName=Continue.continue)上点击 `安装`。
+2.  这将在 VS Code 中打开 Continue 扩展页面，您需要再次点击 `安装`。
+3.  Continue 图标将出现在左侧边栏。为了获得更好的体验，建议将 Continue 移动到右侧边栏。
+
+![move-to-right-sidebar](https://mintlify.s3.us-west-1.amazonaws.com/continue-docs/images/move-to-right-sidebar-b2d315296198e41046fc174d8178f30a.gif)
+
+配置好 Continue 后，我们将继续设置 Ollama 来拉取本地模型。
+
+### 本地模型
+
+有多种方式可以运行与 Continue 兼容的本地模型。三个流行的选项是 Ollama、Llama.cpp 和 LM Studio。Ollama 是一个开源工具，允许用户轻松地在本地运行大型语言模型 (LLM)。Llama.cpp 是一个用于运行 LLM 的高性能 C++ 库，它也包含一个与 OpenAI 兼容的服务器。LM Studio 则提供了一个用于运行本地模型的图形界面。
+
+您可以从 Hugging Face Hub 访问这些本地模型，并获取适用于所有主流本地推理应用的命令和快速链接。
+
+![hugging face hub](https://cdn-uploads.huggingface.co/production/uploads/64445e5f1bc692d87b27e183/d6XMR5q9DwVpdEKFeLW9t.png)
+
+<hfoptions id="local-models">
+<hfoption id="llamacpp">
+
+Llama.cpp 提供了 `llama-server`，这是一个轻量级的、与 OpenAI API 兼容的 HTTP 服务器，用于提供 LLM 服务。您可以按照 [Llama.cpp 仓库](https://github.com/ggml-org/llama.cpp)中的说明从源代码构建它，或者如果您的系统有可用的预构建二进制文件，也可以直接使用。查看 [Llama.cpp 文档](https://github.com/ggerganov/llama.cpp)了解更多信息。
+
+一旦您准备好了 `llama-server`，就可以使用类似以下的命令从 Hugging Face 运行模型：
+
+```bash
+llama-server -hf unsloth/Devstral-Small-2505-GGUF:Q4_K_M
+```
+
+</hfoption>
+<hfoption id="lmstudio">
+LM Studio 是一个适用于 Mac、Windows 和 Linux 的应用程序，可以通过图形界面轻松地在本地运行开源模型。开始使用：
+
+1.  [点击这里在 LM Studio 中打开模型](lmstudio://open_from_hf?model=unsloth/Devstral-Small-2505-GGUF)。
+2.  模型下载完成后，转到“本地服务器”选项卡并点击“启动服务器”。
+</hfoption>
+<hfoption id="ollama">
+要使用 Ollama，您可以先[安装](https://ollama.com/download)它，然后使用 `ollama run` 命令下载您想要运行的模型。
+
+例如，您可以使用以下命令下载并运行 [Devstral-Small](https://huggingface.co/unsloth/Devstral-Small-2505-GGUF?local-app=ollama) 模型：
+
+```bash
+ollama run hf.co/unsloth/Devstral-Small-2505-GGUF:Q4_K_M
+```
+这个模型大小约为 14GB，因此您需要确保运行它的机器有足够的可用 RAM。否则，您可能会看到类似“模型所需系统内存超过可用内存”的错误。
+</hfoption>
+</hfoptions>
+
+> [!TIP]
+> Continue 支持多种本地模型服务提供商。除了 Ollama、Llama.cpp 和 LM Studio，您还可以使用其他提供商。有关支持的提供商完整列表和详细的配置选项，请参阅 [Continue 文档](https://docs.continue.dev/customize/model-providers)。
+
+重要的是，我们要使用那些内置了工具调用功能的模型，例如 Codestral、Qwen 和 Llama 3.1 等。
+
+1.  在您工作区的根目录下创建一个名为 `.continue/models` 的文件夹。
+2.  在此文件夹中添加一个文件来配置您的模型提供商，例如 `local-models.yaml`。
+3.  根据您使用的是 Ollama、Llama.cpp 还是 LM Studio，添加以下相应的配置。
+
+<hfoptions id="local-models">
+<hfoption id="llamacpp">
+这是使用 `llama-server` 提供服务的 `llama.cpp` 模型的配置。请注意，`model` 字段应该与您正在提供服务的模型名称相匹配。
+
+```yaml
+name: Llama.cpp model
+version: 0.0.1
+schema: v1
+models:
+  - provider: llama.cpp
+    model: unsloth/Devstral-Small-2505-GGUF
+    apiBase: http://localhost:8080
+    defaultCompletionOptions:
+      contextLength: 8192 # 根据模型进行调整
+    name: Llama.cpp Devstral-Small
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+<hfoption id="lmstudio">
+这是通过 LM Studio 提供服务的模型的配置。模型标识符应该与 LM Studio 中加载的模型相匹配。
+
+```yaml
+name: LM Studio Model
+version: 0.0.1
+schema: v1
+models:
+  - provider: lmstudio
+    model: unsloth/Devstral-Small-2505-GGUF
+    name: LM Studio Devstral-Small
+    apiBase: http://localhost:1234/v1
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+<hfoption id="ollama">
+这是 Ollama 模型的配置。
+
+```yaml
+name: Ollama Devstral model
+version: 0.0.1
+schema: v1
+models:
+  - provider: ollama
+    model: unsloth/devstral-small-2505-gguf:Q4_K_M
+    defaultCompletionOptions:
+      contextLength: 8192
+    name: Ollama Devstral-Small
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+</hfoptions>
+
+默认情况下，每个模型都有一个最大上下文长度，在这种情况下是 `128000` 个 token。此设置允许在更长的上下文窗口中执行多个 MCP 请求，因此需要模型能够处理更多的 token。
+
+## 工作原理
+
+### 工具调用流程 (Tool Handshake)
+
+工具为模型提供了一种与外部世界交互的强大方式。它们以包含名称和参数模式的 JSON 对象形式提供给模型。例如，一个带有 `filepath` 参数的 `read_file` 工具将使模型能够请求特定文件的内容。
+
+![自主 Agent 图示](https://gist.github.com/user-attachments/assets/c7301fc0-fa5c-4dc4-9955-7ba8a6587b7a)
+
+以下握手流程描述了 Agent 如何使用工具：
+
+1.  在 Agent 模式下，可用的工具与用户的聊天请求一同被发送给模型。
+2.  模型可以选择在其响应中包含一个或多个工具调用。
+3.  用户授予执行权限。如果某个工具的策略设置为 `自动`，则此步骤将被跳过。
+4.  Continue 调用工具，这可能是其内置功能，也可能是由提供该工具的 MCP 服务器来执行。
+5.  Continue 将工具执行的结果发送回模型。
+6.  模型根据结果进行响应，可能会包含另一个工具调用，然后流程从第 2 步重新开始。
+
+Continue 支持多个本地模型服务提供商。您可以为不同的任务使用不同的模型，或根据需要随时切换。本节重点介绍本地优先的解决方案，但 Continue 同样可以与 OpenAI、Anthropic、Microsoft/Azure、Mistral 等主流提供商配合使用。您甚至可以运行自己的模型提供商。
+
+### 本地模型与 MCP 的集成
+
+现在我们已经完成了所有设置，让我们来添加一个现有的 MCP 服务器。以下是一个快速设置新 MCP 服务器以在您的助手中使用的示例：
+
+1.  在您工作区的根目录下创建一个名为 `.continue/mcpServers` 的文件夹。
+2.  在此文件夹中添加一个名为 `playwright-mcp.yaml` 的文件。
+3.  将以下内容写入 `playwright-mcp.yaml` 并保存。
+
+```yaml
+name: Playwright mcpServer
+version: 0.0.1
+schema: v1
+mcpServers:
+  - name: Browser search
+    command: npx
+    args:
+      - "@playwright/mcp@latest"
+```
+
+现在，通过以下提示词来测试您的 MCP 服务器：
+
+```
+1. 使用 playwright 导航到 https://news.ycombinator.com。
+
+2. 提取首页上前 4 个帖子的标题和 URL。
+
+3. 在项目的根目录中创建一个名为 hn.txt 的文件。
+
+4. 将这个列表以纯文本形式保存在 hn.txt 文件中，每行包含标题和 URL，并用连字符分隔。
+
+不要输出任何代码或说明——只需完成任务，并在完成后进行确认。
+```
+
+执行后，将在您的当前工作目录中生成一个名为 `hn.txt` 的文件。
+
+![mcp 输出示例](https://deploy-preview-6060--continuedev.netlify.app/assets/images/mcp-playwright-50b192a2ff395f7a6cc11618c5e2d5b1.png)
+
+## 总结
+
+通过将 Continue 与 Llama 3.1 等本地模型以及 MCP 服务器相结合，您已经解锁了一套强大的开发工作流，可以在利用尖端 AI 功能的同时，确保代码和数据的私密性。
+
+这套设置为您提供了使用专用工具自定义 AI 助手的灵活性，从 Web 自动化到文件管理，所有这些都完全在您的本地机器上运行。准备好将您的开发工作流提升到一个新的水平了吗？不妨从 [Continue Hub MCP 探索页面](https://hub.continue.dev/explore/mcp)开始，尝试不同的 MCP 服务器，发现本地 AI 如何改变您的编程体验。

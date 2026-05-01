@@ -1,0 +1,63 @@
+# Hugging Face MCP 服务器
+
+Hugging Face MCP (模型上下文协议) 服务器能将您兼容 MCP 的 AI 助手 (例如 VS Code、Cursor、Zed 或 Claude Desktop) 直接连接到 Hugging Face Hub。连接后，您的助手便可以直接在编辑器、聊天窗口或命令行界面中，搜索和探索 Hub 上的资源，并使用社区提供的工具。
+
+> [!TIP]
+> Hugging Face MCP 服务器的主要优势在于，它不仅为 Hub 提供了内置工具，还整合了基于 Gradio Spaces 的海量社区工具。在后续课程中，当我们开始构建自己的 MCP 服务器时，可以将其作为一个重要的参考。
+
+## 您可以做什么
+
+- 搜索和探索 Hub 资源：模型、数据集、Space 和论文。
+- 通过托管在 [Spaces](https://hf.co/spaces) 上的 MCP 兼容的 Gradio 应用来运行社区工具。
+- 将结果连同元数据、链接和上下文一起返回给您的助手。
+
+## 内置工具
+
+该服务器提供了一系列精选工具，可在受支持的客户端上直接运行：
+
+- 模型搜索与探索 (可按任务、库、下载量、点赞数筛选)
+- 数据集搜索与探索 (可按标签、大小、模态筛选)
+- Space 语义搜索 (可按功能查找应用，例如 TTS、ASR、OCR)
+- 论文语义搜索 (在 Hub 上发现相关研究)
+
+## 快速入门
+
+1.  打开您的 MCP 设置页面：登录后访问 https://huggingface.co/settings/mcp。
+
+2.  选择您的客户端：选择您正在使用的兼容 MCP 的客户端 (例如 VS Code、Cursor、Zed 或 Claude Desktop)。页面将显示针对该客户端的特定说明和可直接复制的配置代码片段。
+
+3.  粘贴并重启：将代码片段复制到客户端的 MCP 配置文件中，保存并重启/重新加载客户端。您应该能在客户端中看到 “Hugging Face” (或类似名称) 出现在已连接的 MCP 服务器列表中。
+
+> [!TIP]
+> 设置页面会为您生成客户端所需的精确配置。请直接使用它，而不是手动编写配置。
+
+![MCP 设置示例](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hf-mcp-settings.png)
+
+## 使用服务器
+
+连接成功后，您可以直接向您的助手下达使用 Hugging Face 工具的指令。例如：
+
+- "在 Hugging Face 上搜索 Qwen 3 的量化模型。"
+- "帮我找一个可以转录音频文件的 Space。"
+- "展示关于天气时间序列的数据集。"
+- "生成一张 1024 × 1024 像素的吉卜力风格的猫咪图片。"
+
+您的助手将调用由 Hugging Face MCP 服务器 (包括 Spaces) 开放的 MCP 工具，并返回结果 (包括标题、所有者、下载量、链接等)。然后，您可以在 Hub 上打开相应资源，或在当前聊天中继续迭代。
+
+![在 VS Code 中使用 Hugging Face MCP Space](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hf-mcp-vscode.png)
+
+## 添加社区工具 (Spaces)
+
+您可以使用社区构建的、兼容 MCP 的 Gradio Space 来扩展您的 AI 助手的能力：
+
+- 在[这里](https://huggingface.co/spaces?search=mcp)探索支持 MCP 的 Space。
+- 在 Hugging Face 的 MCP 设置页面[这里](https://huggingface.co/settings/mcp)添加您感兴趣的 Space。
+
+Gradio MCP 应用会将其功能作为工具 (带有参数和描述) 暴露出来，以便您的助手可以直接调用它们。请记得重启或刷新您的客户端，以便它能加载您新添加的工具。
+
+## 了解更多
+
+- 设置与客户端配置：https://huggingface.co/settings/mcp
+- 更新日志：https://huggingface.co/changelog/hf-mcp-server
+- HF MCP 服务器文档：https://huggingface.co/docs/hub/en/hf-mcp-server
+- 使用 Gradio 和 Hub 工具构建您自己的 MCP 服务器：https://huggingface.co/docs/hub/main/agents

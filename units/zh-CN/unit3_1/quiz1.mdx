@@ -1,0 +1,149 @@
+# 测验 1：MCP 服务器实现
+
+测试您对 PR Agent 的 MCP 服务器概念和实现的理解。
+
+### Q1: 在我们的 PR Agent 架构中，MCP 服务器的核心作用是什么？
+
+<Question
+  choices={[
+    {
+      text: "托管应用的用户界面",
+      explain: "不完全对。MCP 服务器主要提供后端功能，而非用户界面。"
+    },
+    {
+      text: "提供 AI Agent 可以用来与 GitHub 交互的工具",
+      explain: "很接近，但这个项目我们专注于 Hugging Face Hub，而不是 GitHub。"
+    },
+    {
+      text: "提供用于读取和更新 Hugging Face Hub 上模型仓库标签的工具",
+      explain: "完全正确！MCP 服务器提供了 get_current_tags 和 add_new_tag 这两个工具，用于与 Hub 进行交互。",
+      correct: true
+    },
+    {
+      text: "在 PR 数据上训练一个 AI 模型",
+      explain: "不对。MCP 服务器提供的是运行时能力，而非模型训练功能。"
+    }
+  ]}
+/>
+
+### Q2: 在 FastMCP 的实现中，为什么所有 MCP 工具函数都必须返回字符串，而不是 Python 对象？
+
+<Question
+  choices={[
+    {
+      text: "通过减少内存使用来提升性能",
+      explain: "虽然字符串可能在某些情况下更节省内存，但这不是主要原因。"
+    },
+    {
+      text: "确保 MCP 服务器和客户端之间进行可靠、标准化的数据交换",
+      explain: "正确！MCP 协议要求所有工具的响应都是字符串。因此，我们使用 json.dumps() 来序列化结构化数据。",
+      correct: true
+    },
+    {
+      text: "让代码的调试过程更容易",
+      explain: "虽然可读的 JSON 字符串有助于调试，但这并非协议设定的技术要求。"
+    },
+    {
+      text: "为了符合 Hugging Face Hub API 的要求",
+      explain: "这是 MCP 协议自身的要求，与特定的 Hub API 无关。"
+    }
+  ]}
+/>
+
+### Q3: 在实现 `add_new_tag` 工具时，为何在创建 PR （PR）前要先检查标签是否已存在？
+
+<Question
+  choices={[
+    {
+      text: "减少 API 调用次数以提升性能",
+      explain: "这确实是好处之一，但并非最主要的原因。"
+    },
+    {
+      text: "避免创建重复的 PR ，并提供更明确的用户反馈",
+      explain: "完全正确！这个验证步骤可以防止不必要的 PR，并能返回更有意义的状态消息。",
+      correct: true
+    },
+    {
+      text: "为了遵守 Hugging Face Hub 的 API 调用频率限制",
+      explain: "避免不必要的调用确实有助于遵守频率限制，但这并非此项检查的主要目的。"
+    },
+    {
+      text: "确保标签的格式是有效的",
+      explain: "标签的格式验证是一个独立的逻辑，与检查标签是否已存在是两回事。"
+    }
+  ]}
+/>
+
+### Q4: 在我们的 MCP 服务器实现中，如果一个模型仓库没有 `README.md` 文件，会发生什么？
+
+<Question
+  choices={[
+    {
+      text: "`add_new_tag` 工具将会失败并报错",
+      explain: "实际上，我们的实现能够优雅地处理这种情况。"
+    },
+    {
+      text: "该工具会使用 `ModelCardData` 创建一个新的模型卡片，然后继续添加标签",
+      explain: "正确！代码会捕获 HfHubHTTPError 异常，并在模型卡片不存在时创建一个新的。",
+      correct: true
+    },
+    {
+      text: "该工具会跳过添加标签的操作，并返回一个警告",
+      explain: "工具不会跳过操作，而是会主动创建所需的文件。"
+    },
+    {
+      text: "该工具会自动创建一个包含占位符内容的默认 README 文件",
+      explain: "它会创建一个最小化的模型卡片结构，而不是一个通用的占位符文件。"
+    }
+  ]}
+/>
+
+### Q5: 在 `hf_api.create_commit()` 函数调用中使用 `create_pr=True` 的意义是什么？
+
+<Question
+  choices={[
+    {
+      text: "它直接将提交推送到主分支",
+      explain: "设置 create_pr=True 会创建 pull request，而不是直接提交到主分支。"
+    },
+    {
+      text: "它会自动创建一个 PR，而不是直接提交变更到主分支",
+      explain: "正确！这种做法支持了代码审查的工作流，并遵循了良好的仓库治理实践。",
+      correct: true
+    },
+    {
+      text: "它会创建一个只有仓库所有者才能看到的私有分支",
+      explain: "  PR 对所有仓库协作者都是可见的，并非私有。"
+    },
+    {
+      text: "它在创建提交之前验证提交",
+      explain: "无论 create_  PR 参数如何，验证都会发生。"
+    }
+  ]}
+/>
+
+### Q6: 为什么我们的 MCP 服务器在整个代码中都使用了包含表情符号的详细日志记录？
+
+<Question
+  choices={[
+    {
+      text: "为了让代码对开发者来说更有趣、更吸引人",
+      explain: "虽然表情符号在视觉上很友好，但这里有一个更实际的原因。"
+    },
+    {
+      text: "当服务器自主响应 Hub 事件时，这有助于调试和监控",
+      explain: "完全正确！由于 Agent 是自动响应 Webhook 的，因此详细的日志对于追踪问题和理解其行为至关重要。",
+      correct: true
+    },
+    {
+      text: "为了符合 FastMCP 的日志记录要求",
+      explain: "FastMCP 并没有规定特定的日志格式或要求使用表情符号。"
+    },
+    {
+      text: "为了减少日志文件中的文本量",
+      explain: "表情符号并不会显著减小日志文件的体积，这也不是主要目的。"
+    }
+  ]}
+/>
+
+恭喜您完成了本次测验 🥳！如果您对任何问题感到不确定，不妨花些时间回顾本章内容，以巩固您的知识。

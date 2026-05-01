@@ -1,0 +1,86 @@
+- title: "0. 欢迎来到 MCP 课程"
+  sections:
+  - local: unit0/introduction
+    title: 欢迎学习模型上下文协议 (MCP) 课程
+    
+- title: "1. 模型上下文协议简介"
+  sections:
+  - local: unit1/introduction
+    title: 模型上下文协议 (MCP) 简介
+  - local: unit1/key-concepts
+    title: 关键概念与术语
+  - local: unit1/architectural-components
+    title: MCP 的架构组件
+  - local: unit1/quiz1
+    title: 测验 1：MCP 基础知识
+  - local: unit1/communication-protocol
+    title: 通信协议
+  - local: unit1/capabilities
+    title: 理解 MCP 的能力
+  - local: unit1/sdk
+    title: MCP SDK
+  - local: unit1/quiz2
+    title: 测验 2：MCP SDK
+  - local: unit1/mcp-clients
+    title: MCP 客户端
+  - local: unit1/hf-mcp-server
+    title: Hugging Face MCP 服务器
+  - local: unit1/gradio-mcp
+    title: Gradio 与 MCP 的集成
+  - local: unit1/unit1-recap
+    title: 第一单元回顾
+  - local: unit1/certificate
+    title: 获取您的证书！
+
+- title: "2. 用例：端到端 MCP 应用"
+  sections:
+  - local: unit2/introduction
+    title: 构建 MCP 应用程序
+  - local: unit2/gradio-server
+    title: 构建 Gradio MCP 服务器
+  - local: unit2/clients
+    title: 在应用中使用 MCP 客户端
+  - local: unit2/continue-client
+    title: 在 AI 编码助手中使用 MCP
+  - local: unit2/gradio-client
+    title: Gradio 作为 MCP 客户端
+  - local: unit2/tiny-agents
+    title: 使用 MCP 和 Hugging Face Hub 构建微型智能体 (Tiny Agents)
+  - local: unit2/lemonade-server
+    title: 使用 AMD NPU 与 iGPU 加速的本地 Tiny Agents
+
+- title: "3. 高级 MCP 开发：自定义工作流服务器"
+  sections:
+  - local: unit3/introduction
+    title: 高级 MCP 实战：为 Claude Code 构建自定义工作流服务器
+  - local: unit3/build-mcp-server
+    title: 模块 1：构建 MCP 服务器
+  - local: unit3/github-actions-integration
+    title: 模块 2：GitHub Actions 集成
+  - local: unit3/slack-notification
+    title: 模块 3：集成 Slack 通知
+  - local: unit3/build-mcp-server-solution-walkthrough
+    title: 第三单元解决方案演练：使用 MCP 构建拉取请求智能体  (Pull Request Agent)
+  - local: unit3/certificate
+    title: 获取您的证书！
+  - local: unit3/conclusion
+    title: 第三单元总结
+
+- title: "3.1. 用例：在 Hub 上构建拉取请求智能体"
+  sections:
+  - local: unit3_1/introduction
+    title: 在 Hugging Face Hub 上构建一个拉取请求智能体 (Pull Request Agent)
+  - local: unit3_1/setting-up-the-project
+    title: 项目基础设定
+  - local: unit3_1/creating-the-mcp-server
+    title: 构建 MCP 服务器
+  - local: unit3_1/quiz1
+    title: 测验 1：MCP 服务器实现
+  - local: unit3_1/mcp-client
+    title: MCP 客户端
+  - local: unit3_1/webhook-listener
+    title: 实现 Webhook 监听器
+  - local: unit3_1/quiz2
+    title: 测验 2：PR Agent 的集成
+  - local: unit3_1/conclusion
+    title: 总结与展望
