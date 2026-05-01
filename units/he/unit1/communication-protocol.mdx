@@ -1,0 +1,223 @@
+# פרוטוקול התקשורת
+
+MCP מגדיר פרוטוקול תקשורת סטנדרטי המאפשר ללקוחות ושרתים להחליף הודעות באופן עקבי וצפוי. סטנדרטיזציה זו קריטית ליכולת פעולה הדדית בין הקהילה. בסעיף זה, נחקור את מבנה הפרוטוקול ומנגנוני התעבורה המשמשים ב-MCP.
+
+<Tip warning={true}>
+
+אנחנו נכנסים לפרטים הקטנים של פרוטוקול MCP. לא תצטרך לדעת את כל זה כדי לבנות עם MCP, אבל טוב לדעת שזה קיים ואיך זה עובד.
+
+</Tip>
+
+## JSON-RPC: היסוד
+
+בבסיסו, MCP משתמש ב-**JSON-RPC 2.0** כפורמט ההודעות עבור כל התקשורת בין לקוחות ושרתים. JSON-RPC הוא פרוטוקול קריאת פרוצדורה מרחוק קל משקל המקודד ב-JSON, מה שהופך אותו ל:
+
+- קריא לאדם וקל לניפוי שגיאות
+- אגנוסטי לשפה, תומך ביישום בכל סביבת תכנות
+- מבוסס היטב, עם מפרטים ברורים ואימוץ נרחב
+
+![סוגי הודעות](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/5.png)
+
+הפרוטוקול מגדיר שלושה סוגי הודעות:
+
+### 1. בקשות
+
+נשלחות מלקוח לשרת כדי ליזום פעולה. הודעת בקשה כוללת:
+- מזהה ייחודי (`id`)
+- שם השיטה להפעלה (למשל, `tools/call`)
+- פרמטרים לשיטה (אם יש)
+
+דוגמת בקשה:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "weather",
+    "arguments": {
+      "location": "San Francisco"
+    }
+  }
+}
+```
+
+### 2. תגובות
+
+נשלחות משרת ללקוח בתשובה לבקשה. הודעת תגובה כוללת:
+- אותו `id` כמו הבקשה המתאימה
+- או `result` (להצלחה) או `error` (לכישלון)
+
+דוגמת תגובת הצלחה:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "temperature": 62,
+    "conditions": "Partly cloudy"
+  }
+}
+```
+
+דוגמת תגובת שגיאה:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32602,
+    "message": "Invalid location parameter"
+  }
+}
+```
+
+### 3. התראות
+
+הודעות חד-כיווניות שאינן דורשות תגובה. בדרך כלל נשלחות משרת ללקוח כדי לספק עדכונים או התראות על אירועים.
+
+דוגמת התראה:
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "progress",
+  "params": {
+    "message": "Processing data...",
+    "percent": 50
+  }
+}
+```
+
+## מנגנוני תעבורה
+
+JSON-RPC מגדיר את פורמט ההודעה, אבל MCP גם מפרט כיצד הודעות אלה מועברות בין לקוחות ושרתים. שני מנגנוני תעבורה עיקריים נתמכים:
+
+### stdio (קלט/פלט סטנדרטי)
+
+תעבורת stdio משמשת לתקשורת מקומית, כאשר הלקוח והשרת רצים על אותה מכונה:
+
+יישום המארח מפעיל את השרת כתהליך משנה ומתקשר איתו על ידי כתיבה לקלט הסטנדרטי שלו (stdin) וקריאה מהפלט הסטנדרטי שלו (stdout).
+
+<Tip>
+
+**מקרי שימוש** לתעבורה זו הם כלים מקומיים כמו גישה למערכת קבצים או הפעלת סקריפטים מקומיים.
+
+</Tip>
+
+ה**יתרונות** העיקריים של תעבורה זו הם שהיא פשוטה, לא נדרשת תצורת רשת, ומאובטחת על ידי מערכת ההפעלה.
+
+### HTTP + SSE (אירועים הנשלחים מהשרת) / HTTP זרימתי
+
+תעבורת HTTP+SSE משמשת לתקשורת מרוחקת, כאשר הלקוח והשרת עשויים להיות על מכונות שונות:
+
+התקשורת מתרחשת דרך HTTP, כאשר השרת משתמש באירועים הנשלחים מהשרת (SSE) כדי לדחוף עדכונים ללקוח דרך חיבור מתמשך.
+
+<Tip>
+
+**מקרי שימוש** לתעבורה זו הם התחברות ל-API מרוחקים, שירותי ענן, או משאבים משותפים.
+
+</Tip>
+
+ה**יתרונות** העיקריים של תעבורה זו הם שהיא עובדת דרך רשתות, מאפשרת אינטגרציה עם שירותי אינטרנט, ותואמת לסביבות serverless.
+
+עדכונים אחרונים לתקן MCP הציגו או שיפרו "HTTP זרימתי", המציע יותר גמישות על ידי מתן אפשרות לשרתים לשדרג דינמית ל-SSE עבור הזרמה כאשר צריך, תוך שמירה על תאימות עם סביבות serverless.
+
+## מחזור החיים של האינטראקציה
+
+בסעיף הקודם, דנו במחזור החיים של אינטראקציה בודדת בין לקוח (💻) לשרת (🌐). בואו נסתכל עכשיו על מחזור החיים של אינטראקציה שלמה בין לקוח לשרת בהקשר של פרוטוקול MCP.
+
+פרוטוקול MCP מגדיר מחזור חיים מובנה של אינטראקציה בין לקוחות ושרתים:
+
+### אתחול
+
+הלקוח מתחבר לשרת והם מחליפים גרסאות פרוטוקול ויכולות, והשרת מגיב עם גרסת הפרוטוקול הנתמכת והיכולות שלו.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>initialize</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>initialized</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+הלקוח מאשר שהאתחול הושלם באמצעות הודעת התראה.
+
+### גילוי
+
+הלקוח מבקש מידע על יכולות זמינות והשרת מגיב עם רשימה של כלים זמינים.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>tools/list</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+תהליך זה יכול להיות מחזורי עבור כל סוג כלי, משאב או הנחיה.
+
+### ביצוע
+
+הלקוח מפעיל יכולות בהתבסס על צרכי המארח.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>tools/call</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>notification (התקדמות אופציונלית)</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+### סיום
+
+החיבור נסגר בצורה מסודרת כאשר אינו נדרש יותר והשרת מאשר את בקשת הכיבוי.
+
+<table style="width: 100%;">
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>shutdown</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">←<br>response</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+  <tr>
+    <td style="background-color: lightgreen; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">💻</td>
+    <td style="text-align: center;">→<br>exit</td>
+    <td style="background-color: lightblue; text-align: center; padding: 10px; border: 1px solid #ccc; border-radius: 4px;">🌐</td>
+  </tr>
+</table>
+
+הלקוח שולח את הודעת היציאה הסופית להשלמת הסיום.
+
+## אבולוציית הפרוטוקול
+
+פרוטוקול MCP מתוכנן להיות הרחיב ומסתגל. שלב האתחול כולל משא ומתן על גרסאות, המאפשר תאימות לאחור ככל שהפרוטוקול מתפתח. בנוסף, גילוי יכולות מאפשר ללקוחות להסתגל לתכונות הספציפיות שכל שרת מציע, מאפשר תערובת של שרתים בסיסיים ומתקדמים באותה מערכת אקולוגית.

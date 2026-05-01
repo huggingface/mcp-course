@@ -1,0 +1,92 @@
+# Conceitos-Chave e Terminologia
+
+Antes de mergulhar mais profundamente no Protocolo de Contexto de Modelo (MCP), é importante entender os conceitos-chave e a terminologia que formam a base do MCP. Esta seção apresentará as ideias fundamentais que sustentam o protocolo e fornecerá um vocabulário comum para discutir implementações de MCP ao longo do curso.
+
+O MCP é frequentemente descrito como o "USB-C para aplicações de IA". Assim como o USB-C fornece uma interface física e lógica padronizada para conectar vários periféricos a dispositivos de computação, o MCP oferece um protocolo consistente para conectar modelos de IA a capacidades externas. Esta padronização beneficia todo o ecossistema:
+
+- **usuários** desfrutam de experiências mais simples e consistentes em aplicações de IA
+- **desenvolvedores de aplicações de IA** ganham fácil integração com um ecossistema crescente de ferramentas e fontes de dados
+- **provedores de ferramentas e dados** precisam criar apenas uma única implementação que funcione com múltiplas aplicações de IA
+- o ecossistema mais amplo se beneficia de maior interoperabilidade, inovação e redução da fragmentação
+
+## O Problema de Integração
+
+O **Problema de Integração M×N** refere-se ao desafio de conectar M diferentes aplicações de IA a N diferentes ferramentas externas ou fontes de dados sem uma abordagem padronizada.
+
+### Sem o MCP (Problema M×N)
+
+Sem um protocolo como o MCP, os desenvolvedores precisariam criar M×N integrações personalizadas—uma para cada possível emparelhamento de uma aplicação de IA com uma capacidade externa.
+
+![Sem o MCP](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/1.png)
+
+Cada aplicação de IA precisaria integrar-se individualmente com cada ferramenta/fonte de dados. Este é um processo muito complexo e caro que introduz muita fricção para os desenvolvedores e altos custos de manutenção.
+
+Quando temos múltiplos modelos e múltiplas ferramentas, o número de integrações torna-se grande demais para gerenciar, cada uma com sua própria interface única.
+
+![Múltiplos Modelos e Ferramentas](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/1a.png)
+
+### Com o MCP (Solução M+N)
+
+O MCP transforma isso em um problema M+N ao fornecer uma interface padrão: cada aplicação de IA implementa o lado cliente do MCP uma vez, e cada ferramenta/fonte de dados implementa o lado servidor uma vez. Isso reduz drasticamente a complexidade de integração e a carga de manutenção.
+
+![Com o MCP](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/2.png)
+
+Cada aplicação de IA implementa o lado cliente do MCP uma vez, e cada ferramenta/fonte de dados implementa o lado servidor uma vez.
+
+## Terminologia Básica do MCP
+
+Agora que entendemos o problema que o MCP resolve, vamos mergulhar na terminologia e conceitos básicos que compõem o protocolo MCP.
+
+<Tip>
+
+O MCP é um padrão como HTTP ou USB-C, e é um protocolo para conectar aplicações de IA a ferramentas e fontes de dados externas. Portanto, usar terminologia padrão é crucial para fazer o MCP funcionar efetivamente.
+
+Ao documentar nossas aplicações e comunicar com a comunidade, devemos usar a seguinte terminologia.
+
+</Tip>
+
+### Componentes
+
+Assim como as relações cliente-servidor no HTTP, o MCP tem um cliente e um servidor.
+
+![Componentes MCP](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/3.png)
+
+- **Host**: A aplicação de IA voltada para o usuário com a qual os usuários finais interagem diretamente. Exemplos incluem o Claude Desktop da Anthropic, IDEs aprimorados com IA como o Cursor, bibliotecas de inferência como o Hugging Face Python SDK, ou aplicações personalizadas construídas em bibliotecas como LangChain ou smolagents. Os Hosts iniciam conexões com Servidores MCP e orquestram o fluxo geral entre solicitações do usuário, processamento LLM e ferramentas externas.
+
+- **Cliente**: Um componente dentro da aplicação host que gerencia a comunicação com um Servidor MCP específico. Cada Cliente mantém uma conexão 1:1 com um único Servidor, lidando com os detalhes de nível de protocolo da comunicação MCP e atuando como intermediário entre a lógica do Host e o Servidor externo.
+
+- **Servidor**: Um programa ou serviço externo que expõe capacidades (Ferramentas, Recursos, Prompts) via protocolo MCP.
+
+<Tip warning={true}>
+
+Muitos conteúdos usam 'Cliente' e 'Host' de forma intercambiável. Tecnicamente falando, o host é a aplicação voltada para o usuário, e o cliente é o componente dentro da aplicação host que gerencia a comunicação com um Servidor MCP específico.
+
+</Tip>
+
+### Capacidades
+
+Claro, o valor da sua aplicação é a soma das capacidades que ela oferece. Portanto, as capacidades são a parte mais importante da sua aplicação. Os MCPs podem se conectar com qualquer serviço de software, mas existem algumas capacidades comuns que são usadas para muitas aplicações de IA.
+
+| Capacidade | Descrição | Exemplo |
+| ---------- | ----------- | ------- |
+| **Ferramentas** | Funções executáveis que o modelo de IA pode invocar para realizar ações ou recuperar dados computados. Geralmente relacionadas ao caso de uso da aplicação. | Uma ferramenta para uma aplicação de clima pode ser uma função que retorna o clima em um local específico. |
+| **Recursos** | Fontes de dados somente leitura que fornecem contexto sem computação significativa. | Um assistente de pesquisa pode ter um recurso para artigos científicos. |
+| **Prompts** | Modelos ou fluxos de trabalho predefinidos que orientam interações entre usuários, modelos de IA e as capacidades disponíveis. | Um prompt de resumo. |
+| **Amostragem** | Solicitações iniciadas pelo servidor para que o Cliente/Host realize interações LLM, permitindo ações recursivas onde o LLM pode revisar conteúdo gerado e tomar decisões adicionais. | Uma aplicação de escrita revisando sua própria saída e decidindo refiná-la ainda mais. |
+
+No diagrama a seguir, podemos ver as capacidades coletivas aplicadas a um caso de uso para um agente de código.
+
+![diagrama coletivo](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/8.png)
+
+Esta aplicação pode usar suas entidades MCP da seguinte maneira:
+
+| Entidade | Nome | Descrição |
+| --- | --- | --- |
+| Ferramenta | Interpretador de Código | Uma ferramenta que pode executar código que o LLM escreve. |
+| Recurso | Documentação | Um recurso que contém a documentação da aplicação. |
+| Prompt | Estilo de Código | Um prompt que orienta o LLM a gerar código. |
+| Amostragem | Revisão de Código | Uma amostragem que permite ao LLM revisar o código e tomar decisões adicionais. |
+
+### Conclusão
+
+Entender esses conceitos-chave e terminologia fornece a base para trabalhar com o MCP de forma eficaz. Nas seções seguintes, construiremos sobre essa base para explorar os componentes arquitetônicos, o protocolo de comunicação e as capacidades que compõem o Protocolo de Contexto de Modelo.
