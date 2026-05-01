@@ -1,0 +1,80 @@
+# 构建 MCP 客户端
+
+在本章节中，我们将使用不同编程语言创建能与 MCP 服务器交互的客户端。我们将实现基于 HuggingFace.js 的 JavaScript 客户端和基于 smolagents 的 Python 客户端。
+
+## 配置 MCP 客户端
+
+要成功部署 MCP 服务器和客户端，需要进行正确配置。由于 MCP 规范仍在演进中，配置方法可能随之变化。我们将重点介绍当前的最佳配置实践。
+
+### MCP 配置文件
+
+MCP 宿主使用配置文件管理服务器连接。这些文件定义了可用服务器及其连接方式。
+
+配置文件设计简洁易懂，且在主流 MCP 宿主中保持格式统一。
+
+#### `mcp.json` 结构
+
+标准 MCP 配置文件名为 `mcp.json`，其基本结构如下：
+
+```json
+{
+  "servers": [
+    {
+      "name": "MCP Server",
+      "transport": {
+        "type": "sse",
+        "url": "http://localhost:7860/gradio_api/mcp/sse"
+      }
+    }
+  ]
+}
+```
+
+此示例配置了使用 SSE 传输的服务器，连接本地 7860 端口运行的 Gradio 服务器。
+
+<Tip>
+
+我们通过 SSE 传输连接 Gradio 应用是假设其运行在远程服务器。如需连接本地脚本，建议使用 `stdio` 传输而非 `sse` 传输。
+
+</Tip>
+
+#### HTTP+SSE 传输配置
+
+对于使用 HTTP+SSE 传输的远程服务器，配置需包含服务器 URL：
+
+```json
+{
+  "servers": [
+    {
+      "name": "Remote MCP Server",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/gradio_api/mcp/sse"
+      }
+    }
+  ]
+}
+```
+
+该配置使 UI 客户端能通过 MCP 协议与 Gradio 服务器通信，实现前端与 MCP 服务的无缝集成。
+
+## 配置 UI MCP 客户端
+
+使用 Gradio MCP 服务器时，可通过以下方式配置 UI 客户端连接：
+
+### 基础配置
+
+创建名为 `config.json` 的配置文件：
+
+```json
+{
+  "mcpServers": {
+    "mcp": {
+      "url": "http://localhost:7860/gradio_api/mcp/sse"
+    }
+  }
+}
+```
+
+该配置使 UI 客户端能通过 MCP 协议与 Gradio 服务器通信，实现前端与 MCP 服务的无缝集成。
+

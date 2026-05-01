@@ -1,0 +1,451 @@
+# Tiny 智能体：50 行代码实现的 MCP 驱动智能体
+
+现在我们已经用 Gradio 构建了 MCP 服务器，接下来让我们深入探索 MCP 客户端。本节基于实验性项目 [Tiny Agents](https://huggingface.co/blog/tiny-agents)，该项目展示了如何极简地部署可连接服务（如我们的 Gradio 情感分析服务器）的 MCP 客户端。
+
+在这个简短练习中，我们将指导您实现一个 TypeScript (JS) MCP 客户端，该客户端可与任何 MCP 服务器通信（包括我们在上一节构建的基于 Gradio 的情感分析服务器）。您将看到 MCP 如何标准化智能体与工具的交互方式，从而显著简化 Agentic AI 的开发。
+
+![meme](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/thumbnail.jpg)
+<figcaption>图片致谢 https://x.com/adamdotdev</figcaption>
+
+我们将展示如何将您的微型智能体连接到基于 Gradio 的 MCP 服务器，使其能够同时使用您自定义的情感分析工具和其他预构建工具。
+
+## 如何运行完整演示
+
+如果您已安装 NodeJS（包含 `pnpm` 或 `npm`），只需在终端运行：
+
+```bash
+npx @huggingface/mcp-client
+```
+
+或者使用 `pnpm`：
+
+```bash
+pnpx @huggingface/mcp-client
+```
+
+该命令会将包安装到临时目录并执行其命令。
+
+您将看到您的简易智能体连接到多个本地运行的 MCP 服务器，加载它们的工具（类似于加载 Gradio 情感分析工具的方式），然后进入对话提示模式。
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/use-filesystem.mp4" type="video/mp4">
+</video>
+
+默认情况下，示例智能体会连接以下两个 MCP 服务器：
+- 标准[文件系统服务器](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem)，可访问您的桌面
+- [Playwright MCP](https://github.com/microsoft/playwright-mcp) 服务器，提供沙盒化 Chromium 浏览器支持
+
+您可以轻松将 Gradio 情感分析服务器添加到列表中（本节后续将演示）。
+
+> [!NOTE]
+> 注意：当前所有微型智能体中的 MCP 服务器实际上都是本地进程（远程服务器支持即将推出），这不包括运行在 localhost:7860 的 Gradio 服务器。
+
+第一个视频的输入示例：
+> 写一首关于 Hugging Face 社区的俳句，并保存到桌面名为 "hf.txt" 的文件
+
+现在尝试涉及网页浏览的提示：
+> 在 Brave Search 上搜索 HF 推理服务提供商并打开前 3 个结果
+
+<video controls autoplay loop>
+  <source src="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/blog/tiny-agents/brave-search.mp4" type="video/mp4">
+</video>
+
+当连接 Gradio 情感分析工具后，可以类似地询问：
+> 分析这条评论的情感："我完全爱上了这个产品，它超出了我所有的预期！"
+
+### 默认模型与提供商
+
+示例智能体默认使用以下模型/提供商组合：
+- ["Qwen/Qwen2.5-72B-Instruct"](https://huggingface.co/Qwen/Qwen2.5-72B-Instruct)
+- 运行于 [Nebius](https://huggingface.co/docs/inference-providers/providers/nebius) 平台
+
+这些配置均可通过环境变量修改！以下示例展示如何添加 Gradio MCP 服务器：
+
+```ts
+const agent = new Agent({
+	provider: process.env.PROVIDER ?? "nebius",
+	model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+	apiKey: process.env.HF_TOKEN,
+	servers: [
+		// Default servers
+		{
+			command: "npx",
+			args: ["@modelcontextprotocol/servers", "filesystem"]
+		},
+		{
+			command: "npx",
+			args: ["playwright-mcp"]
+		},
+		// Our Gradio sentiment analysis server
+		{
+			command: "npx",
+			args: [
+				"mcp-remote",
+				"http://localhost:7860/gradio_api/mcp/sse"
+			]
+		}
+	],
+});
+```
+
+<Tip>
+
+我们通过 [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) 包连接到基于 Gradio 的 MCP 服务器。
+
+</Tip>
+
+
+## 实现这一目标的基础：LLM 原生支持工具调用。
+
+之所以能够将 Gradio MCP 服务器连接到我们的 Tiny Agent，是因为最近的 LLM（包括封闭式和开放式）都经过了函数调用（也就是工具使用）的训练。同样的功能也支持我们与使用 Gradio 构建的情绪分析工具的集成。
+
+工具由其名称、描述以及其参数的 JSONSchema 表示形式定义——这与我们在 Gradio 服务器中定义情绪分析函数的方式完全相同。让我们看一个简单的例子：
+
+```ts
+const weatherTool = {
+	type: "function",
+	function: {
+		name: "get_weather",
+		description: "Get current temperature for a given location.",
+		parameters: {
+			type: "object",
+			properties: {
+				location: {
+					type: "string",
+					description: "City and country e.g. Bogotá, Colombia",
+				},
+			},
+		},
+	},
+};
+```
+
+我们的 Gradio 情感分析工具结构类似，但输入参数使用 `text` 替代 `location`。
+
+这里引用的权威文档是 [OpenAI 的函数调用文档](https://platform.openai.com/docs/guides/function-calling?api-mode=chat)。（是的... OpenAI 几乎为整个社区定义了 LLM 的标准 😅）
+
+推理引擎允许您在调用 LLM 时传递工具列表，LLM 可以自由选择调用零个、一个或多个工具。
+作为开发者，您需要执行这些工具并将结果反馈给 LLM 以继续生成。
+
+> 注意：在后端（推理引擎层面），工具会以特殊格式的 [chat_template](file://e:\githubProjects\transformers\src\transformers\models\llava_onevision\convert_llava_onevision_weights_to_hf.py#L58-L58) 传递给模型（如同其他消息），然后从响应中解析出来（使用模型特定的特殊标记）以暴露为工具调用。
+
+## 在 InferenceClient 上实现 MCP 客户端
+
+现在我们已经了解现代 LLM 中工具的定义，接下来让我们实现真正的 MCP 客户端，用于与 Gradio 服务器和其他 MCP 服务器通信。
+
+[官方文档](https://modelcontextprotocol.io/quickstart/client) 编写得相当完善。您只需将 Anthropic 客户端 SDK 的引用替换为其他 OpenAI 兼容的 SDK 即可（这里还提供了可输入 LLM 的 [llms.txt](https://modelcontextprotocol.io/llms-full.txt) 来辅助编码）。
+
+需要说明的是，我们使用 HF 的 `InferenceClient` 作为推理客户端。
+
+> [!TIP]
+> 完整的 `McpClient.ts` 代码文件可在[此处](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/McpClient.ts)查阅 🤓
+
+我们的 `McpClient` 类包含：
+- 推理客户端（支持任意推理提供商，`huggingface/inference` 同时支持远程和本地端点）
+- 一组 MCP 客户端会话（每个连接的 MCP 服务器对应一个会话，支持连接多个服务器包括 Gradio 服务器）
+- 可用工具列表（从连接的服务器获取并稍作格式化）
+
+```ts
+export class McpClient {
+	protected client: InferenceClient;
+	protected provider: string;
+	protected model: string;
+	private clients: Map<ToolName, Client> = new Map();
+	public readonly availableTools: ChatCompletionInputTool[] = [];
+
+	constructor({ provider, model, apiKey }: { provider: InferenceProvider; model: string; apiKey: string }) {
+		this.client = new InferenceClient(apiKey);
+		this.provider = provider;
+		this.model = model;
+	}
+	
+	// [...]
+}
+```
+
+为了连接到 MCP 服务器（例如我们的 Gradio 情绪分析服务器），官方的 `@modelcontextprotocol/sdk/client` TypeScript SDK 提供了一个带有 `listTools()` 方法的 `Client` 类：
+
+```ts
+async addMcpServer(server: StdioServerParameters): Promise<void> {
+	const transport = new StdioClientTransport({
+		...server,
+		env: { ...server.env, PATH: process.env.PATH ?? "" },
+	});
+	const mcp = new Client({ name: "@huggingface/mcp-client", version: packageVersion });
+	await mcp.connect(transport);
+
+	const toolsResult = await mcp.listTools();
+	debug(
+		"Connected to server with tools:",
+		toolsResult.tools.map(({ name }) => name)
+	);
+
+	for (const tool of toolsResult.tools) {
+		this.clients.set(tool.name, mcp);
+	}
+
+	this.availableTools.push(
+		...toolsResult.tools.map((tool) => {
+			return {
+				type: "function",
+				function: {
+					name: tool.name,
+					description: tool.description,
+					parameters: tool.inputSchema,
+				},
+			} satisfies ChatCompletionInputTool;
+		})
+	);
+}
+```
+
+`StdioServerParameters` 是 MCP SDK 中的一个接口，可让您轻松创建本地进程：如前所述，目前所有 MCP 服务器实际上都是本地进程，包括我们的 Gradio 服务器（尽管我们通过 HTTP 访问它）。
+
+对于我们连接的每个 MCP 服务器（包括我们的 Gradio 情绪分析服务器），我们都会稍微重新格式化其工具列表，并将其添加到 `this.availableTools` 中。
+
+### 如何使用工具
+
+使用我们的情绪分析工具（或任何其他 MCP 工具）非常简单。您只需将 `this.availableTools` 传递给您的 LLM 聊天完成函数，以及您常用的消息数组即可：
+
+```ts
+const stream = this.client.chatCompletionStream({
+	provider: this.provider,
+	model: this.model,
+	messages,
+	tools: this.availableTools,
+	tool_choice: "auto",
+});
+```
+
+`tool_choice: "auto"` 是您传递给 LLM 的参数，用于生成零个、一个或多个工具调用。
+
+在解析或流式传输输出时，LLM 会生成一些工具调用（例如函数名称和一些 JSON 编码的参数），您（作为开发者）需要计算这些调用。MCP 客户端 SDK 再次简化了计算过程；它有一个 `client.callTool()` 方法：
+
+```ts
+const toolName = toolCall.function.name;
+const toolArgs = JSON.parse(toolCall.function.arguments);
+
+const toolMessage: ChatCompletionInputMessageTool = {
+	role: "tool",
+	tool_call_id: toolCall.id,
+	content: "",
+	name: toolName,
+};
+
+/// Get the appropriate session for this tool
+const client = this.clients.get(toolName);
+if (client) {
+	const result = await client.callTool({ name: toolName, arguments: toolArgs });
+	toolMessage.content = result.content[0].text;
+} else {
+	toolMessage.content = `Error: No session found for tool: ${toolName}`;
+}
+```
+
+如果 LLM 选择使用我们的情感分析工具，这段代码会自动将调用路由到 Gradio 服务器，执行分析并将结果返回给 LLM。
+
+最后您需要将工具消息结果添加到 `messages` 数组并传回 LLM。
+
+## 50 行代码实现的智能体 🤯
+
+现在我们已经有了能连接任意 MCP 服务器（包括 Gradio 情感分析服务器）获取工具列表，并能将工具注入 LLM 推理流程的 MCP 客户端，那么... 究竟什么是智能体？
+
+> 当您拥有带工具集的推理客户端后，智能体本质上只是一个 while 循环。
+
+更具体地说，智能体由以下要素构成：
+- 系统提示
+- LLM 推理客户端
+- 连接多个 MCP 服务器（包括 Gradio 服务器）工具的 MCP 客户端
+- 基础控制流（见下方 while 循环）
+
+> [!TIP]
+> 完整 `Agent.ts` 代码文件可[在此处](https://github.com/huggingface/huggingface.js/blob/main/packages/mcp-client/src/Agent.ts)查看。
+
+我们的智能体类直接继承自 McpClient：
+
+```ts
+export class Agent extends McpClient {
+	private readonly servers: StdioServerParameters[];
+	protected messages: ChatCompletionInputMessage[];
+
+	constructor({
+		provider,
+		model,
+		apiKey,
+		servers,
+		prompt,
+	}: {
+		provider: InferenceProvider;
+		model: string;
+		apiKey: string;
+		servers: StdioServerParameters[];
+		prompt?: string;
+	}) {
+		super({ provider, model, apiKey });
+		this.servers = servers;
+		this.messages = [
+			{
+				role: "system",
+				content: prompt ?? DEFAULT_SYSTEM_PROMPT,
+			},
+		];
+	}
+}
+```
+
+默认情况下，我们使用受 [GPT-4.1 提示指南](https://cookbook.openai.com/examples/gpt4-1_prompting_guide) 启发的极简系统提示。
+
+尽管这来自 OpenAI 😈，但以下声明越来越适用于闭源和开源模型：
+> 我们建议开发者仅通过 tools 字段传递工具，而非像过去某些做法那样手动在提示中注入工具描述并编写独立的工具调用解析器。
+
+这意味着我们无需在系统提示中精心编排工具使用示例。`tools: this.availableTools` 参数已足够，LLM 将自动掌握文件系统工具和 Gradio 情感分析工具的使用方法。
+
+加载智能体工具的操作本质上就是连接所需的 MCP 服务器（借助 JS 的并行特性可轻松实现）：
+
+```ts
+async loadTools(): Promise<void> {
+	await Promise.all(this.servers.map((s) => this.addMcpServer(s)));
+}
+```
+
+我们添加了两个额外的工具（MCP 之外），可供 LLM 用于我们的智能体的控制流：
+
+```ts
+const taskCompletionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "task_complete",
+		description: "Call this tool when the task given by the user is complete",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const askQuestionTool: ChatCompletionInputTool = {
+	type: "function",
+	function: {
+		name: "ask_question",
+		description: "Ask a question to the user to get more info required to solve or clarify their problem.",
+		parameters: {
+			type: "object",
+			properties: {},
+		},
+	},
+};
+const exitLoopTools = [taskCompletionTool, askQuestionTool];
+```
+
+当调用任何这些工具时，智能体都会中断循环，并将控制权交还给用户，以便用户输入新的输入。
+
+### 完整的 while 循环
+
+看看我们完整的 while 循环。🎉
+
+智能体主 while 循环的要点是，我们简单地迭代 LLM，交替调用工具并向其提供工具结果，**直到 LLM 开始连续响应两条非工具消息**。
+
+这是完整的 while 循环：
+
+```ts
+let numOfTurns = 0;
+let nextTurnShouldCallTools = true;
+while (true) {
+	try {
+		yield* this.processSingleTurnWithTools(this.messages, {
+			exitLoopTools,
+			exitIfFirstChunkNoTool: numOfTurns > 0 && nextTurnShouldCallTools,
+			abortSignal: opts.abortSignal,
+		});
+	} catch (err) {
+		if (err instanceof Error && err.message === "AbortError") {
+			return;
+		}
+		throw err;
+	}
+	numOfTurns++;
+	const currentLast = this.messages.at(-1)!;
+	if (
+		currentLast.role === "tool" &&
+		currentLast.name &&
+		exitLoopTools.map((t) => t.function.name).includes(currentLast.name)
+	) {
+		return;
+	}
+	if (currentLast.role !== "tool" && numOfTurns > MAX_NUM_TURNS) {
+		return;
+	}
+	if (currentLast.role !== "tool" && nextTurnShouldCallTools) {
+		return;
+	}
+	if (currentLast.role === "tool") {
+		nextTurnShouldCallTools = false;
+	} else {
+		nextTurnShouldCallTools = true;
+	}
+}
+```
+
+## 将 Tiny Agent 与 Gradio MCP 服务器连接
+
+现在我们了解了 Tiny Agent 和 Gradio MCP 服务器，让我们看看它们是如何协同工作的！MCP 的优点在于它为智能体提供了一种标准化的方式，使其能够与任何兼容 MCP 的服务器（包括我们基于 Gradio 的情绪分析服务器）进行交互。
+
+### 将 Gradio 服务器与 Tiny Agent 配合使用
+
+要将 Tiny Agent 连接到我们之前构建的 Gradio 情绪分析服务器，我们只需将其添加到服务器列表中即可。以下是修改智能体配置的方法：
+
+```ts
+const agent = new Agent({
+    provider: process.env.PROVIDER ?? "nebius",
+    model: process.env.MODEL_ID ?? "Qwen/Qwen2.5-72B-Instruct",
+    apiKey: process.env.HF_TOKEN,
+    servers: [
+        // ... existing servers ...
+        {
+            command: "npx",
+            args: [
+                "mcp-remote",
+                "http://localhost:7860/gradio_api/mcp/sse"  // Your Gradio MCP server
+            ]
+        }
+    ],
+});
+```
+
+现在我们的智能体可以同时使用情感分析工具和其他工具！例如，它可以：
+1. 使用文件系统服务器从文件中读取文本
+2. 使用我们的 Gradio 服务器分析其情感
+3. 将结果写回到新文件中
+
+### 示例交互
+
+以下是与我们的智能体进行对话的示例：
+
+```
+用户：读取我桌面上的 "feedback.txt" 文件并分析其情感
+
+智能体：我将帮助您分析反馈文件的情感。以下是具体步骤：
+
+首先，我会使用文件系统工具读取文件
+然后，使用情感分析工具分析其情感
+最后，将结果写入新文件
+[智能体继续使用工具并提供分析结果]
+```
+
+### 部署注意事项
+
+当将 Gradio MCP 服务器部署到 Hugging Face Spaces 时，您需要更新智能体配置中的服务器 URL 以指向已部署的空间：
+
+```ts
+{
+    command: "npx",
+    args: [
+        "mcp-remote",
+        "https://YOUR_USERNAME-mcp-sentiment.hf.space/gradio_api/mcp/sse"
+    ]
+}
+```
+
+这使得您的智能体可以从任何地方使用情绪分析工具，而不仅仅是在本地！
+
+
+
