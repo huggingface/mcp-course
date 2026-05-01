@@ -1,0 +1,179 @@
+# MCP SDK
+
+Model Context Protocolは、JavaScript、Python、その他の言語向けの公式SDKを提供しています。これにより、アプリケーションでMCPクライアントとサーバーを簡単に実装できます。これらのSDKは低レベルのプロトコル詳細を処理し、アプリケーションの機能構築に集中できるようにします。
+
+## SDKの概要
+
+両SDKは、先ほど説明したMCPプロトコル仕様に従って、同様のコア機能を提供します。これらは以下を処理します：
+
+- プロトコルレベルの通信
+- 機能の登録と発見
+- メッセージのシリアライゼーション/デシリアライゼーション
+- 接続管理
+- エラーハンドリング
+
+## コアプリミティブの実装
+
+両SDKを使用してコアプリミティブ（ツール、リソース、プロンプト）のそれぞれを実装する方法を探求してみましょう。
+
+<hfoptions id="server-implementation">
+<hfoption id="python">
+
+<Youtube id="exzrb5QNUis" />
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+# Create an MCP server
+mcp = FastMCP("Weather Service")
+
+# Tool implementation
+@mcp.tool()
+def get_weather(location: str) -> str:
+    """Get the current weather for a specified location."""
+    return f"Weather in {location}: Sunny, 72°F"
+
+# Resource implementation
+@mcp.resource("weather://{location}")
+def weather_resource(location: str) -> str:
+    """Provide weather data as a resource."""
+    return f"Weather data for {location}: Sunny, 72°F"
+
+# Prompt implementation
+@mcp.prompt()
+def weather_report(location: str) -> str:
+    """Create a weather report prompt."""
+    return f"""You are a weather reporter. Weather report for {location}?"""
+
+
+# Run the server
+if __name__ == "__main__":
+    mcp.run()
+```
+
+サーバーを実装したら、サーバースクリプトを実行して起動できます。
+
+```bash
+mcp dev server.py
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+// index.mjs
+import {
+  McpServer,
+  ResourceTemplate,
+} from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// Create an MCP server
+const server = new McpServer({
+  name: "Weather Service",
+  version: "1.0.0",
+});
+
+// Tool implementation
+server.tool("get_weather", { location: z.string() }, async ({ location }) => ({
+  content: [
+    {
+      type: "text",
+      text: `Weather in ${location}: Sunny, 72°F`,
+    },
+  ],
+}));
+
+// Resource implementation
+server.resource(
+  "weather",
+  new ResourceTemplate("weather://{location}", { list: undefined }),
+  async (uri, { location }) => ({
+    contents: [
+      {
+        uri: uri.href,
+        text: `Weather data for ${location}: Sunny, 72°F`,
+      },
+    ],
+  })
+);
+
+// Prompt implementation
+server.prompt(
+  "weather_report",
+  { location: z.string() },
+  async ({ location }) => ({
+    messages: [
+      {
+        role: "assistant",
+        content: {
+          type: "text",
+          text: "You are a weather reporter.",
+        },
+      },
+      {
+        role: "user",
+        content: {
+          type: "text",
+          text: `Weather report for ${location}?`,
+        },
+      },
+    ],
+  })
+);
+
+// Run the server
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+サーバーを実装したら、サーバースクリプトを実行して起動できます。
+
+```bash
+npx @modelcontextprotocol/inspector node ./index.mjs
+```
+
+</hfoption>
+</hfoptions>
+
+これにより、ファイル`server.py`を実行する開発サーバーが初期化され、以下の出力がログに表示されます：
+
+```bash
+Starting MCP inspector...
+⚙️ Proxy server listening on port 6277
+Spawned stdio transport
+Connected MCP client to backing server transport
+Created web app transport
+Set up MCP proxy
+🔍 MCP Inspector is up and running at http://127.0.0.1:6274 🚀
+```
+
+その後、[http://127.0.0.1:6274](http://127.0.0.1:6274)でMCP Inspectorを開いて、サーバーの機能を見て、それらとインタラクトできます。
+
+UIを通じてサーバーの機能とそれらを呼び出す機能が表示されます。
+
+![MCP Inspector](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/6.png)
+
+## MCP SDK
+
+MCPは言語非依存に設計されており、いくつかの人気のあるプログラミング言語向けの公式SDKが利用可能です：
+
+| 言語   | リポジトリ                                                                                               | メンテナー       | ステータス           |
+| ---------- | -------------------------------------------------------------------------------------------------------- | ------------------- | ---------------- |
+| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | Anthropic           | アクティブ           |
+| Python     | [github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk)         | Anthropic           | アクティブ           |
+| Java       | [github.com/modelcontextprotocol/java-sdk](https://github.com/modelcontextprotocol/java-sdk)             | Spring AI (VMware)  | アクティブ           |
+| Kotlin     | [github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk)         | JetBrains           | アクティブ           |
+| C#         | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk)         | Microsoft           | アクティブ (プレビュー) |
+| Swift      | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk)           | loopwork-ai         | アクティブ           |
+| Rust       | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk)             | Anthropic/Community | アクティブ           |
+| Dart       | [https://github.com/leehack/mcp_dart](https://github.com/leehack/mcp_dart)                               | Flutter Community   | アクティブ           |
+
+これらのSDKは、MCPプロトコルとの作業を簡素化する言語固有の抽象化を提供し、低レベルのプロトコル詳細を扱うことなく、サーバーやクライアントのコアロジックの実装に集中できるようにします。
+
+## 次のステップ
+
+MCPでできることの表面をかじっただけですが、すでに基本的なサーバーが動作しています。実際、ブラウザでMCPクライアントを使用して接続しています。
+
+次のセクションでは、LLMからサーバーに接続する方法を見ていきます。

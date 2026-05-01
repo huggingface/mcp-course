@@ -1,0 +1,133 @@
+# プロジェクトのセットアップ
+
+このセクションでは、プルリクエストエージェントの開発環境をセットアップします。
+
+<Tip>
+
+依存関係管理には`uv`を使用したモダンなPythonツールを使用し、必要な設定ファイルを作成します。`uv`に馴染みがない場合は、[こちら](https://docs.astral.sh/uv/)で詳しく学ぶことができます。
+
+</Tip>
+
+
+## プロジェクト構造
+
+プロジェクトディレクトリを作成し、ファイル構造を理解することから始めましょう：
+
+```bash
+git clone https://huggingface.co/spaces/mcp-course/tag-this-repo
+```
+
+最終的なプロジェクト構造は以下のようになります：
+
+```
+hf-pr-agent/
+├── mcp_server.py              # タグ付けツール付きのコアMCPサーバー
+├── app.py                     # FastAPI Webhookリスナーとエージェント
+├── requirements.txt           # Python依存関係
+├── pyproject.toml             # プロジェクト設定ファイル
+├── env.example                # 環境変数テンプレート
+├── cleanup.py                 # 開発ユーティリティ
+```
+
+## 依存関係と設定ファイル
+
+プロジェクトの依存関係と設定について説明します。
+
+### 1. Pythonプロジェクト設定ファイル
+
+`uv`を使用して`pyproject.toml`ファイルを作成し、プロジェクトを定義します：
+
+<Tip>
+
+`uv`がインストールされていない場合は、[こちら](https://docs.astral.sh/uv/getting-started/installation/)の手順に従ってください。
+
+</Tip>
+
+```toml
+[project]
+name = "mcp-course-unit3-example"
+version = "0.1.0"
+description = "FastAPI and Gradio app for Hugging Face Hub discussion webhooks"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "gradio>=4.0.0",
+    "huggingface-hub[mcp]>=0.32.0",
+    "pydantic>=2.0.0",
+    "python-multipart>=0.0.6",
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "fastmcp>=2.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+```
+
+さまざまなデプロイメントプラットフォームとの互換性のため、同じ内容が`requirements.txt`にも記載されています。
+
+仮想環境を作成するには、以下を実行します：
+
+```bash
+uv venv
+source .venv/bin/activate # WindowsではC.venv/Scripts/activate
+```
+
+依存関係をインストールするには、以下を実行します：
+
+```bash
+uv sync
+```
+
+### 2. 環境設定
+
+必要な環境変数を文書化するために`env.example`を作成します：
+
+```bash
+# Hugging Face APIトークン（必須）
+# 取得先：https://huggingface.co/settings/tokens
+HF_TOKEN=hf_your_token_here
+
+# Webhookシークレット（本番環境では必須）
+# 強力でランダムな文字列を使用
+WEBHOOK_SECRET=your-webhook-secret-here
+
+# エージェント用モデル（オプション）
+HF_MODEL=owner/model
+
+# MCPエージェント用プロバイダー（オプション）
+HF_PROVIDER=huggingface
+```
+
+Hugging Face APIトークンを[こちら](https://huggingface.co/settings/tokens)から取得する必要があります。
+
+また、Webhookシークレットを生成する必要があります。以下のコマンドを実行してください：
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+その後、`env.example`ファイルを基に、Webhookシークレットを`.env`ファイルに追加する必要があります。
+
+## 次のステップ
+
+プロジェクト構造と環境のセットアップが完了したので、以下の準備が整いました：
+
+1. **MCPサーバーの作成** - コアタグ付け機能の実装
+2. **Webhookリスナーの構築** - 受信ディスカッションイベントの処理
+3. **エージェントの統合** - MCPツールとWebhook処理の接続
+4. **テストとデプロイ** - 機能の検証とSpacesへのデプロイ
+
+次のセクションでは、すべてのHugging Face Hub対話を処理するMCPサーバーの作成について詳しく説明します。
+
+<Tip>
+
+`.env`ファイルを安全に保管し、バージョン管理にコミットしないでください。`.env`ファイルは、秘密情報の偶発的な漏洩を防ぐため、`.gitignore`ファイルに追加する必要があります。
+
+</Tip> 
