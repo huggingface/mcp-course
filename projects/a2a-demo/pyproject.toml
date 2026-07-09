@@ -1,0 +1,41 @@
+[project]
+name = "a2a-demo"
+version = "1.0.0"
+description = "Toy A2A (Agent-to-Agent) demo: a Weather Agent and an Outdoor Activity Planner Agent, each backed by its own internal MCP server, talking to each other over a minimal A2A protocol."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.2.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.7.0",
+    "python-dotenv>=1.0.0",
+    "langsmith>=0.10.0",
+    "gradio>=6.20.0",
+]
+
+[project.optional-dependencies]
+notebook = [
+    "jupyter>=1.0.0",
+    "ipykernel>=6.29.0",
+]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["common", "weather_agent", "activity_agent"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.21.0",
+    "jupyter>=1.0.0",
+    "ipykernel>=6.29.0",
+]
