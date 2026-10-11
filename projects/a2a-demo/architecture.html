@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture — Weather Agent × Activity Planner Agent</title>
+<style>
+  :root {
+    --bg: #f2f4f7;
+    --surface: #ffffff;
+    --surface-2: #eef1f5;
+    --border: #d8dde5;
+    --text: #1a2130;
+    --text-muted: #5b6472;
+    --text-faint: #8891a0;
+    --a2a: #0f9a86;
+    --a2a-bg: #e4f6f2;
+    --mcp: #b5720a;
+    --mcp-bg: #faf1de;
+    --user: #4a5fc4;
+    --user-bg: #eaecfb;
+    --shadow: 0 1px 2px rgba(20, 24, 31, 0.04), 0 8px 24px -12px rgba(20, 24, 31, 0.12);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b;
+      --surface: #1a1f27;
+      --surface-2: #202632;
+      --border: #2c3340;
+      --text: #e7eaef;
+      --text-muted: #9aa3b2;
+      --text-faint: #6c7484;
+      --a2a: #4fd6c0;
+      --a2a-bg: #16302c;
+      --mcp: #e8ab52;
+      --mcp-bg: #332512;
+      --user: #8ea0f5;
+      --user-bg: #232a4a;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -14px rgba(0, 0, 0, 0.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151b;
+    --surface: #1a1f27;
+    --surface-2: #202632;
+    --border: #2c3340;
+    --text: #e7eaef;
+    --text-muted: #9aa3b2;
+    --text-faint: #6c7484;
+    --a2a: #4fd6c0;
+    --a2a-bg: #16302c;
+    --mcp: #e8ab52;
+    --mcp-bg: #332512;
+    --user: #8ea0f5;
+    --user-bg: #232a4a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -14px rgba(0, 0, 0, 0.6);
+  }
+  :root[data-theme="light"] {
+    --bg: #f2f4f7;
+    --surface: #ffffff;
+    --surface-2: #eef1f5;
+    --border: #d8dde5;
+    --text: #1a2130;
+    --text-muted: #5b6472;
+    --text-faint: #8891a0;
+    --a2a: #0f9a86;
+    --a2a-bg: #e4f6f2;
+    --mcp: #b5720a;
+    --mcp-bg: #faf1de;
+    --user: #4a5fc4;
+    --user-bg: #eaecfb;
+    --shadow: 0 1px 2px rgba(20, 24, 31, 0.04), 0 8px 24px -12px rgba(20, 24, 31, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  }
+
+  .page {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  header.top {
+    margin-bottom: 2.75rem;
+  }
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0 0 0.6rem;
+  }
+  h1 {
+    font-size: clamp(1.6rem, 1.1rem + 1.8vw, 2.35rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin: 0 0 0.65rem;
+    text-wrap: balance;
+  }
+  .lede {
+    font-size: 1.02rem;
+    color: var(--text-muted);
+    max-width: 62ch;
+    margin: 0;
+    text-wrap: pretty;
+  }
+
+  section.block {
+    margin-bottom: 2.75rem;
+  }
+  .block h2 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 0 0 1.1rem;
+  }
+
+  /* ---------- diagram ---------- */
+
+  .diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  @media (min-width: 860px) {
+    .diagram { flex-direction: row; align-items: stretch; }
+  }
+
+  .lane {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 1rem 1.1rem;
+  }
+  .node.user {
+    text-align: center;
+    border-color: color-mix(in srgb, var(--user) 35%, var(--border));
+  }
+  .node .kicker {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+  .node .title {
+    font-weight: 700;
+    font-size: 1.02rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+  .node .port {
+    font-size: 0.78rem;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  .node .desc {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin-top: 0.35rem;
+  }
+  .badges {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
+  }
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    letter-spacing: 0.01em;
+  }
+  .badge.a2a { background: var(--a2a-bg); color: var(--a2a); }
+  .badge.mcp { background: var(--mcp-bg); color: var(--mcp); }
+
+  .tool-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+  }
+  .tool-card .kicker { margin-bottom: 0.5rem; }
+  .tool-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.35rem;
+  }
+  .tool-list li {
+    font-size: 0.82rem;
+  }
+  .tool-list code {
+    font-size: 0.8rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.05rem 0.4rem;
+    border-radius: 5px;
+    color: var(--text);
+  }
+
+  .connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.25rem;
+    text-align: center;
+  }
+  @media (min-width: 860px) {
+    .connector {
+      flex-direction: column;
+      padding: 0 0.9rem;
+      min-width: 148px;
+      justify-content: center;
+    }
+  }
+  .connector .arrow {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+  .connector.a2a-c .arrow, .connector.a2a-c .label { color: var(--a2a); }
+  .connector.mcp-c .arrow, .connector.mcp-c .label { color: var(--mcp); }
+  .connector .label {
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .connector .sub {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  }
+
+  .inner-connector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-left: 0.2rem;
+  }
+  .inner-connector .arrow { color: var(--mcp); font-size: 1rem; }
+  .inner-connector .label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--mcp);
+  }
+
+  /* ---------- legend ---------- */
+
+  .legend {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+  @media (min-width: 640px) {
+    .legend { grid-template-columns: 1fr 1fr; }
+  }
+  .legend .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.15rem;
+    box-shadow: var(--shadow);
+  }
+  .legend .card .head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  .legend .dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend .dot.a2a { background: var(--a2a); }
+  .legend .dot.mcp { background: var(--mcp); }
+  .legend .card .head strong { font-size: 0.92rem; }
+  .legend dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 0.7rem;
+    font-size: 0.84rem;
+  }
+  .legend dt { color: var(--text-faint); }
+  .legend dd { margin: 0; color: var(--text-muted); }
+
+  /* ---------- sequence ---------- */
+
+  ol.sequence {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+    display: grid;
+    gap: 0.55rem;
+  }
+  ol.sequence li {
+    counter-increment: step;
+    display: flex;
+    gap: 0.85rem;
+    align-items: baseline;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    padding: 0.15rem 0;
+  }
+  ol.sequence li::before {
+    content: counter(step);
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.74rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+  }
+  ol.sequence strong { color: var(--text); font-weight: 600; }
+
+  footer.foot {
+    border-top: 1px solid var(--border);
+    padding-top: 1.25rem;
+    font-size: 0.82rem;
+    color: var(--text-faint);
+  }
+  footer.foot code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 0.05rem 0.4rem;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <p class="eyebrow">Architecture · a2a-demo</p>
+    <h1>Weather Agent × Activity Planner Agent</h1>
+    <p class="lede">
+      Two toy agents, two protocols. <span class="mono">A2A</span> connects agent to agent
+      over HTTP; <span class="mono">MCP</span> connects each agent to its own private tool
+      server over stdio. The Activity Planner never touches a weather API directly — it asks
+      the Weather Agent.
+    </p>
+  </header>
+
+  <section class="block">
+    <h2>System diagram</h2>
+    <div class="diagram">
+
+      <div class="lane" style="flex: 0 0 auto; max-width: 200px; align-self: center;">
+        <div class="node user">
+          <span class="kicker">Client</span>
+          <div class="title">User</div>
+          <div class="desc">Sends one plain-text request.</div>
+        </div>
+      </div>
+
+      <div class="connector a2a-c">
+        <span class="arrow">→</span>
+        <span class="label">A2A</span>
+        <span class="sub">message/send</span>
+      </div>
+
+      <div class="lane">
+        <div class="node">
+          <span class="kicker">A2A server + A2A client</span>
+          <div class="title">Activity Planner Agent <span class="port">:8002</span></div>
+          <div class="desc">Parses the city, asks the Weather Agent, then picks a plan.</div>
+          <div class="badges">
+            <span class="badge a2a">agent card</span>
+            <span class="badge a2a">message/send</span>
+          </div>
+        </div>
+        <div class="inner-connector">
+          <span class="arrow">↓</span>
+          <span class="label">MCP · tools/call</span>
+        </div>
+        <div class="tool-card">
+          <span class="kicker">Activity MCP server · stdio subprocess</span>
+          <ul class="tool-list">
+            <li><code>suggest_indoor_activity</code></li>
+            <li><code>suggest_picnic</code></li>
+            <li><code>suggest_outdoor_activity</code></li>
+            <li><code>recommend_activity(condition, temp)</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="connector a2a-c">
+        <span class="arrow">⇄</span>
+        <span class="label">A2A</span>
+        <span class="sub">"weather in Paris?"</span>
+      </div>
+
+      <div class="lane">
+        <div class="node">
+          <span class="kicker">A2A server</span>
+          <div class="title">Weather Agent <span class="port">:8001</span></div>
+          <div class="desc">Looks up current or forecast conditions for a city.</div>
+          <div class="badges">
+            <span class="badge a2a">agent card</span>
+            <span class="badge a2a">message/send</span>
+          </div>
+        </div>
+        <div class="inner-connector">
+          <span class="arrow">↓</span>
+          <span class="label">MCP · tools/call</span>
+        </div>
+        <div class="tool-card">
+          <span class="kicker">Weather MCP server · stdio subprocess</span>
+          <ul class="tool-list">
+            <li><code>get_current_weather(location)</code></li>
+            <li><code>get_forecast(location, days_ahead)</code></li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Protocol legend</h2>
+    <div class="legend">
+      <div class="card">
+        <div class="head"><span class="dot a2a"></span><strong>A2A — agent to agent</strong></div>
+        <dl>
+          <dt>Transport</dt><dd>HTTP + JSON-RPC 2.0</dd>
+          <dt>Discovery</dt><dd>Agent Card at <code class="mono">/.well-known/agent.json</code></dd>
+          <dt>Message</dt><dd><code class="mono">message/send</code> → <code class="mono">Task</code></dd>
+          <dt>Scope</dt><dd>Between independent, peer agents</dd>
+        </dl>
+      </div>
+      <div class="card">
+        <div class="head"><span class="dot mcp"></span><strong>MCP — agent to tool</strong></div>
+        <dl>
+          <dt>Transport</dt><dd>stdio, subprocess per agent</dd>
+          <dt>Discovery</dt><dd><code class="mono">tools/list</code></dd>
+          <dt>Message</dt><dd><code class="mono">tools/call</code> → tool result</dd>
+          <dt>Scope</dt><dd>An agent's own private toolbox</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Request flow</h2>
+    <ol class="sequence">
+      <li><strong>User</strong> sends "what should we do in Paris today?" to the Activity Planner Agent over A2A.</li>
+      <li><strong>Activity Planner</strong> extracts the city, then opens its own A2A call to the Weather Agent.</li>
+      <li><strong>Weather Agent</strong> calls <code class="mono">get_current_weather</code> on its MCP server over stdio.</li>
+      <li><strong>Weather Agent</strong> replies to the Activity Planner with a completed A2A <code class="mono">Task</code>.</li>
+      <li><strong>Activity Planner</strong> feeds the condition into its own <code class="mono">recommend_activity</code> MCP tool.</li>
+      <li><strong>Activity Planner</strong> returns a weather-aware suggestion to the user as a completed A2A <code class="mono">Task</code>.</li>
+    </ol>
+  </section>
+
+  <footer class="foot">
+    Educational implementation — <code>common/a2a_protocol.py</code> mirrors the shape of the real
+    <span class="mono">A2A</span> spec (agent cards, JSON-RPC <code>message/send</code>, task lifecycle)
+    without depending on <code>a2a-sdk</code>. See <code>projects/a2a-demo/README.md</code> for setup
+    and <code>notebook/a2a_prototype.ipynb</code> for a step-by-step walkthrough.
+  </footer>
+
+</div>
+</body>
+</html>
