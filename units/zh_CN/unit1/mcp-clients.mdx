@@ -1,0 +1,342 @@
+# MCP Clients
+
+现在我们已经对模型上下文协议（Model Context Protocol）有了基本了解，接下来可以探索 MCP 客户端在 MCP 生态系统中的关键作用。
+
+在本单元的第一部分，我们将探讨 MCP 客户端在模型上下文协议生态系统中的核心角色。
+
+在本节中，您将：
+
+* 理解 MCP 客户端的定义及其在 MCP 架构中的角色
+* 了解 MCP 客户端的主要职责
+* 探索主流的 MCP 客户端实现方案
+* 学习如何使用 Hugging Face 的 MCP 客户端实现
+* 查看 MCP 客户端的实际使用示例
+
+## 理解 MCP 客户端
+
+MCP 客户端是连接 AI 应用（宿主）与 MCP 服务器提供的外部能力之间的关键桥梁。可以将宿主视为您的主应用程序（如 AI 助手或 IDE），而客户端则是宿主中专门处理 MCP 通信的模块。
+
+## 用户界面客户端
+
+让我们从探索 MCP 可用的用户界面客户端开始。
+
+### 聊天界面客户端
+
+Anthropic 的 Claude Desktop 是最突出的 MCP 客户端之一，提供与各种 MCP 服务器的集成。
+
+### 交互式开发客户端
+
+Cursor 的 MCP 客户端实现通过直接集成代码编辑能力，提供 AI 驱动的编码辅助。它支持多个 MCP 服务器连接，并在编码过程中提供实时工具调用，是开发者的强大工具。
+
+Continue.dev 是另一个支持 MCP 的交互式开发客户端示例，可以从 VS Code 连接到 MCP 服务器。
+
+## 配置 MCP 客户端
+
+现在我们已经介绍了 MCP 协议的核心内容，接下来看看如何配置您的 MCP 服务器和客户端。
+
+要成功部署 MCP 服务器和客户端，需要进行正确的配置。
+
+<Tip>
+
+由于 MCP 规范仍在演进中，配置方法可能会随之变化。我们将重点介绍当前的最佳配置实践。
+
+</Tip>
+
+### MCP 配置文件
+
+MCP 宿主使用配置文件来管理服务器连接。这些文件定义了可用的服务器及其连接方式。
+
+幸运的是，这些配置文件非常简洁易懂，且在主流 MCP 宿主中保持统一。
+
+#### `mcp.json` 结构
+
+标准的 MCP 配置文件名为 `mcp.json`，其基本结构如下：
+
+```json
+{
+  "servers": [
+    {
+      "name": "Server Name",
+      "transport": {
+        "type": "stdio|sse",
+        // Transport-specific configuration
+      }
+    }
+  ]
+}
+```
+
+在此示例中，我们有一个服务器，它具有名称和传输类型。传输类型可以是 `stdio` 或 `sse`。
+
+#### stdio 传输配置
+
+对于使用 stdio 传输的本地服务器，配置包含启动服务器进程的命令和参数：
+
+```json
+{
+  "servers": [
+    {
+      "name": "File Explorer",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+这里，我们有一个名为“文件资源管理器”的服务器，它是一个本地脚本。
+
+#### HTTP+SSE 传输配置
+
+对于使用 HTTP+SSE 传输的远程服务器，配置包含服务器 URL：
+
+```json
+{
+  "servers": [
+    {
+      "name": "Remote API Server",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+#### 配置中的环境变量
+
+可以使用 `env` 字段将环境变量传递给服务器进程。以下是在服务器代码中访问它们的方法：
+
+<hfoptions id="env-variables">
+<hfoption id="python">
+
+在 Python 中，我们使用 `os` 模块来访问环境变量：
+
+```python
+import os
+
+# Access environment variables
+github_token = os.environ.get("GITHUB_TOKEN")
+if not github_token:
+    raise ValueError("GITHUB_TOKEN environment variable is required")
+
+# Use the token in your server code
+def make_github_request():
+    headers = {"Authorization": f"Bearer {github_token}"}
+    # ... rest of your code
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+在 JavaScript 中，我们使用 `process.env` 对象来访问环境变量：
+
+```javascript
+// Access environment variables
+const githubToken = process.env.GITHUB_TOKEN;
+if (!githubToken) {
+    throw new Error("GITHUB_TOKEN environment variable is required");
+}
+
+// Use the token in your server code
+function makeGithubRequest() {
+    const headers = { "Authorization": `Bearer ${githubToken}` };
+    // ... rest of your code
+}
+```
+
+</hfoption>
+</hfoptions>
+
+`mcp.json` 中相应的配置如下：
+
+```json
+{
+  "servers": [
+    {
+      "name": "GitHub API",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/github_server.py"],
+        "env": {
+          "GITHUB_TOKEN": "your_github_token"
+        }
+      }
+    }
+  ]
+}
+```
+
+### 配置示例
+
+让我们来看一些实际的配置场景：
+
+#### 场景 1：本地服务器配置
+
+在此场景中，我们有一个本地服务器，它是一个 Python 脚本，可以是文件资源管理器或代码编辑器。
+
+```json
+{
+  "servers": [
+    {
+      "name": "File Explorer",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+#### 场景 2：远程服务器配置
+
+在此场景中，我们有一个作为天气 API 的远程服务器。
+
+```json
+{
+  "servers": [
+    {
+      "name": "Weather API",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+正确的配置对于成功部署 MCP 集成至关重要。通过了解这些方面，您可以在 AI 应用程序和外部功能之间建立稳健可靠的连接。
+
+在下一节中，我们将探索 Hugging Face Hub 上可用的 MCP 服务器生态系统，以及如何在那里发布您自己的服务器。
+
+## 代码客户端
+
+您还可以在代码中使用 MCP 客户端，以便 LLM 可以使用这些工具。让我们在 `smolagents` 中探索一些示例。
+
+首先，让我们探索上一页中的天气服务器。在 `smolagents` 中，我们可以使用 `ToolCollection` 类自动从 MCP 服务器发现并注册工具。这可以通过将 `StdioServerParameters` 或 `SSEServerParameters` 传递给 `ToolCollection.from_mcp` 方法来实现。然后，我们可以将工具打印到控制台。
+
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp.client.stdio import StdioServerParameters
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tools:
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+
+```
+
+<details>
+<summary>
+Output
+</summary>
+
+```sh
+Weather API: Get the weather in a specific location
+
+```
+
+</details>
+
+我们也可以连接到托管在远程计算机上的 MCP 服务器。在这种情况下，我们需要将 `SSEServerParameters` 传递给 `ToolCollection.from_mcp` 方法。
+
+```python
+from smolagents.mcp_client import MCPClient
+
+with MCPClient(
+    {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
+) as tools:
+    # Tools from the remote server are available
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+```
+
+<details>
+<summary>
+Output
+</summary>
+
+```sh
+prime_factors: Compute the prime factorization of a positive integer.
+generate_cheetah_image: Generate a cheetah image.
+image_orientation: Returns whether image is portrait or landscape.
+sepia: Apply a sepia filter to the input image.
+```
+
+</details>
+
+现在，让我们看看如何在代码智能体中使用 MCP 客户端。
+
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp.client.stdio import StdioServerParameters
+from smolagents import CodeAgent, InferenceClientModel
+
+model = InferenceClientModel()
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], model=model)
+    agent.run("What's the weather in Tokyo?")
+
+```
+
+<details>
+<summary>
+Output
+</summary>
+
+```sh
+The weather in Tokyo is sunny with a temperature of 20 degrees Celsius.
+```
+
+</details>
+
+我们还可以连接到 MCP 包。以下是连接到 `pubmedmcp` 包的示例。
+
+```python
+from smolagents import ToolCollection, CodeAgent
+from mcp import StdioServerParameters
+
+server_parameters = StdioServerParameters(
+    command="uv",
+    args=["--quiet", "pubmedmcp@0.1.3"],
+    env={"UV_PYTHON": "3.12", **os.environ},
+)
+
+with ToolCollection.from_mcp(server_parameters, trust_remote_code=True) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], add_base_tools=True)
+    agent.run("Please find a remedy for hangover.")
+```
+
+<details>
+<summary>
+Output
+</summary>
+
+```sh
+The remedy for hangover is to drink water.
+```
+
+</details>
+
+## 后续步骤
+
+现在您已经了解了 MCP 客户端，接下来可以：
+* 探索具体的 MCP 服务器实现
+* 了解如何创建自定义 MCP 客户端
+* 深入研究高级 MCP 集成模式
+
+让我们继续探索模型上下文协议 (MCP) 的世界！
