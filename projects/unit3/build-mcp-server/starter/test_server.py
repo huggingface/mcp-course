@@ -57,7 +57,12 @@ class TestAnalyzeFileChanges:
     async def test_includes_required_fields(self):
         """Test that the result includes expected fields."""
         with patch('subprocess.run') as mock_run:
-            mock_run.return_value = MagicMock(stdout="M\tfile1.py\n", stderr="")
+            # Configure mock to have returncode 0 (success)
+            mock_result = MagicMock()
+            mock_result.returncode = 0
+            mock_result.stdout = "M\tfile1.py\n"
+            mock_result.stderr = ""
+            mock_run.return_value = mock_result
             
             result = await analyze_file_changes()
             data = json.loads(result)
