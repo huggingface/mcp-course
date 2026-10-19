@@ -176,3 +176,4 @@ cython_debug/
 .DS_Store
 
 videos/
+*.lock

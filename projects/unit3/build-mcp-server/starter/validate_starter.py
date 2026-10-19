@@ -35,11 +35,11 @@ def test_imports():
         import server
         print("✓ server.py imports successfully")
         
-        # Check that FastMCP is imported
+        # Check that MCPServer is imported
         if hasattr(server, 'mcp'):
-            print("✓ FastMCP server instance found")
+            print("✓ MCPServer server instance found")
         else:
-            print("✗ FastMCP server instance not found")
+            print("✗ MCPServer server instance not found")
             return False
             
         return True

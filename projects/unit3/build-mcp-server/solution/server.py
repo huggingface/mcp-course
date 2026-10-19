@@ -10,10 +10,10 @@ import subprocess
 from typing import Optional
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
-# Initialize the FastMCP server
-mcp = FastMCP("pr-agent")
+# Initialize the MCPServer server
+mcp = MCPServer("pr-agent")
 
 # PR template directory (shared between starter and solution)
 TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates"
