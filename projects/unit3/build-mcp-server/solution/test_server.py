@@ -30,7 +30,7 @@ class TestImplementation:
     def test_imports(self):
         """Test that all required functions can be imported."""
         assert IMPORTS_SUCCESSFUL, f"Failed to import required functions: {IMPORT_ERROR if not IMPORTS_SUCCESSFUL else ''}"
-        assert mcp is not None, "FastMCP server instance not found"
+        assert mcp is not None, "MCPServer server instance not found"
         assert callable(analyze_file_changes), "analyze_file_changes should be a callable function"
         assert callable(get_pr_templates), "get_pr_templates should be a callable function"
         assert callable(suggest_template), "suggest_template should be a callable function"
@@ -189,11 +189,11 @@ class TestSuggestTemplate:
 
 @pytest.mark.skipif(not IMPORTS_SUCCESSFUL, reason="Imports failed")
 class TestToolRegistration:
-    """Test that tools are properly registered with FastMCP."""
+    """Test that tools are properly registered with MCPServer."""
     
     def test_tools_have_decorators(self):
         """Test that tool functions are decorated with @mcp.tool()."""
-        # In FastMCP, decorated functions should have certain attributes
+        # In MCPServer, decorated functions should have certain attributes
         # This is a basic check that functions exist and are callable
         assert hasattr(analyze_file_changes, '__name__'), \
             "analyze_file_changes should be a proper function"
