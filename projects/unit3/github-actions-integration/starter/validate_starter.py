@@ -17,7 +17,6 @@ def test_project_structure():
         "pyproject.toml",
         "README.md"
     ]
-    
     all_exist = True
     for file in required_files:
         if Path(file).exists():
