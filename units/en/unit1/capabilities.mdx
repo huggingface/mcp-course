@@ -143,6 +143,9 @@ function codeReview(code, language) {
 
 ## Sampling
 
+> [!WARNING]
+> **Sampling is deprecated** as of MCP specification version `2026-07-28`. New implementations **SHOULD NOT** adopt it, and existing implementations **SHOULD** migrate to integrating directly with LLM provider APIs. It remains in the specification for at least twelve months after that revision's release before it becomes eligible for removal. See the [deprecated features registry](https://modelcontextprotocol.io/specification/2026-07-28/deprecated) and the [Sampling specification](https://modelcontextprotocol.io/specification/2026-07-28/client/sampling). The rest of this section explains how Sampling works so you can understand and maintain existing implementations.
+
 Sampling allows Servers to request the Client (specifically, the Host application) to perform LLM interactions.
 
 - **Control**: Sampling is **server-initiated** but requires Client/Host facilitation.
@@ -209,7 +212,7 @@ Let's look at how these capabilities work together to enable complex interaction
 | Tools      | Model (LLM)   | Client → Server | Yes (potentially) | Yes | Actions, API calls, data manipulation |
 | Resources  | Application   | Client → Server | No (read-only) | Typically no | Data retrieval, context gathering |
 | Prompts    | User          | Server → Client | No | No (selected by user) | Guided workflows, specialized templates |
-| Sampling   | Server        | Server → Client → Server | Indirectly | Yes | Multi-step tasks, agentic behaviors |
+| Sampling (deprecated) | Server        | Server → Client → Server | Indirectly | Yes | Multi-step tasks, agentic behaviors |
 
 These capabilities are designed to work together in complementary ways:
 
