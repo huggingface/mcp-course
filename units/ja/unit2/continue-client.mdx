@@ -1,0 +1,193 @@
+# ローカルおよびオープンソースモデルでのMCPの使用
+
+このセクションでは、Ollamaのようなローカルツールと連携するAIコーディングアシスタント構築ツールであるContinueを使用して、MCPをローカルおよびオープンソースモデルと接続します。
+
+## Continueのセットアップ
+
+ContinueはVS Code マーケットプレイスからインストールできます。
+
+<Tip>
+
+*Continueは[JetBrains](https://plugins.jetbrains.com/plugin/22707-continue)の拡張機能もあります。*
+
+</Tip>
+
+### VS Code拡張機能
+
+1. [Visual Studio MarketplaceのContinue拡張機能ページ](https://marketplace.visualstudio.com/items?itemName=Continue.continue)で`Install`をクリック
+2. これによりVS CodeでContinue拡張機能ページが開き、そこで再度`Install`をクリックする必要があります
+3. Continueロゴが左サイドバーに表示されます。より良い体験のために、Continueを右サイドバーに移動してください
+
+![sidebar vs code demo](https://docs.continue.dev/assets/images/move-to-right-sidebar-b2d315296198e41046fc174d8178f30a.gif)
+
+Continueの設定が完了したら、ローカルモデルを取得するためのOllamaのセットアップに移ります。
+
+### ローカルモデル
+
+Continueと互換性のあるローカルモデルを実行する方法は多数あります。人気のある3つのオプションは、Ollama、Llama.cpp、LM Studioです。Ollamaは、ユーザーが大規模言語モデル（LLM）をローカルで簡単に実行できるオープンソースツールです。Llama.cppは、OpenAI互換サーバーも含むLLM実行用の高性能C++ライブラリです。LM Studioは、ローカルモデルを実行するためのグラフィカルインターフェースを提供します。
+
+Hugging Face Hubからローカルモデルにアクセスし、すべての主要なローカル推論アプリのコマンドとクイックリンクを取得できます。
+
+![hugging face hub](https://cdn-uploads.huggingface.co/production/uploads/64445e5f1bc692d87b27e183/d6XMR5q9DwVpdEKFeLW9t.png)
+
+<hfoptions id="local-models">
+<hfoption id="llamacpp">
+
+Llama.cppは、LLMを提供するための軽量でOpenAI API互換のHTTPサーバーである`llama-server`を提供しています。[Llama.cppリポジトリ](https://github.com/ggml-org/llama.cpp)の指示に従ってソースからビルドするか、システムで利用可能な場合は事前にビルドされたバイナリを使用できます。詳細については、[Llama.cppドキュメント](https://github.com/ggerganov/llama.cpp)をご確認ください。
+
+`llama-server`を入手したら、次のようなコマンドでHugging Faceからモデルを実行できます：
+
+```bash
+llama-server -hf unsloth/Devstral-Small-2505-GGUF:Q4_K_M
+```
+
+</hfoption>
+<hfoption id="lmstudio">
+LM Studioは、Mac、Windows、Linuxで利用可能なアプリケーションで、グラフィカルインターフェースでオープンソースモデルをローカルで簡単に実行できます。開始するには：
+
+1. [ここをクリックしてLM Studioでモデルを開く](lmstudio://open_from_hf?model=unsloth/Devstral-Small-2505-GGUF)
+2. モデルがダウンロードされたら、「Local Server」タブに移動し、「Start Server」をクリック
+</hfoption>
+<hfoption id="ollama">
+Ollamaを使用するには、[インストール](https://ollama.com/download)して、実行したいモデルを`ollama run`コマンドでダウンロードできます。
+
+例えば、[Devstral-Small](https://huggingface.co/unsloth/Devstral-Small-2505-GGUF?local-app=ollama)モデルをダウンロードして実行するには：
+
+```bash
+ollama run unsloth/devstral-small-2505-gguf:Q4_K_M
+```
+</hfoption>
+</hfoptions>
+
+<Tip>
+
+Continueは様々なローカルモデルプロバイダーをサポートしています。Ollama、Llama.cpp、LM Studio以外にも他のプロバイダーを使用できます。サポートされているプロバイダーの完全なリストと詳細な設定オプションについては、[Continueドキュメント](https://docs.continue.dev/customize/model-providers)をご参照ください。
+
+</Tip>
+
+組み込み機能としてツール呼び出し機能を持つモデル、つまりCodestral QwenやLlama 3.1xを使用することが重要です。
+
+1. ワークスペースのトップレベルに`.continue/models`というフォルダを作成
+2. モデルプロバイダーを設定するためのファイルをこのフォルダに追加。例：`local-models.yaml`
+3. Ollama、Llama.cpp、LM Studioのどれを使用しているかに応じて、以下の設定を追加
+
+<hfoptions id="local-models">
+<hfoption id="llamacpp">
+この設定は`llama-server`で提供される`llama.cpp`モデル用です。`model`フィールドは提供するモデルと一致させる必要があります。
+
+```yaml
+name: Llama.cpp model
+version: 0.0.1
+schema: v1
+models:
+  - provider: llama.cpp
+    model: unsloth/Devstral-Small-2505-GGUF
+    apiBase: http://localhost:8080
+    defaultCompletionOptions:
+      contextLength: 8192 # モデルに基づいて調整
+    name: Llama.cpp Devstral-Small
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+<hfoption id="lmstudio">
+この設定はLM Studio経由で提供されるモデル用です。モデル識別子はLM Studioにロードされているものと一致させる必要があります。
+
+```yaml
+name: LM Studio Model
+version: 0.0.1
+schema: v1
+models:
+  - provider: lmstudio
+    model: unsloth/Devstral-Small-2505-GGUF
+    name: LM Studio Devstral-Small
+    apiBase: http://localhost:1234/v1
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+<hfoption id="ollama">
+この設定はOllamaモデル用です。
+
+```yaml
+name: Ollama Devstral model
+version: 0.0.1
+schema: v1
+models:
+  - provider: ollama
+    model: unsloth/devstral-small-2505-gguf:Q4_K_M
+    defaultCompletionOptions:
+      contextLength: 8192
+    name: Ollama Devstral-Small
+    roles:
+      - chat
+      - edit
+```
+</hfoption>
+</hfoptions>
+
+デフォルトでは、各モデルには最大コンテキスト長があり、この場合は`128000`トークンです。このセットアップには、複数のMCPリクエストを実行するためのより大きなコンテキストウィンドウの使用が含まれ、より多くのトークンを処理できる必要があります。
+
+## 動作の仕組み
+
+### ツールハンドシェイク
+
+ツールは、モデルが外部世界とインターフェースするための強力な方法を提供します。これらは名前と引数スキーマを持つJSONオブジェクトとしてモデルに提供されます。例えば、`filepath`引数を持つ`read_file`ツールは、モデルに特定のファイルの内容を要求する能力を与えます。
+
+![autonomous agents diagram](https://gist.github.com/user-attachments/assets/c7301fc0-fa5c-4dc4-9955-7ba8a6587b7a)
+
+以下のハンドシェイクは、エージェントがツールを使用する方法を説明しています：
+
+1. エージェントモードでは、使用可能なツールが`user`チャットリクエストと一緒に送信されます
+2. モデルは応答にツール呼び出しを含めることを選択できます
+3. ユーザーが許可を与えます。そのツールのポリシーが`Automatic`に設定されている場合、このステップはスキップされます
+4. Continueは組み込み機能またはその特定のツールを提供するMCPサーバーを使用してツールを呼び出します
+5. Continueは結果をモデルに送り返します
+6. モデルが応答し、場合によっては別のツール呼び出しを行い、ステップ2が再び始まります
+
+Continueは複数のローカルモデルプロバイダーをサポートしています。異なるタスクに異なるモデルを使用したり、必要に応じてモデルを切り替えたりできます。このセクションではローカルファーストソリューションに焦点を当てていますが、ContinueはOpenAI、Anthropic、Microsoft/Azure、Mistralなどの人気プロバイダーでも動作します。独自のモデルプロバイダーを実行することも可能です。
+
+### MCPとのローカルモデル統合
+
+すべてのセットアップが完了したので、既存のMCPサーバーを追加しましょう。以下は、アシスタントで使用する新しいMCPサーバーをセットアップする簡単な例です：
+
+1. ワークスペースのトップレベルに`.continue/mcpServers`というフォルダを作成
+2. このフォルダに`playwright-mcp.yaml`というファイルを追加
+3. `playwright-mcp.yaml`に以下の内容を書き込んで保存
+
+```yaml
+name: Playwright mcpServer
+version: 0.0.1
+schema: v1
+mcpServers:
+  - name: Browser search
+    command: npx
+    args:
+      - "@playwright/mcp@latest"
+```
+
+次のコマンドでMCPサーバーをテストしてください：
+
+```
+1. playwrightを使用して、https://news.ycombinator.com に移動してください。
+
+2. ホームページの上位4つの投稿のタイトルとURLを抽出してください。
+
+3. プロジェクトのルートディレクトリにhn.txtという名前のファイルを作成してください。
+
+4. このリストをhn.txtファイルにプレーンテキストとして保存してください。各行にはタイトルとURLをハイフンで区切って含めてください。
+
+コードや指示を出力せず、タスクを完了して完了時に確認してください。
+```
+
+結果として、現在の作業ディレクトリに`hn.txt`という生成されたファイルが作成されます。
+
+![mcp output example](https://deploy-preview-6060--continuedev.netlify.app/assets/images/mcp-playwright-50b192a2ff395f7a6cc11618c5e2d5b1.png)
+
+## まとめ
+
+ContinueをLlama 3.1のようなローカルモデルやMCPサーバーと組み合わせることで、最先端のAI機能を活用しながら、コードとデータをプライベートに保つ強力な開発ワークフローを手に入れました。
+
+このセットアップにより、Web自動化からファイル管理まで、すべて完全にローカルマシンで実行される専門ツールでAIアシスタントをカスタマイズする柔軟性が得られます。開発ワークフローを次のレベルに引き上げる準備はできましたか？[Continue Hub MCP探索ページ](https://hub.continue.dev/explore/mcp)から異なるMCPサーバーを試してみることから始めて、ローカルAIがいかにコーディング体験を変革するかを発見してください。

@@ -1,0 +1,518 @@
+# Webhookリスナー
+
+webhookリスナーは、プルリクエストエージェントのエントリーポイントです。Hugging Face Hubでディスカッションが作成または更新されたときにリアルタイムイベントを受信し、MCPを活用したタグ付けワークフローをトリガーします。このセクションでは、FastAPIを使用してwebhookハンドラーを実装します。
+
+## Webhook統合の理解
+
+[Hugging Face Webhooks Guide](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md)に従って、webhookリスナーは受信リクエストを検証し、ディスカッションイベントをリアルタイムで処理します。
+
+![Webhook Creation](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
+
+### Webhookイベントフロー
+
+信頼性の高いリスナーを構築するためには、webhookフローを理解することが重要です：
+
+1. **ユーザーアクション**: 誰かがモデルリポジトリのディスカッションでコメントを作成
+2. **Hubイベント**: Hugging Faceがwebhookイベントを生成
+3. **Webhook配信**: HubがPOST requestを私たちのエンドポイントに送信
+4. **認証**: webhookシークレットを検証
+5. **処理**: コメント内容からタグを抽出
+6. **アクション**: MCPツールを使用して新しいタグのプルリクエストを作成
+
+<Tip>
+
+Webhookはプッシュ通知です - Hugging Face Hubは変更をポーリングするのではなく、アクティブにイベントをアプリケーションに送信します。これにより、ディスカッションやコメントに対するリアルタイムの応答が可能になります。
+
+</Tip>
+
+## FastAPI Webhookアプリケーション
+
+基盤から始めて完全な処理ロジックまで構築しながら、webhookリスナーをステップバイステップで作成しましょう。
+
+### 1. アプリケーションセットアップ
+
+まず、必要なすべてのインポートと設定を含む基本のFastAPIアプリケーションをセットアップしましょう：
+
+```python
+import os
+import json
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+
+from fastapi import FastAPI, Request, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+```
+
+これらのインポートは、堅牢なwebhookハンドラーを構築するために必要なすべてを提供します。`FastAPI`はWebフレームワークを提供し、`BackgroundTasks`は非同期処理を可能にし、typingインポートはデータ検証を支援します。
+
+次に、アプリケーションを設定しましょう：
+
+```python
+# Configuration
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+# Simple storage for processed operations
+tag_operations_store: List[Dict[str, Any]] = []
+
+app = FastAPI(title="HF Tagging Bot")
+app.add_middleware(CORSMiddleware, allow_origins=["*"])
+```
+
+この設定では以下をセットアップします：
+- **Webhookシークレット**: 受信webhookの検証用
+- **HFトークン**: Hub APIでの認証用
+- **オペレーションストア**: 処理されたオペレーションを監視するためのインメモリストレージ
+- **CORSミドルウェア**: Webインターフェース用のクロスオリジンリクエストを許可
+
+<Tip>
+`tag_operations_store`リストは最近のwebhook処理オペレーションを追跡します。これはデバッグと監視に役立ちますが、本番環境ではデータベースを使用するか、このリストのサイズを制限することを検討してください。
+</Tip>
+
+### 2. Webhookデータモデル
+
+[Hugging Face webhook documentation](https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md)に基づいて、webhookデータ構造を理解する必要があります：
+
+```python
+class WebhookEvent(BaseModel):
+    event: Dict[str, str]          # Contains action and scope information
+    comment: Dict[str, Any]        # Comment content and metadata
+    discussion: Dict[str, Any]     # Discussion information
+    repo: Dict[str, str]           # Repository details
+```
+
+このPydanticモデルは、webhook構造の理解を助けます。
+
+私たちが関心を持つ主要なフィールドは：
+- `event.action`: 新しいコメントの場合は通常"create"
+- `event.scope`: コメントイベントの場合は通常"discussion.comment"
+- `comment.content`: 実際のコメントテキスト
+- `repo.name`: コメントが作成されたリポジトリ
+
+### 3. コアWebhookハンドラー
+
+次に、メインのwebhookハンドラーです - ここが重要な部分です。理解しやすい部分に分けて見てみましょう：
+
+```python
+@app.post("/webhook")
+async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
+    """
+    Handle incoming webhooks from Hugging Face Hub
+    Following the pattern from: https://raw.githubusercontent.com/huggingface/hub-docs/refs/heads/main/docs/hub/webhooks-guide-discussion-bot.md
+    """
+    print("🔔 Webhook received!")
+    
+    # Step 1: Validate webhook secret (security)
+    webhook_secret = request.headers.get("X-Webhook-Secret")
+    if webhook_secret != WEBHOOK_SECRET:
+        print("❌ Invalid webhook secret")
+        return {"error": "incorrect secret"}, 400
+```
+
+最初のステップはセキュリティ検証です。webhookが正当なものであることを確認するために、`X-Webhook-Secret`ヘッダーを設定されたシークレットと照合します。
+
+<Tip>
+
+常にwebhookシークレットを検証してください！この確認なしでは、誰でも偽のwebhookリクエストをアプリケーションに送信できてしまいます。シークレットはHugging Faceとアプリケーション間の共有パスワードとして機能します。
+
+</Tip>
+
+次に、webhookデータの解析と検証を行いましょう：
+
+```python
+    # Step 2: Parse webhook data
+    try:
+        webhook_data = await request.json()
+        print(f"📥 Webhook data: {json.dumps(webhook_data, indent=2)}")
+    except Exception as e:
+        print(f"❌ Error parsing webhook data: {str(e)}")
+        return {"error": "invalid JSON"}, 400
+    
+    # Step 3: Validate event structure
+    event = webhook_data.get("event", {})
+    if not event:
+        print("❌ No event data in webhook")
+        return {"error": "missing event data"}, 400
+```
+
+この解析ステップは、潜在的なJSONエラーを適切に処理し、期待されるイベント構造があることを検証します。
+
+次に、イベントフィルタリングロジックです：
+
+```python
+    # Step 4: Check if this is a discussion comment creation
+    # Following the webhook guide pattern:
+    if (
+        event.get("action") == "create" and 
+        event.get("scope") == "discussion.comment"
+    ):
+        print("✅ Valid discussion comment creation event")
+        
+        # Process in background to return quickly to Hub
+        background_tasks.add_task(process_webhook_comment, webhook_data)
+        
+        return {
+            "status": "accepted",
+            "message": "Comment processing started",
+            "timestamp": datetime.now().isoformat()
+        }
+    else:
+        print(f"ℹ️ Ignoring event: action={event.get('action')}, scope={event.get('scope')}")
+        return {
+            "status": "ignored",
+            "reason": "Not a discussion comment creation"
+        }
+```
+
+このフィルタリングにより、私たちが関心を持つイベント（新しいディスカッションコメント）のみを処理することが保証されます。リポジトリ作成、モデルアップロードなどの他のイベントは無視します。
+
+FastAPIの`background_tasks.add_task()`を使用してwebhookを非同期で処理します。これにより、実際のタグ処理はバックグラウンドで実行されながら、迅速にレスポンス（数秒以内）を返すことができます。
+
+<Tip>
+
+Webhookエンドポイントは10秒以内に応答する必要があります。そうでなければ、送信プラットフォームは失敗とみなす可能性があります。バックグラウンドタスクを使用することで、複雑な処理を非同期で実行しながら高速な応答を保証します。
+
+</Tip>
+
+### 4. コメント処理ロジック
+
+次に、実際のタグ抽出とMCPツール使用を行うコアコメント処理機能を実装しましょう：
+
+```python
+async def process_webhook_comment(webhook_data: Dict[str, Any]):
+    """
+    Process webhook comment to detect and add tags
+    Integrates with our MCP client for Hub interactions
+    """
+    print("🏷️ Starting process_webhook_comment...")
+    
+    try:
+        # Extract comment and repository information
+        comment_content = webhook_data["comment"]["content"]
+        discussion_title = webhook_data["discussion"]["title"]
+        repo_name = webhook_data["repo"]["name"]
+        discussion_num = webhook_data["discussion"]["num"]
+        comment_author = webhook_data["comment"]["author"].get("id", "unknown")
+        
+        print(f"📝 Comment from {comment_author}: {comment_content}")
+        print(f"📰 Discussion: {discussion_title}")
+        print(f"📦 Repository: {repo_name}")
+```
+
+この初期セクションは、webhookデータから関連するすべての情報を抽出します。タグがどちらの場所でも言及される可能性があるため、コメント内容とディスカッションタイトルの両方を取得します。
+
+次に、タグを抽出して処理します：
+
+```python
+        # Extract potential tags from comment and title
+        comment_tags = extract_tags_from_text(comment_content)
+        title_tags = extract_tags_from_text(discussion_title)
+        all_tags = list(set(comment_tags + title_tags))
+        
+        print(f"🔍 Found tags: {all_tags}")
+        
+        # Store operation for monitoring
+        operation = {
+            "timestamp": datetime.now().isoformat(),
+            "repo_name": repo_name,
+            "discussion_num": discussion_num,
+            "comment_author": comment_author,
+            "extracted_tags": all_tags,
+            "comment_preview": comment_content[:100] + "..." if len(comment_content) > 100 else comment_content,
+            "status": "processing"
+        }
+        tag_operations_store.append(operation)
+```
+
+両方のソースからタグを組み合わせ、監視用のオペレーションレコードを作成します。このレコードは、各webhook処理オペレーションの進行状況を追跡します。
+
+<Tip>
+
+オペレーションレコードの保存は、デバッグと監視にとって重要です。何かが間違ったときに、最近のオペレーションを見て何が起こったか、なぜ起こったかを理解できます。
+
+</Tip>
+
+次に、MCPエージェント統合です：
+
+```python
+        if not all_tags:
+            operation["status"] = "no_tags"
+            operation["message"] = "No recognizable tags found"
+            print("❌ No tags found to process")
+            return
+        
+        # Get MCP agent for tag processing
+        agent = await get_agent()
+        if not agent:
+            operation["status"] = "error"
+            operation["message"] = "Agent not configured (missing HF_TOKEN)"
+            print("❌ No agent available")
+            return
+        
+        # Process each extracted tag
+        operation["results"] = []
+        for tag in all_tags:
+            try:
+                print(f"🤖 Processing tag '{tag}' for repo '{repo_name}'")
+                
+                # Create prompt for agent to handle tag processing
+                prompt = f"""
+                Analyze the repository '{repo_name}' and determine if the tag '{tag}' should be added.
+                
+                First, check the current tags using get_current_tags.
+                If '{tag}' is not already present and it's a valid tag, add it using add_new_tag.
+                
+                Repository: {repo_name}
+                Tag to process: {tag}
+                
+                Provide a clear summary of what was done.
+                """
+                
+                response = await agent.run(prompt)
+                print(f"🤖 Agent response for '{tag}': {response}")
+                
+                # Parse response and store result
+                tag_result = {
+                    "tag": tag,
+                    "response": response,
+                    "timestamp": datetime.now().isoformat()
+                }
+                operation["results"].append(tag_result)
+                
+            except Exception as e:
+                error_msg = f"❌ Error processing tag '{tag}': {str(e)}"
+                print(error_msg)
+                operation["results"].append({
+                    "tag": tag,
+                    "error": str(e),
+                    "timestamp": datetime.now().isoformat()
+                })
+        
+        operation["status"] = "completed"
+        print(f"✅ Completed processing {len(all_tags)} tags")
+```
+
+このセクションは、コアビジネスロジックを処理します：
+1. **検証**: 処理すべきタグと利用可能なエージェントがあることを確認
+2. **処理**: 各タグに対して、エージェント用の自然言語プロンプトを作成
+3. **記録**: 監視とデバッグのためにすべての結果を保存
+4. **エラーハンドリング**: 個々のタグのエラーを適切に処理
+
+エージェントプロンプトは、AIが取るべき正確なステップを指示するように慎重に作成されています：まず現在のタグを確認し、適切な場合は新しいタグを追加します。
+
+### 5. ヘルスと監視エンドポイント
+
+webhookハンドラー以外に、監視とデバッグのためのエンドポイントが必要です。これらの重要なエンドポイントを追加しましょう：
+
+```python
+@app.get("/")
+async def root():
+    """Root endpoint with basic information"""
+    return {
+        "name": "HF Tagging Bot",
+        "status": "running",
+        "description": "Webhook listener for automatic model tagging",
+        "endpoints": {
+            "webhook": "/webhook",
+            "health": "/health",
+            "operations": "/operations"
+        }
+    }
+```
+
+ルートエンドポイントは、サービスとその利用可能なエンドポイントに関する基本情報を提供します。
+
+```python
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring"""
+    agent = await get_agent()
+    
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "components": {
+            "webhook_secret": "configured" if WEBHOOK_SECRET else "missing",
+            "hf_token": "configured" if HF_TOKEN else "missing",
+            "mcp_agent": "ready" if agent else "not_ready"
+        }
+    }
+```
+
+ヘルスチェックエンドポイントは、すべてのコンポーネントが適切に設定されていることを検証します。これは本番監視に不可欠です。
+
+```python
+@app.get("/operations")
+async def get_operations():
+    """Get recent tag operations for monitoring"""
+    # Return last 50 operations
+    recent_ops = tag_operations_store[-50:] if tag_operations_store else []
+    return {
+        "total_operations": len(tag_operations_store),
+        "recent_operations": recent_ops
+    }
+```
+
+オペレーションエンドポイントでは、最近のwebhook処理アクティビティを確認できます。これはデバッグと監視にとって非常に有用です。
+
+<Tip>
+
+ヘルスと監視エンドポイントは、本番デプロイメントにとって重要です。ログを掘り下げることなく、設定の問題を迅速に特定し、アプリケーションのアクティビティを監視するのに役立ちます。
+
+</Tip>
+
+## Hugging Face HubでのWebhook設定
+
+webhookリスナーの準備ができたので、Hugging Face Hubで設定しましょう。ここで、アプリケーションを実際のリポジトリイベントに接続します。
+
+### 1. 設定でWebhookを作成
+
+[webhook setup guide](https://huggingface.co/docs/hub/webhooks-guide-discussion-bot)に従って：
+
+![Webhook Settings](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/webhook-creation.png)
+
+[Hugging Face Settings](https://huggingface.co/settings/webhooks)に移動して設定します：
+
+1. **対象リポジトリ**: 監視するリポジトリを指定
+2. **Webhook URL**: デプロイされたアプリケーションエンドポイント（例：`https://your-space.hf.space/webhook`）
+3. **シークレット**: `WEBHOOK_SECRET`環境変数と同じシークレットを使用
+4. **イベント**: "Community (PR & discussions)"イベントを購読
+
+<Tip>
+
+多くのリポジトリにwebhookを設定する前に、1つまたは2つのテストリポジトリから始めてください。これにより、スケールアップする前にアプリケーションが正しく動作することを検証できます。
+
+</Tip>
+
+### 2. Space URL設定
+
+Hugging Face Spacesデプロイメントでは、直接URLを取得する必要があります：
+
+![Direct URL](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/direct-url.png)
+
+プロセスは以下の通りです：
+1. Space設定で"Embed this Space"をクリック
+2. "Direct URL"をコピー
+3. `/webhook`を追加してwebhookエンドポイントを作成
+4. このURLでwebhook設定を更新
+
+例えば、Space URLが`https://username-space-name.hf.space`の場合、webhookエンドポイントは`https://username-space-name.hf.space/webhook`になります。
+
+![Space URL](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/direct-url.png)
+
+## Webhookリスナーのテスト
+
+本番環境にデプロイする前にテストが重要です。さまざまなテストアプローチを見てみましょう：
+
+### 1. ローカルテスト
+
+簡単なスクリプトを使用してwebhookハンドラーをローカルでテストできます：
+
+```python
+# test_webhook_local.py
+import requests
+import json
+
+# Test data matching webhook format
+test_webhook_data = {
+    "event": {
+        "action": "create",
+        "scope": "discussion.comment"
+    },
+    "comment": {
+        "content": "This model needs tags: pytorch, transformers",
+        "author": {"id": "test-user"}
+    },
+    "discussion": {
+        "title": "Missing tags",
+        "num": 1
+    },
+    "repo": {
+        "name": "test-user/test-model"
+    }
+}
+
+# Send test webhook
+response = requests.post(
+    "http://localhost:8000/webhook",
+    json=test_webhook_data,
+    headers={"X-Webhook-Secret": "your-test-secret"}
+)
+
+print(f"Status: {response.status_code}")
+print(f"Response: {response.json()}")
+```
+
+このスクリプトは実際のwebhookリクエストをシミュレートし、実際のイベントを待つことなくハンドラーをテストできます。
+
+### 2. 開発用シミュレーションエンドポイント
+
+より簡単なテストのために、FastAPIアプリケーションにシミュレーションエンドポイントを追加することもできます：
+
+```python
+@app.post("/simulate_webhook")
+async def simulate_webhook(
+    repo_name: str, 
+    discussion_title: str, 
+    comment_content: str
+) -> str:
+    """Simulate webhook for testing purposes"""
+    
+    # Create mock webhook data
+    mock_webhook_data = {
+        "event": {
+            "action": "create",
+            "scope": "discussion.comment"
+        },
+        "comment": {
+            "content": comment_content,
+            "author": {"id": "test-user"}
+        },
+        "discussion": {
+            "title": discussion_title,
+            "num": 999
+        },
+        "repo": {
+            "name": repo_name
+        }
+    }
+    
+    # Process the simulated webhook
+    await process_webhook_comment(mock_webhook_data)
+    
+    return f"Simulated webhook processed for {repo_name}"
+```
+
+このエンドポイントにより、アプリケーションのインターフェースを通じてさまざまなシナリオを簡単にテストできます。
+
+<Tip>
+シミュレーションエンドポイントは開発中に非常に有用です。実際のリポジトリディスカッションを作成することなく、さまざまなタグの組み合わせやエッジケースをテストできます。
+</Tip>
+
+## 期待されるWebhook結果
+
+すべてが正しく動作している場合、ディスカッションボットの例のような結果が表示されるはずです：
+
+![Discussion Result](https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/webhooks-guides/001-discussion-bot/discussion-result.png)
+
+<!-- This shows the bot responding to a discussion comment, creating a PR -->
+
+このスクリーンショットは、ボットがディスカッションコメントに応答してプルリクエストを作成する成功したwebhook処理を示しています。
+
+## 次のステップ
+
+webhookリスナーが実装されたことで、以下が得られました：
+
+1. **セキュアなwebhook検証** - Hugging Faceのベストプラクティスに従った
+2. **リアルタイムイベント処理** - バックグラウンドタスクハンドリング付き
+3. **MCP統合** - インテリジェントなタグ管理のため
+4. **監視とデバッグ** 機能
+
+次のセクションでは、webhookからPR作成までの完全なワークフローを実証する、完全なプルリクエストエージェントにすべてを統合します。
+
+<Tip>
+
+タイムアウトを避けるため、常にwebhookレスポンスを迅速に（10秒以内に）返してください。MCPツール実行やプルリクエスト作成などの長い処理オペレーションには、バックグラウンドタスクを使用してください。
+
+</Tip>
