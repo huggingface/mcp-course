@@ -1,0 +1,52 @@
+- title: "0. Welcome to the MCP Course"
+  sections:
+  - local: unit0/introduction
+    title: Welcome to the MCP Course
+    
+- title: "1. Introduction to Model Context Protocol"
+  sections:
+  - local: unit1/introduction
+    title: Introduction to Model Context Protocol (MCP)
+  - local: unit1/key-concepts
+    title: Key Concepts and Terminology
+  - local: unit1/architectural-components
+    title: Architectural Components
+  - local: unit1/quiz1
+    title: Quiz 1 - MCP Fundamentals
+  - local: unit1/communication-protocol
+    title: The Communication Protocol
+  - local: unit1/capabilities
+    title: Understanding MCP Capabilities
+  - local: unit1/sdk
+    title: MCP SDK
+  - local: unit1/quiz2
+    title: Quiz 2 - MCP SDK
+  - local: unit1/mcp-clients
+    title: MCP Clients
+  - local: unit1/gradio-mcp
+    title: Gradio MCP Integration
+  - local: unit1/certificate
+    title: Get your certificate!
+
+- title: "2. Use Case: End-to-End MCP Application"
+  sections:
+  - local: unit2/introduction
+    title: Introduction to Building an MCP Application
+  - local: unit2/gradio-server
+    title: Building the Gradio MCP Server
+  - local: unit2/clients
+    title: Using MCP Clients with your application
+  - local: unit2/gradio-client
+    title: Building an MCP Client with Gradio
+  - local: unit2/tiny-agents
+    title: Building a Tiny Agent with TypeScript
+
+- title: "3. Use Case: Advanced MCP Development"
+  sections:
+  - local: unit3/introduction
+    title: Coming Soon
+
+- title: "Bonus Units"
+  sections:
+  - local: unit4/introduction
+    title: Coming Soon

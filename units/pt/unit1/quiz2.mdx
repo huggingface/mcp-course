@@ -1,0 +1,125 @@
+# Quiz 2: SDK do MCP
+
+Teste seu conhecimento sobre os SDKs do MCP e suas funcionalidades.
+
+### Q1: Qual é o principal objetivo dos SDKs do MCP?
+
+<Question
+  choices={[
+    {
+      text: "Definir a especificação do protocolo MCP",
+      explain: "Os SDKs implementam o protocolo, eles não o definem. A especificação é separada."
+    },
+    {
+      text: "Facilitar a implementação de clientes e servidores MCP",
+      explain: "Correto! Os SDKs abstraem os detalhes de baixo nível do protocolo.",
+      correct: true
+    },
+    {
+      text: "Fornecer uma interface visual para interações MCP",
+      explain: "Embora algumas ferramentas possam oferecer isso (como o MCP Inspector), não é o objetivo principal dos próprios SDKs."
+    },
+    {
+      text: "Substituir a necessidade de linguagens de programação",
+      explain: "Os SDKs são bibliotecas usadas dentro das linguagens de programação."
+    }
+  ]}
+/>
+
+### Q2: Qual das seguintes funcionalidades os SDKs do MCP normalmente tratam?
+
+<Question
+  choices={[
+    {
+      text: "Otimização de Servidores MCP",
+      explain: "Isso está fora do escopo dos SDKs MCP, que se concentram na implementação do protocolo."
+    },
+    {
+      text: "Definição de novos algoritmos de IA",
+      explain: "Isso está fora do escopo dos SDKs MCP, que se concentram na implementação do protocolo."
+    },
+    {
+      text: "Serialização/desserialização de mensagens",
+      explain: "Correto! Esta é uma função essencial para lidar com mensagens JSON-RPC.",
+      correct: true
+    },
+    {
+      text: "Hospedagem de Grandes Modelos de Linguagem",
+      explain: "O MCP permite a conexão com LLMs, mas os próprios SDKs não os hospedam."
+    }
+  ]}
+/>
+
+### Q3: De acordo com o texto fornecido, qual empresa mantém o SDK oficial de Python para MCP?
+
+<Question
+  choices={[
+    {
+      text: "Google",
+      explain: "O texto lista a Anthropic como a mantenedora."
+    },
+    {
+      text: "Anthropic",
+      explain: "Correto! O material do curso indica que a Anthropic mantém o SDK Python.",
+      correct: true
+    },
+    {
+      text: "Microsoft",
+      explain: "A Microsoft mantém o SDK C# de acordo com o texto."
+    },
+    {
+      text: "JetBrains",
+      explain: "A JetBrains mantém o SDK Kotlin de acordo com o texto."
+    }
+  ]}
+/>
+
+### Q4: Qual comando é usado para iniciar um servidor MCP de desenvolvimento usando um arquivo Python chamado `server.py`?
+
+<Question
+  choices={[
+    {
+      text: "python server.py run",
+      explain: "Embora você execute scripts Python com `python`, o MCP tem um comando CLI específico."
+    },
+    {
+      text: "mcp start server.py",
+      explain: "O comando é `mcp dev`, não `mcp start`."
+    },
+    {
+      text: "mcp dev server.py",
+      explain: "Correto! Este comando inicializa o servidor de desenvolvimento.",
+      correct: true
+    },
+    {
+      text: "serve mcp server.py",
+      explain: "Este não é o comando CLI padrão do MCP mostrado no material do curso."
+    }
+  ]}
+/>
+
+### Q5: Qual é o papel do JSON-RPC 2.0 no MCP?
+
+<Question
+  choices={[
+    {
+      text: "Como mecanismo de transporte primário para comunicação remota",
+      explain: "HTTP+SSE ou HTTP Streamable são mecanismos de transporte; JSON-RPC é o formato de mensagem."
+    },
+    {
+      text: "Como o formato de mensagem para toda a comunicação entre Clientes e Servidores",
+      explain: "Correto! O MCP usa JSON-RPC 2.0 para estruturar mensagens.",
+      correct: true
+    },
+    {
+      text: "Como uma ferramenta para depurar modelos de IA",
+      explain: "Embora sua natureza legível por humanos ajude na depuração de comunicações, não é uma ferramenta de depuração para os próprios modelos de IA."
+    },
+    {
+      text: "Como um método para definir capacidades de IA como Ferramentas e Recursos",
+      explain: "As capacidades são definidas por seus próprios esquemas; JSON-RPC é usado para invocá-las e trocar dados."
+    }
+  ]}
+/>
+
+Parabéns por concluir este Quiz 🥳! Se precisar revisar algum elemento, aproveite para revisitar o capítulo e reforçar seu conhecimento.

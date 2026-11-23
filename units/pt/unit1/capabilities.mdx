@@ -1,0 +1,243 @@
+# Entendendo as Capacidades do MCP
+
+Servidores MCP expõem uma variedade de capacidades aos Clientes através do protocolo de comunicação. Essas capacidades se dividem em quatro categorias principais, cada uma com características distintas e casos de uso. Vamos explorar essas primitivas centrais que formam a base da funcionalidade do MCP.
+
+<Tip>
+
+Nesta seção, mostraremos exemplos como funções agnósticas de framework em cada linguagem. Isso é para focar nos conceitos e como eles trabalham juntos, ao invés das complexidades de qualquer framework.
+
+Nas próximas unidades, mostraremos como esses conceitos são implementados em código específico do MCP.
+
+</Tip>
+
+## Ferramentas
+
+Ferramentas são funções ou ações executáveis que o modelo de IA pode invocar através do protocolo MCP.
+
+- **Controle**: Ferramentas são tipicamente **controladas pelo modelo**, significando que o modelo de IA (LLM) decide quando chamá-las baseado na solicitação do usuário e contexto.
+- **Segurança**: Devido à sua capacidade de realizar ações com efeitos colaterais, execução de ferramentas pode ser perigosa. Portanto, elas tipicamente requerem aprovação explícita do usuário.
+- **Casos de Uso**: Enviar mensagens, criar tickets, consultar APIs, realizar cálculos.
+
+**Exemplo**: Uma ferramenta de clima que busca dados meteorológicos atuais para uma localização dada:
+
+<hfoptions id="tool-example">
+<hfoption id="python">
+
+```python
+def get_weather(location: str) -> dict:
+    """Obter o clima atual para uma localização especificada."""
+    # Conectar à API de clima e buscar dados
+    return {
+        "temperature": 72,
+        "conditions": "Ensolarado",
+        "humidity": 45
+    }
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function getWeather(location) {
+    // Conectar à API de clima e buscar dados
+    return {
+        temperature: 72,
+        conditions: 'Ensolarado',
+        humidity: 45
+    };
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## Recursos
+
+Recursos fornecem acesso somente leitura a fontes de dados, permitindo que o modelo de IA recupere contexto sem executar lógica complexa.
+
+- **Controle**: Recursos são **controlados pela aplicação**, significando que a aplicação Host tipicamente decide quando acessá-los.
+- **Natureza**: Eles são projetados para recuperação de dados com computação mínima, similar a endpoints GET em APIs REST.
+- **Segurança**: Como são somente leitura, eles tipicamente apresentam riscos de segurança menores que Ferramentas.
+- **Casos de Uso**: Acessar conteúdos de arquivo, recuperar registros de banco de dados, ler informações de configuração.
+
+**Exemplo**: Um recurso que fornece acesso a conteúdos de arquivo:
+
+<hfoptions id="resource-example">
+<hfoption id="python">
+
+```python
+def read_file(file_path: str) -> str:
+    """Ler o conteúdo de um arquivo no caminho especificado."""
+    with open(file_path, 'r') as f:
+        return f.read()
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function readFile(filePath) {
+    // Usando fs.readFile para ler conteúdos do arquivo
+    const fs = require('fs');
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            resolve(data);
+        });
+    });
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## Prompts
+
+Prompts são templates ou fluxos de trabalho predefinidos que guiam a interação entre o usuário, o modelo de IA e as capacidades do Servidor.
+
+- **Controle**: Prompts são **controlados pelo usuário**, frequentemente apresentados como opções na UI da aplicação Host.
+- **Propósito**: Eles estruturam interações para uso ótimo de Ferramentas e Recursos disponíveis.
+- **Seleção**: Usuários tipicamente selecionam um prompt antes do modelo de IA começar o processamento, definindo contexto para a interação.
+- **Casos de Uso**: Fluxos de trabalho comuns, templates de tarefas especializadas, interações guiadas.
+
+**Exemplo**: Um template de prompt para gerar uma revisão de código:
+
+<hfoptions id="prompt-example">
+<hfoption id="python">
+
+```python
+def code_review(code: str, language: str) -> list:
+    """Gerar uma revisão de código para o snippet de código fornecido."""
+    return [
+        {
+            "role": "system",
+            "content": f"Você é um revisor de código examinando código {language}. Forneça uma revisão detalhada destacando melhores práticas, problemas potenciais e sugestões de melhoria."
+        },
+        {
+            "role": "user",
+            "content": f"Por favor, revise este código {language}:\n\n```{language}\n{code}\n```"
+        }
+    ]
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function codeReview(code, language) {
+    return [
+        {
+            role: 'system',
+            content: `Você é um revisor de código examinando código ${language}. Forneça uma revisão detalhada destacando melhores práticas, problemas potenciais e sugestões de melhoria.`
+        },
+        {
+            role: 'user',
+            content: `Por favor, revise este código ${language}:\n\n\`\`\`${language}\n${code}\n\`\`\``
+        }
+    ];
+}
+```
+
+</hfoption>
+</hfoptions>
+
+## Amostragem
+
+Amostragem permite que Servidores solicitem ao Cliente (especificamente, a aplicação Host) para realizar interações LLM.
+
+- **Controle**: Amostragem é **iniciada pelo servidor** mas requer facilitação do Cliente/Host.
+- **Propósito**: Permite comportamentos agênticos dirigidos pelo servidor e potencialmente interações recursivas ou multi-etapas.
+- **Segurança**: Como Ferramentas, operações de amostragem tipicamente requerem aprovação do usuário.
+- **Casos de Uso**: Tarefas complexas multi-etapas, fluxos de trabalho de agentes autônomos, processos interativos.
+
+**Exemplo**: Um Servidor pode solicitar ao Cliente para analisar dados que processou:
+
+<hfoptions id="sampling-example">
+<hfoption id="python">
+
+```python
+def request_sampling(messages, system_prompt=None, include_context="none"):
+    """Solicitar amostragem LLM do cliente."""
+    # Em uma implementação real, isso enviaria uma solicitação ao cliente
+    return {
+        "role": "assistant",
+        "content": "Análise dos dados fornecidos..."
+    }
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+function requestSampling(messages, systemPrompt = null, includeContext = 'none') {
+    // Em uma implementação real, isso enviaria uma solicitação ao cliente
+    return {
+        role: 'assistant',
+        content: 'Análise dos dados fornecidos...'
+    };
+}
+
+function handleSamplingRequest(request) {
+    const { messages, systemPrompt, includeContext } = request;
+    // Em uma implementação real, isso processaria a solicitação e retornaria uma resposta
+    return {
+        role: 'assistant',
+        content: 'Resposta à solicitação de amostragem...'
+    };
+}
+```
+
+</hfoption>
+</hfoptions>
+
+O fluxo de amostragem segue estes passos:
+1. Servidor envia uma solicitação `sampling/createMessage` ao cliente
+2. Cliente revisa a solicitação e pode modificá-la
+3. Cliente faz amostragem de um LLM
+4. Cliente revisa a conclusão
+5. Cliente retorna o resultado ao servidor
+
+<Tip>
+
+Este design humano-no-loop garante que usuários mantenham controle sobre o que o LLM vê e gera. Ao implementar amostragem, é importante fornecer prompts claros e bem estruturados e incluir contexto relevante.
+
+</Tip>
+
+## Como as Capacidades Trabalham Juntas
+
+Vamos ver como essas capacidades trabalham juntas para permitir interações complexas. Na tabela abaixo, delineamos as capacidades, quem as controla, a direção do controle e alguns outros detalhes.
+
+| Capacidade | Controlada Por | Direção | Efeitos Colaterais | Aprovação Necessária | Casos de Uso Típicos |
+|------------|---------------|-----------|--------------|-----------------|-------------------|
+| Ferramentas      | Modelo (LLM)   | Cliente → Servidor | Sim (potencialmente) | Sim | Ações, chamadas API, manipulação de dados |
+| Recursos  | Aplicação   | Cliente → Servidor | Não (somente leitura) | Tipicamente não | Recuperação de dados, coleta de contexto |
+| Prompts    | Usuário          | Servidor → Cliente | Não | Não (selecionado pelo usuário) | Fluxos de trabalho guiados, templates especializados |
+| Amostragem   | Servidor        | Servidor → Cliente → Servidor | Indiretamente | Sim | Tarefas multi-etapas, comportamentos agênticos |
+
+Essas capacidades são projetadas para trabalhar juntas de maneiras complementares:
+
+1. Um usuário pode selecionar um **Prompt** para iniciar um fluxo de trabalho especializado
+2. O Prompt pode incluir contexto de **Recursos**
+3. Durante o processamento, o modelo de IA pode chamar **Ferramentas** para realizar ações específicas
+4. Para operações complexas, o Servidor pode usar **Amostragem** para solicitar processamento LLM adicional
+
+A distinção entre essas primitivas fornece uma estrutura clara para interações MCP, permitindo que modelos de IA acessem informações, realizem ações e se envolvam em fluxos de trabalho complexos mantendo limites de controle apropriados.
+
+## Processo de Descoberta
+
+Uma das características-chave do MCP é a descoberta dinâmica de capacidades. Quando um Cliente se conecta a um Servidor, ele pode consultar as Ferramentas, Recursos e Prompts disponíveis através de métodos de lista específicos:
+
+- `tools/list`: Descobrir Ferramentas disponíveis
+- `resources/list`: Descobrir Recursos disponíveis
+- `prompts/list`: Descobrir Prompts disponíveis
+
+Este mecanismo de descoberta dinâmica permite que Clientes se adaptem às capacidades específicas que cada Servidor oferece sem exigir conhecimento hardcoded da funcionalidade do Servidor.
+
+## Conclusão
+
+Entender essas primitivas centrais é essencial para trabalhar com MCP efetivamente. Fornecendo tipos distintos de capacidades com limites de controle claros, o MCP permite interações poderosas entre modelos de IA e sistemas externos mantendo mecanismos apropriados de segurança e controle.
+
+Na próxima seção, nós vamos explorar como o Gradio integra com MCP para prover interfaces de fácil utilização para estas capacidades.

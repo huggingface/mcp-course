@@ -1,0 +1,169 @@
+# SDK do MCP
+
+O Protocolo de Contexto de Modelo fornece SDKs oficiais para JavaScript, Python e outras linguagens. Isso facilita a implementação de clientes e servidores MCP em suas aplicações. Esses SDKs lidam com os detalhes de baixo nível do protocolo, permitindo que você se concentre na construção das capacidades da sua aplicação.
+
+## Visão Geral do SDK
+
+Ambos os SDKs fornecem funcionalidades essenciais semelhantes, seguindo a especificação do protocolo MCP que discutimos anteriormente. Eles lidam com:
+
+- Comunicação em nível de protocolo
+- Registro e descoberta de capacidades
+- Serialização/desserialização de mensagens
+- Gerenciamento de conexões
+- Tratamento de erros
+
+## Implementação de Primitivas Essenciais
+
+Vamos explorar como implementar cada uma das primitivas essenciais (Ferramentas, Recursos e Prompts) usando ambos os SDKs.
+
+<hfoptions id="server-implementation">
+<hfoption id="python">
+
+<Youtube id="exzrb5QNUis" />
+
+```python
+from mcp.server.fastmcp import FastMCP
+
+# Create an MCP server
+mcp = FastMCP("Weather Service")
+
+
+@mcp.tool()
+def get_weather(location: str) -> str:
+    """Get the current weather for a specified location."""
+    return f"Weather in {location}: Sunny, 72°F"
+
+
+@mcp.resource("weather://{location}")
+def weather_resource(location: str) -> str:
+    """Provide weather data as a resource."""
+    return f"Weather data for {location}: Sunny, 72°F"
+
+
+@mcp.prompt()
+def weather_report(location: str) -> str:
+    """Create a weather report prompt."""
+    return f"""You are a weather reporter. Weather report for {location}?"""
+
+
+# Run the server
+if __name__ == "__main__":
+    mcp.run()
+
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+```javascript
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+// Create an MCP server
+const server = new McpServer({
+    name: "Weather Service",
+    version: "1.0.0"
+});
+
+// Tool implementation
+server.tool("get_weather",
+    { location: z.string() },
+    async ({ location }) => ({
+        content: [{
+            type: "text",
+            text: `Weather in ${location}: Sunny, 72°F`
+        }]
+    })
+);
+
+// Resource implementation
+server.resource(
+    "weather",
+    new ResourceTemplate("weather://{location}", { list: undefined }),
+    async (uri, { location }) => ({
+        contents: [{
+            uri: uri.href,
+            text: `Weather data for ${location}: Sunny, 72°F`
+        }]
+    })
+);
+
+// Prompt implementation
+server.prompt(
+    "weather_report",
+    { location: z.string() },
+    async ({ location }) => ({
+        messages: [
+            {
+                role: "assistant",
+                content: {
+                    type: "text",
+                    text: "You are a weather reporter."
+                }
+            },
+            {
+                role: "user",
+                content: {
+                    type: "text",
+                    text: `Weather report for ${location}?`
+                }
+            }
+        ]
+    })
+);
+
+// Run the server
+const transport = new StdioServerTransport();
+await server.connect(transport);
+```
+
+</hfoption>
+</hfoptions>
+
+Uma vez que você tenha implementado seu servidor, você pode iniciá-lo executando o script do servidor.
+
+```bash
+mcp dev server.py
+```
+
+Isso inicializará um servidor de desenvolvimento executando o arquivo `server.py`. E registrará a seguinte saída:
+
+```bash
+Starting MCP inspector...
+⚙️ Proxy server listening on port 6277
+Spawned stdio transport
+Connected MCP client to backing server transport
+Created web app transport
+Set up MCP proxy
+🔍 MCP Inspector is up and running at http://127.0.0.1:6274 🚀
+```
+
+Você pode então abrir o MCP Inspector em [http://127.0.0.1:6274](http://127.0.0.1:6274) para ver as capacidades do servidor e interagir com elas.
+
+Você verá as capacidades do servidor e a possibilidade de chamá-las através da UI.
+
+![MCP Inspector](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit1/6.png)
+
+## SDKs do MCP
+
+O MCP foi projetado para ser agnóstico em relação à linguagem, e existem SDKs oficiais disponíveis para várias linguagens de programação populares:
+
+| Linguagem | Repositório | Mantenedor(es) | Status |
+|----------|------------|---------------|--------|
+| TypeScript | [github.com/modelcontextprotocol/typescript-sdk](https://github.com/modelcontextprotocol/typescript-sdk) | Anthropic | Ativo |
+| Python | [github.com/modelcontextprotocol/python-sdk](https://github.com/modelcontextprotocol/python-sdk) | Anthropic | Ativo |
+| Java | [github.com/modelcontextprotocol/java-sdk](https://github.com/modelcontextprotocol/java-sdk) | Spring AI (VMware) | Ativo |
+| Kotlin | [github.com/modelcontextprotocol/kotlin-sdk](https://github.com/modelcontextprotocol/kotlin-sdk) | JetBrains | Ativo |
+| C# | [github.com/modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk) | Microsoft | Ativo (Preview) |
+| Swift | [github.com/modelcontextprotocol/swift-sdk](https://github.com/modelcontextprotocol/swift-sdk) | loopwork-ai | Ativo |
+| Rust | [github.com/modelcontextprotocol/rust-sdk](https://github.com/modelcontextprotocol/rust-sdk) | Anthropic/Comunidade | Ativo |
+| Dart | [https://github.com/leehack/mcp_dart](https://github.com/leehack/mcp_dart) | Comunidade Flutter | Ativo |
+
+Esses SDKs fornecem abstrações específicas de linguagem que simplificam o trabalho com o protocolo MCP, permitindo que você se concentre na implementação da lógica central de seus servidores ou clientes, em vez de lidar com detalhes de protocolo de baixo nível.
+
+## Próximos Passos
+
+Apenas arranhamos a superfície do que você pode fazer com o MCP, mas você já tem um servidor básico em execução. Na verdade, você também se conectou a ele usando o Cliente MCP no navegador.
+
+Na próxima seção, veremos como conectar seu servidor a um LLM.

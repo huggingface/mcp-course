@@ -1,0 +1,342 @@
+# לקוחות MCP
+
+כעת שיש לנו הבנה בסיסית של פרוטוקול הקשר המודל, אנחנו יכולים לחקור את התפקיד החיוני של לקוחות MCP במערכת האקולוגית של פרוטוקול הקשר המודל.
+
+בחלק זה של יחידה 1, נחקור את התפקיד החיוני של לקוחות MCP במערכת האקולוגית של פרוטוקול הקשר המודל.
+
+בסעיף זה, אתם:
+
+* תבינו מהם לקוחות MCP ומהו תפקידם בארכיטקטורת ה-MCP
+* תלמדו על האחריות המרכזית של לקוחות MCP
+* תחקרו את יישומי לקוח ה-MCP העיקריים
+* תגלו איך להשתמש ביישום לקוח ה-MCP של Hugging Face
+* תראו דוגמאות מעשיות לשימוש בלקוח MCP
+
+## הבנת לקוחות MCP
+
+לקוחות MCP הם רכיבים קריטיים הפועלים כגשר בין יישומי בינה מלאכותית (מארחים) ליכולות חיצוניות המסופקות על ידי שרתי MCP. חשבו על המארח כיישום הראשי שלכם (כמו עוזר בינה מלאכותית או IDE) ועל הלקוח כמודול ייעודי בתוך המארח האחראי על טיפול בתקשורת MCP.
+
+## לקוח ממשק משתמש
+
+בואו נתחיל בחקירת לקוחות ממשק המשתמש הזמינים עבור ה-MCP.
+
+### לקוחות ממשק צ'אט
+
+Claude Desktop של Anthropic עומד כאחד מלקוחות ה-MCP הבולטים ביותר, המספק אינטגרציה עם שרתי MCP שונים.
+
+### לקוחות פיתוח אינטראקטיביים
+
+יישום לקוח ה-MCP של Cursor מאפשר סיוע בקידוד מופעל בינה מלאכותית באמצעות אינטגרציה ישירה עם יכולות עריכת קוד. הוא תומך בחיבורי שרת MCP מרובים ומספק הפעלת כלים בזמן אמת במהלך הקידוד, מה שהופך אותו לכלי עוצמתי למפתחים.
+
+Continue.dev הוא דוגמה נוספת ללקוח פיתוח אינטראקטיבי התומך ב-MCP ומתחבר לשרת MCP מ-VS Code.
+
+## הגדרת לקוחות MCP
+
+כעת שכיסינו את הליבה של פרוטוקול ה-MCP, בואו נראה איך להגדיר את שרתי ולקוחות ה-MCP שלכם.
+
+פריסה יעילה של שרתים ולקוחות MCP דורשת הגדרה נכונה.
+
+<Tip>
+
+מפרט ה-MCP עדיין מתפתח, כך ששיטות ההגדרה כפופות לאבולוציה. נתמקד בשיטות העבודה המומלצות הנוכחיות להגדרה.
+
+</Tip>
+
+### קבצי הגדרה של MCP
+
+מארחי MCP משתמשים בקבצי הגדרה לניהול חיבורי שרת. קבצים אלה מגדירים אילו שרתים זמינים וכיצד להתחבר אליהם.
+
+למרבה המזל, קבצי ההגדרה הם מאוד פשוטים, קלים להבנה, ועקביים בין מארחי MCP עיקריים.
+
+#### מבנה `mcp.json`
+
+קובץ ההגדרה הסטנדרטי ל-MCP נקרא `mcp.json`. הנה המבנה הבסיסי:
+
+```json
+{
+  "servers": [
+    {
+      "name": "שם השרת",
+      "transport": {
+        "type": "stdio|sse",
+        // הגדרות ספציפיות לתעבורה
+      }
+    }
+  ]
+}
+```
+
+בדוגמה זו, יש לנו שרת יחיד עם שם וסוג תעבורה. סוג התעבורה הוא או `stdio` או `sse`.
+
+#### הגדרה עבור תעבורת stdio
+
+עבור שרתים מקומיים המשתמשים בתעבורת stdio, ההגדרה כוללת את הפקודה והארגומנטים להפעלת תהליך השרת:
+
+```json
+{
+  "servers": [
+    {
+      "name": "סייר קבצים",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+כאן, יש לנו שרת הנקרא "סייר קבצים" שהוא סקריפט מקומי.
+
+#### הגדרה עבור תעבורת HTTP+SSE
+
+עבור שרתים מרוחקים המשתמשים בתעבורת HTTP+SSE, ההגדרה כוללת את כתובת ה-URL של השרת:
+
+```json
+{
+  "servers": [
+    {
+      "name": "שרת API מרוחק",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+#### משתני סביבה בהגדרה
+
+ניתן להעביר משתני סביבה לתהליכי שרת באמצעות השדה `env`. הנה כיצד לגשת אליהם בקוד השרת שלכם:
+
+<hfoptions id="env-variables">
+<hfoption id="python">
+
+בפייתון, אנו משתמשים במודול `os` כדי לגשת למשתני סביבה:
+
+```python
+import os
+
+# גישה למשתני סביבה
+github_token = os.environ.get("GITHUB_TOKEN")
+if not github_token:
+    raise ValueError("משתנה הסביבה GITHUB_TOKEN נדרש")
+
+# שימוש בטוקן בקוד השרת שלך
+def make_github_request():
+    headers = {"Authorization": f"Bearer {github_token}"}
+    # ... שאר הקוד שלך
+```
+
+</hfoption>
+<hfoption id="javascript">
+
+בג'אווהסקריפט, אנו משתמשים באובייקט `process.env` כדי לגשת למשתני סביבה:
+
+```javascript
+// גישה למשתני סביבה
+const githubToken = process.env.GITHUB_TOKEN;
+if (!githubToken) {
+    throw new Error("משתנה הסביבה GITHUB_TOKEN נדרש");
+}
+
+// שימוש בטוקן בקוד השרת שלך
+function makeGithubRequest() {
+    const headers = { "Authorization": `Bearer ${githubToken}` };
+    // ... שאר הקוד שלך
+}
+```
+
+</hfoption>
+</hfoptions>
+
+ההגדרה המתאימה ב-`mcp.json` תיראה כך:
+
+```json
+{
+  "servers": [
+    {
+      "name": "GitHub API",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/github_server.py"],
+        "env": {
+          "GITHUB_TOKEN": "הטוקן_שלך_בגיטהאב"
+        }
+      }
+    }
+  ]
+}
+```
+
+### דוגמאות הגדרה
+
+בואו נסתכל על כמה תרחישי הגדרה מהעולם האמיתי:
+
+#### תרחיש 1: הגדרת שרת מקומי
+
+בתרחיש זה, יש לנו שרת מקומי שהוא סקריפט פייתון שיכול להיות סייר קבצים או עורך קוד.
+
+```json
+{
+  "servers": [
+    {
+      "name": "סייר קבצים",
+      "transport": {
+        "type": "stdio",
+        "command": "python",
+        "args": ["/path/to/file_explorer_server.py"]
+      }
+    }
+  ]
+}
+```
+
+#### תרחיש 2: הגדרת שרת מרוחק
+
+בתרחיש זה, יש לנו שרת מרוחק שהוא API מזג אוויר.
+
+```json
+{
+  "servers": [
+    {
+      "name": "API מזג אוויר",
+      "transport": {
+        "type": "sse",
+        "url": "https://example.com/mcp-server"
+      }
+    }
+  ]
+}
+```
+
+הגדרה נכונה היא חיונית לפריסה מוצלחת של אינטגרציות MCP. על ידי הבנת היבטים אלה, אתם יכולים ליצור חיבורים חזקים ואמינים בין יישומי בינה מלאכותית ויכולות חיצוניות.
+
+בסעיף הבא, נחקור את המערכת האקולוגית של שרתי MCP הזמינים ב-Hugging Face Hub וכיצד לפרסם את השרתים שלכם שם.
+
+## לקוחות קוד
+
+אתם יכולים גם להשתמש בלקוח ה-MCP בתוך קוד כך שהכלים יהיו זמינים ל-LLM. בואו נחקור כמה דוגמאות ב-`smolagents`.
+
+ראשית, בואו נחקור את שרת מזג האוויר שלנו מהעמוד הקודם. ב-`smolagents`, אנחנו יכולים להשתמש במחלקה `ToolCollection` כדי לגלות ולרשום באופן אוטומטי כלים משרת MCP. זה נעשה על ידי העברת `StdioServerParameters` או `SSEServerParameters` לשיטה `ToolCollection.from_mcp`. אז אנחנו יכולים להדפיס את הכלים למסוף.
+
+```python
+from smolagents import ToolCollection
+from mcp.client.stdio import StdioServerParameters
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tools:
+    print("\n".join(f"{tool.name}: {tool.description}" for tool in tools.tools))
+
+```
+
+<details>
+<summary>
+פלט
+</summary>
+
+```sh
+get_weather: קבל את מזג האוויר הנוכחי למיקום מצוין.
+
+```
+
+</details>
+
+אנחנו יכולים גם להתחבר לשרת MCP שמאוחסן במחשב מרוחק. במקרה זה, אנחנו צריכים להעביר את `SSEServerParameters` למחלקה `MCPClient`.
+
+```python
+from smolagents.mcp_client import MCPClient
+
+with MCPClient(
+    {"url": "https://abidlabs-mcp-tools.hf.space/gradio_api/mcp/sse"}
+) as tools:
+    # כלים מהשרת המרוחק זמינים
+    print("\n".join(f"{t.name}: {t.description}" for t in tools))
+```
+
+<details>
+<summary>
+פלט
+</summary>
+
+```sh
+prime_factors: חשב את הפירוק לגורמים ראשוניים של מספר שלם חיובי.
+generate_cheetah_image: צור תמונת צ'יטה.
+image_orientation: מחזיר אם התמונה היא לאורך או לרוחב.
+sepia: החל פילטר ספיה לתמונת הקלט.
+```
+
+</details>
+
+עכשיו, בואו נראה איך אנחנו יכולים להשתמש בלקוח ה-MCP בסוכן קוד.
+
+```python
+from smolagents import InferenceClientModel, CodeAgent, ToolCollection
+from mcp.client.stdio import StdioServerParameters
+
+model = InferenceClientModel()
+
+server_parameters = StdioServerParameters(command="uv", args=["run", "server.py"])
+
+with ToolCollection.from_mcp(
+    server_parameters, trust_remote_code=True
+) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], model=model)
+    agent.run("מה מזג האוויר בטוקיו?")
+
+```
+
+<details>
+<summary>
+פלט
+</summary>
+
+```sh
+מזג האוויר בטוקיו הוא שמשי עם טמפרטורה של 20 מעלות צלזיוס.
+```
+
+</details>
+
+אנחנו יכולים גם להתחבר לחבילת MCP. הנה דוגמה להתחברות לחבילה `pubmedmcp`.
+
+```python
+import os
+from smolagents import ToolCollection, CodeAgent
+from mcp import StdioServerParameters
+
+server_parameters = StdioServerParameters(
+    command="uv",
+    args=["--quiet", "pubmedmcp@0.1.3"],
+    env={"UV_PYTHON": "3.12", **os.environ},
+)
+
+with ToolCollection.from_mcp(server_parameters, trust_remote_code=True) as tool_collection:
+    agent = CodeAgent(tools=[*tool_collection.tools], add_base_tools=True)
+    agent.run("אנא מצא תרופה להנגאובר.")
+```
+
+<details>
+<summary>
+פלט
+</summary>
+
+```sh
+התרופה להנגאובר היא לשתות מים.
+```
+
+</details>
+
+## צעדים הבאים
+
+עכשיו שאתם מבינים את לקוחות ה-MCP, אתם מוכנים ל:
+* לחקור יישומי שרת MCP ספציפיים
+* ללמוד על יצירת לקוחות MCP מותאמים אישית
+* לצלול לתוך דפוסי אינטגרציה מתקדמים של MCP
+
+בואו נמשיך את המסע שלנו לעולם של פרוטוקול הקשר המודל!
