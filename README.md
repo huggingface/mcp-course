@@ -1,6 +1,6 @@
 # The Model Context Protocol (MCP) Course
 
-<div align="center"> <a href="README.md">🇺🇸 English</a> | <a href="README_vi.md">🇻🇳 Tiếng Việt</a> </div>
+<div align="center"> <a href="README.md">🇺🇸 English</a> | <a href="README_vi.md">🇻🇳 Tiếng Việt</a> | <a href="README_zh-CN.md">🇨🇳 简体中文</a> </div>
 
 ![1](https://github.com/user-attachments/assets/d26dcc5e-46cb-449e-aecb-49ece10d342a)
 

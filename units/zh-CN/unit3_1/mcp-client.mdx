@@ -1,0 +1,342 @@
+# MCP 客户端
+
+现在我们已经有了带有标签工具的 MCP 服务器，我们需要创建一个客户端来与这些工具交互。MCP 客户端充当 webhook 处理程序和 MCP 服务器之间的桥梁，使我们的智能体能够使用 Hub 标签功能。
+
+为了这个项目，我们将构建一个 API 和一个 Gradio 应用。API 将用于测试 MCP 服务器和 webhook 监听器，Gradio 应用将用于通过模拟 webhook 事件来测试 MCP 客户端。
+
+> [!TIP]
+> 为便于教学，我们将 MCP 服务器和客户端放在同一个代码仓库中。但在实际应用中，您很可能会将它们分为独立的项目。事实上，根据您的需求，您可能只需要构建两者之一。
+
+## 理解 MCP 客户端架构
+
+在我们的应用中，MCP 客户端被集成在主 FastAPI 应用（`app.py`）中。它负责创建并管理与 MCP 服务器的连接，为 AI Agent 执行工具提供了一个无缝的接口。
+
+![MCP 客户端集成](https://huggingface.co/datasets/mcp-course/images/resolve/main/unit3/app.png)
+
+## 基于 Agent 的 MCP 客户端
+
+我们将使用 `huggingface_hub` 库中的 Agent 类，该类内置了对 MCP 的支持。这使我们能在单个组件中同时拥有强大的语言模型能力和 MCP 工具集成。
+
+### 1. Agent 配置
+
+让我们从设置 Agent 的配置开始，并理解每个部分的作用：
+
+```python
+from huggingface_hub.inference._mcp.agent import Agent
+from typing import Optional, Literal
+
+# 配置
+HF_TOKEN = os.getenv("HF_TOKEN")
+HF_MODEL = os.getenv("HF_MODEL", "microsoft/DialoGPT-medium")
+DEFAULT_PROVIDER: Literal["hf-inference"] = "hf-inference"
+
+# 全局 Agent 实例
+agent_instance: Optional[Agent] = None
+```
+
+我们首先进行必要的导入和配置。全局变量 `agent_instance` 确保我们只创建一次 Agent 实例，并在多个请求之间复用它。由于 Agent 的初始化可能耗时较长，这对性能至关重要。
+
+现在，我们来实现创建和管理 Agent 实例的函数：
+
+```python
+async def get_agent():
+    """获取或创建 Agent 实例（单例模式）"""
+    print("🤖 正在获取 Agent 实例...")
+    global agent_instance
+    if agent_instance is None and HF_TOKEN:
+        print("🔧 Agent 实例不存在，正在创建新的实例...")
+        print(f"🔑 已提供 HF_TOKEN: {bool(HF_TOKEN)}")
+        print(f"🤖 使用模型: {HF_MODEL}")
+        print(f"🔗 使用提供商: {DEFAULT_PROVIDER}")
+```
+
+该函数首先检查 Agent 实例是否已存在。这种“单例模式”可以防止不必要的重复创建，并确保状态的一致性。
+
+接下来是 Agent 实例的创建过程：
+
+```python
+        try:
+           agent_instance = Agent(
+                model=HF_MODEL,
+                provider=DEFAULT_PROVIDER,
+                api_key=HF_TOKEN,
+                servers=[
+                    {
+                        "type": "stdio",
+                        "command": "python",
+                        "args": ["mcp_server.py"],
+                        "cwd": ".",
+                        "env": {"HF_TOKEN": HF_TOKEN} if HF_TOKEN else {},
+                    }
+                ],
+            )
+            print("✅ Agent 实例创建成功")
+            print("🔧 正在加载 MCP 工具...")
+            await agent_instance.load_tools()
+            print("✅ MCP 工具加载成功")
+        except Exception as e:
+            print(f"❌ 创建或加载 Agent 时出错: {str(e)}")
+           agent_instance = None
+```
+
+这是最关键的部分！让我们来分解 Agent 的配置：
+
+**Agent 核心参数：**
+- `model`：指定用于推理的语言模型。
+- `provider`：指定如何访问该模型（此处为 Hugging Face Inference API）。
+- `api_key`：您的 Hugging Face API 密钥。
+
+**MCP 服务器连接配置：**
+- `type: "stdio"`：通过标准输入/输出（stdio）连接到 MCP 服务器。
+- `command: "python"`：将 MCP 服务器作为一个 Python 子进程来运行。
+- `args: ["mcp_server.py"]`：需要执行的脚本文件。
+- `env`：将 `HF_TOKEN` 环境变量传递给服务器子进程，确保其拥有访问 Hub 的权限。
+
+> [!TIP]
+> `stdio` 连接类型意味着 Agent 会将您的 MCP 服务器作为一个子进程启动，并通过标准输入/输出管道与其通信。这种方式非常适合本地开发和单机部署。
+
+`await agent_instance.load_tools()` 这一步至关重要——它会发现 MCP 服务器提供的所有工具，并使它们可供 Agent 的推理引擎调用。
+
+## 工具的发现与使用
+
+一旦 Agent 创建成功并加载了工具，它就能够自动发现并使用这些 MCP 工具。这正是 Agent 方法的强大之处。
+
+
+### 可用工具
+Agent 会自动发现我们之前在 MCP 服务器中定义的工具：
+- `get_current_tags(repo_id: str)` - 检索仓库现有的标签。
+- `add_new_tag(repo_id: str, tag: str, pr_title: str)` - 通过 PR 添加新标签。
+
+Agent 不会盲目地调用这些工具，而是会根据您给出的提示词词进行推理，以决定何时以及如何使用它们。
+
+### 工具执行示例
+
+下面的例子展示了 Agent 如何智能地使用工具：
+
+```python
+# Agent 如何智能使用工具的示例
+async def example_tool_usage():
+   agent = await get_agent()
+    
+    if agent:
+        # Agent 能够推理出需要使用哪些工具
+        response = await agent.run(
+            "检查 microsoft/DialoGPT-medium 仓库的当前标签，如果 'conversational-ai' 标签不存在，就添加它。"
+        )
+        print(response)
+```
+
+请注意，我们只给 Agent 一条自然语言指令，它会自己弄清楚后续步骤：
+1. 首先调用 `get_current_tags` 来查看现有标签。
+2. 检查 `conversational-ai` 是否已在列表中。
+3. 如果不在，则调用 `add_new_tag` 来添加它。
+4. 最后，返回其操作的摘要。
+
+这种方式比我们手动编写逻辑来直接调用工具要智能得多！
+
+## 与 Webhook 处理集成
+
+现在，让我们看看 MCP 客户端如何融入到我们的 Webhook 处理流程中。这是所有组件协同工作的关键环节。
+
+### 1. 标签提取与处理
+
+这是处理 Webhook 事件并调用 MCP Agent 的核心函数：
+
+```python
+async def process_webhook_comment(webhook_data: Dict[str, Any]):
+    """处理 Webhook 事件，检测并添加标签。"""
+    print("🏷️ 开始处理 Webhook 评论...")
+
+    try:
+        comment_content = webhook_data["comment"]["content"]
+        discussion_title = webhook_data["discussion"]["title"]
+        repo_name = webhook_data["repo"]["name"]
+        
+        # 从评论和讨论标题中提取潜在的标签
+        comment_tags = extract_tags_from_text(comment_content)
+        title_tags = extract_tags_from_text(discussion_title)
+        all_tags = list(set(comment_tags + title_tags))
+
+        print(f"🔍 发现所有唯一标签: {all_tags}")
+
+        if not all_tags:
+            return ["在讨论中未找到可识别的标签。"]
+```
+
+第一部分从评论内容和讨论标题中提取并合并标签。我们使用 `set` 来确保标签的唯一性。
+
+> [!TIP]
+> 同时处理评论和讨论标题可以增加我们捕获相关标签的机会。用户可能在标题中提及标签（例如，“缺少 pytorch 标签”），也可能在评论中提及（例如，“这需要 #transformers”）。
+
+接下来，我们获取 Agent 实例并处理每一个提取到的标签：
+
+```python
+        # 获取 Agent 实例
+       agent = await get_agent()
+        if not agent:
+            return ["错误：Agent 未配置 (缺少 HF_TOKEN)"]
+
+        # 逐个处理标签
+        result_messages = []
+        for tag in all_tags:
+            try:
+                # 使用 Agent 处理标签
+                prompt = f"""
+                对于仓库 '{repo_name}'，请检查标签 '{tag}' 是否已存在。
+                如果不存在，请通过创建一个拉取请求来添加它。
+                
+                仓库: {repo_name}
+                要检查/添加的标签: {tag}
+                """
+                
+                print(f"🤖 正在为仓库 '{repo_name}' 处理标签 '{tag}'...")
+                response = await agent.run(prompt)
+                
+                # 解析 Agent 的响应以判断成功与否
+                if "success" in response.lower():
+                    result_messages.append(f"✅ 标签 '{tag}' 处理成功")
+                else:
+                    result_messages.append(f"⚠️ 处理标签 '{tag}' 时出现问题: {response}")
+                    
+            except Exception as e:
+                error_msg = f"❌ 处理标签 '{tag}' 时出错: {str(e)}"
+                print(error_msg)
+                result_messages.append(error_msg)
+
+        return result_messages
+```
+
+这里的关键在于，我们为每个标签都向 Agent 提供了一个清晰、结构化的提示词。Agent 会根据这个提示词自动完成一系列操作：
+1. **理解任务**：它知道需要先检查当前标签。
+2. **比较分析**：将我们想要添加的新标签与现有标签进行比较。
+3. **执行动作**：如果需要，创建拉取请求。
+4. **返回结果**：返回其操作的摘要。
+
+这种方法将工具编排的复杂性完全自动化了。
+
+### 2. 标签提取逻辑
+
+让我们来看看为 MCP 处理提供输入的标签提取逻辑：
+
+```python
+import re
+from typing import List
+
+# 用于验证的已识别 ML/AI 标签列表
+RECOGNIZED_TAGS = {
+    "pytorch", "tensorflow", "jax", "transformers", "diffusers",
+    # ... 其他标签 ...
+    "computer-vision", "nlp", "cv", "multimodal",
+}
+```
+
+这个精心策划的标签列表帮助我们专注于相关的机器学习/AI 标签，避免向仓库添加不恰当的内容。
+
+现在是提取函数本身：
+
+```python
+def extract_tags_from_text(text: str) -> List[str]:
+    """从讨论文本中提取潜在的标签。"""
+    text_lower = text.lower()
+    explicit_tags = []
+
+    # 模式 1: "tag: something" 或 "tags: something"
+    tag_pattern = r"tags?:\s*([a-zA-Z0-9-_,\s]+)"
+    matches = re.findall(tag_pattern, text_lower)
+    for match in matches:
+        tags = [tag.strip() for tag in match.split(",")]
+        explicit_tags.extend(tags)
+
+    # 模式 2: "#hashtag" 风格
+    hashtag_pattern = r"#([a-zA-Z0-9-_]+)"
+    hashtag_matches = re.findall(hashtag_pattern, text_lower)
+    explicit_tags.extend(hashtag_matches)
+
+    # 模式 3: 在自然文本中查找被提及的已识别标签
+    mentioned_tags = []
+    for tag in RECOGNIZED_TAGS:
+        if tag in text_lower:
+            mentioned_tags.append(tag)
+
+    # 合并并去重
+    all_tags = list(set(explicit_tags + mentioned_tags))
+
+    # 仅保留已识别的或被明确提及的标签
+    valid_tags = []
+    for tag in all_tags:
+        if tag in RECOGNIZED_TAGS or tag in explicit_tags:
+            valid_tags.append(tag)
+
+    return valid_tags
+```
+
+该函数使用多种策略来提取标签：
+1. **显式模式**：例如 `tags: pytorch, transformers` 或 `tag: nlp`。
+2. **话题标签**：例如 `#pytorch` `#nlp`。
+3. **自然语言提及**：例如 “这个 transformers 模型用于 text-generation”。
+
+最后的验证步骤确保我们只建议合适的标签，防止添加垃圾或不相关的内容。
+
+## 性能考量
+
+在构建生产级的 MCP 客户端时，性能对于维持 Webhook 的快速响应至关重要。让我们看看我们所做的一些优化。
+
+### 1. Agent 单例模式
+
+Agent 实例只创建一次并被复用，以避免：
+- 重复启动 MCP 服务器的开销。
+- 工具加载的延迟。
+- 重复建立连接的成本。
+
+这种模式对于需要快速响应的 Webhook 处理程序来说至关重要。
+
+### 2. 异步处理
+
+所有的 MCP 操作都是异步的，以便：
+- 并发处理多个 Webhook 请求。
+- 避免阻塞主 FastAPI 线程。
+- 提供响应迅速的 Webhook 响应。
+
+异步特性允许您的 Webhook 处理程序在后台处理标签的同时，继续接收新的请求。
+
+### 3. 后台任务处理
+
+FastAPI 内置了 `BackgroundTasks` 类，可用于在后台运行耗时任务，而不会阻塞主线程。
+
+```python
+from fastapi import BackgroundTasks
+
+@app.post("/webhook")
+async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
+    """处理 Webhook 请求并在后台执行任务。"""
+    
+    # 快速验证 Webhook
+    if request.headers.get("X-Webhook-Secret") != WEBHOOK_SECRET:
+        return {"error": "Invalid secret"}
+    
+    webhook_data = await request.json()
+    
+    # 将耗时的任务添加到后台队列，以便快速返回响应
+    background_tasks.add_task(process_webhook_comment, webhook_data)
+    
+    return {"status": "accepted"}
+```
+
+这种模式确保了 Webhook 的响应非常迅速（通常在 1 秒以内），同时允许复杂的标签处理在后台进行。
+
+> [!TIP]
+> Webhook 端点应在 10 秒内响应，否则平台可能会认为它们超时。使用后台任务可确保您总能快速响应，同时异步处理复杂逻辑。
+
+## 下一步
+
+实现了 MCP 客户端后，我们现在可以：
+
+1. **实现 Webhook 监听器** - 创建接收 Hub 事件的 FastAPI 端点。
+2. **集成所有组件** - 将 Webhook、客户端和服务器连接成一个完整的系统。
+3. **添加测试界面** - 创建一个 Gradio 界面用于开发和监控。
+4. **部署和测试** - 在生产环境中验证整个系统。
+
+在下一节中，我们将实现触发 MCP 驱动的标签 Agent 的 Webhook 监听器。
+
+> [!TIP]
+> `huggingface_hub` 的 Agent 类同时提供了 MCP 工具集成和语言模型推理能力，使其成为构建像我们这样的智能自动化工作流的理想选择。

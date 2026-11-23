@@ -1,0 +1,395 @@
+# 使用 AMD NPU 与 iGPU 加速的本地 Tiny Agents
+
+在本节中，我们将向您展示如何利用 AMD 神经处理单元 (NPU) 和集成 GPU (iGPU) 来加速我们的端到端 Tiny Agents 应用。随后，我们将通过提供对本地文件的访问权限并创建一个能处理敏感信息的助手，来增强我们的应用，以确保最大程度的隐私保护。
+
+为了实现这一目标，我们将使用 Lemonade Server，这是一个用于在本地运行模型并支持 NPU 和 iGPU 加速的工具。
+
+## 设置
+### 设置 Lemonade Server
+
+您可以在 Windows 和 Linux 上安装 Lemonade Server。更多文档可以在 [lemonade-server.ai](https://lemonade-server.ai/) 找到。
+
+<hfoptions id="local-models">
+<hfoption id="windows">
+
+要在 Windows 上安装 Lemonade Server，只需在[此处](https://github.com/lemonade-sdk/lemonade/releases/latest/download/Lemonade_Server_Installer.exe)下载并运行最新的安装程序即可。
+
+Lemonade Server 在 Windows x86/x64 平台上支持所有平台和引擎的 CPU 推理。GPU 加速通过使用 Vulkan 的 `llamacpp` 引擎启用，重点支持 AMD Ryzen™ AI 7000/8000/300 系列和 AMD Radeon™ 7000/9000 系列。对于 NPU 加速，ONNX Runtime GenAI (OGA) 引擎支持 AMD Ryzen™ AI 300 系列设备。
+
+安装 Lemonade Server 后，您可以通过点击桌面上的 `Lemonade` 图标来启动它。
+
+</hfoption>
+<hfoption id="linux">
+
+要在 Linux 上安装 Lemonade，首先请创建并激活一个虚拟环境 (venv)：
+
+> [!TIP]
+> 如果您没有安装 `uv`，可以按照[此处的说明](https://docs.astral.sh/uv/getting-started/installation/)进行安装。
+
+```bash
+uv venv --python 3.11
+source .venv/bin/activate
+```
+
+然后，安装 `lemonade-sdk` 包：
+```bash
+uv pip install lemonade-sdk==8.0.3
+```
+
+或者，您也可以通过克隆仓库并从源代码构建包来安装：
+```bash
+git clone https://github.com/lemonade-sdk/lemonade-sdk.git
+cd lemonade-sdk
+pip install -e .
+```
+
+安装完成后，您可以通过运行以下命令来启动 Lemonade：
+
+```bash
+lemonade-server-dev serve
+```
+
+Lemonade Server 在 Windows x86/x64 平台上支持所有平台和引擎的 CPU 推理。GPU 加速通过 `llamacpp` 引擎 (Vulkan) 启用，重点支持 AMD Ryzen™ AI 7000/8000/300 系列和 Radeon™ 7000/9000 系列。
+
+> [!TIP]
+> *NPU 加速目前仅适用于 Windows 上的 AMD Ryzen™ AI 300 系列。*
+
+</hfoption>
+</hfoptions>
+
+### Tiny Agents 和 NPX 设置
+
+本课程的这一部分假设您已经安装了 `npx` 和 `Tiny Agents`。如果还没有，请参考课程的 [Tiny Agents](https://huggingface.co/learn/mcp-course/en/unit2/tiny-agents) 部分。请确保使用 `huggingface_hub[mcp]==0.33.2`。
+
+## 使用 AMD NPU 和 iGPU 运行您的 Tiny Agents 应用
+
+要使用 AMD NPU 和 iGPU 运行您的 Tiny Agents 应用，只需将我们在[上一节](https://huggingface.co/learn/mcp-course/en/unit2/tiny-agents)中创建的 MCP 服务器指向 Lemonade Server，如下所示：
+
+<hfoptions id="agent-config">
+<hfoption id="windows">
+
+```json
+{
+  "model": "Qwen3-8B-GGUF",
+  "endpointUrl": "http://localhost:8000/api/",
+  "servers": [
+    {
+      "type": "stdio",
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": [
+        "mcp-remote",
+        "http://localhost:7860/gradio_api/mcp/sse"
+      ]
+    }
+  ]
+}
+```
+
+</hfoption>
+<hfoption id="linux">
+
+```json
+{
+  "model": "Qwen3-8B-GGUF",
+  "endpointUrl": "http://localhost:8000/api/",
+  "servers": [
+    {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://localhost:7860/gradio_api/mcp/sse"
+      ]
+    }
+  ]
+}
+```
+
+</hfoption>
+</hfoptions>
+
+然后，您可以从多种模型中选择一个在本地机器上运行。在这个例子中，我们使用了 [`Qwen3-8B-GGUF`](https://huggingface.co/Qwen/Qwen3-8B-GGUF) 模型，该模型通过 Vulkan 加速在 AMD GPU 上能高效运行。您可以通过访问 http://localhost:8000/#model-management 找到支持的模型列表，甚至可以导入您自己的模型。
+
+## 创建一个在本地处理敏感信息的助手
+
+![Lemonade Server 界面](https://raw.githubusercontent.com/lemonade-sdk/assets/refs/heads/main/huggingface_course/hf_lemonade.png)
+
+现在，让我们通过启用对本地文件的访问权限，并引入一个完全在设备上处理敏感信息的助手，来增强我们的端到端应用。具体来说，这个助手将帮助我们评估候选人的简历，并在招聘过程中辅助决策——同时确保数据的私密性和安全性。
+
+为此，我们将使用 [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP) MCP 服务器，它允许您在本地机器上运行命令，并提供全面的文件系统访问、终端控制和代码编辑功能。
+
+让我们用一个基本的 Tiny Agent 来设置一个项目。
+
+```bash
+mkdir file-assistant
+cd file-assistant
+```
+
+然后在 `file-assistant` 文件夹中创建一个新的 `agent.json` 文件。
+
+<hfoptions id="agent-file-config">
+<hfoption id="windows">
+
+```json
+{
+  "model": "user.jan-nano",
+  "endpointUrl": "http://localhost:8000/api/",
+  "servers": [
+    {
+      "type": "stdio",
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": [
+        "-y",
+        "@wonderwhy-er/desktop-commander"
+      ]
+    }
+  ]
+}
+```
+
+</hfoption>
+<hfoption id="linux">
+
+```json
+{
+  "model": "user.jan-nano",
+  "endpointUrl": "http://localhost:8000/api/",
+  "servers": [
+    {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@wonderwhy-er/desktop-commander"
+      ]
+    }
+  ]
+}
+```
+
+</hfoption>
+</hfoptions>
+
+最后，我们需要下载 `Jan Nano` 模型。您可以通过访问 http://localhost:8000/#model-management，点击 `Add a Model` 并提供以下信息来完成：
+
+```
+Model Name: user.jan-nano
+Checkpoint: Menlo/Jan-nano-gguf:jan-nano-4b-Q4_0.gguf
+Recipe: llamacpp
+```
+
+![自定义模型](https://raw.githubusercontent.com/lemonade-sdk/assets/refs/heads/main/huggingface_course/custom_model.png)
+
+全部完成！现在让我们来试一试。
+
+### 试运行
+
+![录制](https://raw.githubusercontent.com/lemonade-sdk/assets/refs/heads/main/huggingface_course/recording.gif)
+
+我们的目标是创建一个能帮助我们在本地处理敏感信息的助手。为此，我们首先为助手创建一个职位描述文件。
+
+在 `file-assistant` 文件夹中创建一个名为 `job_description.md` 的文件。
+
+```md
+# 高级食品技术工程师
+
+## 关于此职位
+我们正在寻找一位烹饪创新者，他能将烹饪过程转化为精确的算法和 AI 系统。
+
+## 您将要做什么
+- 将烹饪指令转换为可度量的算法
+- 开发由 AI 驱动的厨房工具
+- 创建食品质量评估系统
+- 构建能遵循食谱的 AI 模型
+
+## 要求
+- 计算机科学硕士学位 (有食品相关论文者优先)
+- Python 和 PyTorch 的专业知识
+- 将食品科学与机器学习相结合的实践经验
+- 使用烹饪隐喻进行表达的强大沟通技巧
+
+## 福利
+- 使用实验性厨房
+- 持续的品尝测试机会
+- 协作的技术美食家团队环境
+
+*注意：必须参加会议并发表关于算法烹饪优化的论文。*
+
+```
+
+现在，让我们在 `file-assistant` 文件夹内创建一个 `candidates` 文件夹，并添加一个示例简历文件供助手使用。
+
+```bash
+mkdir candidates
+touch candidates/john_resume.md
+```
+
+添加以下示例简历，或者您也可以使用自己的简历。
+
+```md
+# John Doe
+
+**联系信息**
+- 邮箱：email@example.com
+- 电话：(+1) 123-456-7890
+- 地址：1234 Abc Street, Example, EX 01234
+- GitHub：github.com/example
+- LinkedIn：linkedin.com/in/example
+- 网站：example.com
+
+## 工作经验
+
+**机器学习工程师实习生** | Slow Feet Technology | 2021年7月 - 至今
+- 开发了跨食材的、与食品无关的烹饪配方
+- 创建了具有竞争力的奶油蘑菇汤食谱，并发表于 NeurIPS 2099
+- 为餐饮烹饪研究构建了专用的平底锅
+
+**研究实习生** | Paddling University | 2020年8月 - 至今
+- 使用温度计设计了高效的麻婆豆腐质量评估方法
+- 提出了用于豆腐烹饪的快速翻炒算法，发表于 CVPR 2077
+- 以更高的效率超越了最先进的方法
+
+**研究助理** | Huangdu Institute of Technology | 2020年3月 - 2020年6月
+- 使用勺子和筷子开发了食用麻婆豆腐的新框架
+- 设计了受豆类研磨方法启发的豆腐过滤策略
+- 创建了用于评估饮食计划新颖性和多样性的标准
+
+**研究实习生** | Paddling University | 2018年7月 - 2018年8月
+- 使用传统汉堡配料设计了双层三明治
+- 利用结构对偶性提高了共享配料的烹饪速度
+- 在 QWE'15 和 ASDF'14 数据集上超越了基线
+
+## 教育背景
+
+**计算机科学硕士** | University of Charles River | 2021年9月 - 2023年1月
+- 地点：马萨诸塞州波士顿
+
+**软件工程学士** | Huangdu Institute of Technology | 2016年9月 - 2020年7月
+- 地点：中国上海
+
+## 技能
+
+**编程语言：** Python、JavaScript/TypeScript、HTML/CSS、Java
+**工具和框架：** Git、PyTorch、Keras、scikit-learn、Linux、Vue、React、Django、LaTeX
+**语言：** 英语 (流利)、印度尼西亚语 (母语)
+
+## 奖项与荣誉
+
+- **金奖**，国际大学生捕鱼竞赛 (ICCFC) | 2018
+- **一等奖**，中国国家优秀烹饪技能奖学金 | 2017、2018
+
+## 出版物
+
+**Eating is All You Need** | NeurIPS 2099
+- 作者：Haha Ha、San Zhang
+
+**You Only Cook Once: Unified, Real-Time Mapo Tofu Recipe** | CVPR 2077 (最佳论文荣誉提名)
+- 作者：Haha Ha、San Zhang、Si Li、Wu Wang
+```
+
+然后我们可以使用以下命令运行 Agent ：
+
+```bash
+tiny-agents run agent.json
+```
+
+您应该会看到以下输出：
+
+```
+Agent loaded with 18 tools:
+ • get_config
+ • set_config_value
+ • read_file
+ • read_multiple_files
+ • write_file
+ • create_directory
+ • list_directory
+ • move_file
+ • search_files
+ • search_code
+ • get_file_info
+ • edit_block
+ • execute_command
+ • read_output
+ • force_terminate
+ • list_sessions
+ • list_processes
+ • kill_process
+ »
+ ```
+
+现在，让我们为助手提供一些信息以开始工作。
+
+```
+» Read the contents of C:\Users\your_username\file-assistant\job_description.md
+```
+
+您应该会看到类似以下的输出：
+
+```
+<Tool iNtxGmOuXHqZVBWmKnfxsc61xsJbsoAM>read_file {"path":"C:\\Users\\your_username\\file-assistant\\job_description.md","length":23}
+
+Tool iNtxGmOuXHqZVBWmKnfxsc61xsJbsoAM
+[Reading 23 lines from start]
+
+(...)
+
+高级食品技术工程师职位的职位描述强调，需要一位能够弥合食品科学与人工智能之间鸿沟的候选人 (...)。候选人还需要参加会议并发表关于算法烹饪优化的研究。
+```
+
+> [!TIP]
+> 我们使用的是默认的系统提示词，这可能会导致助手多次调用某些工具。要创建一个更果断的助手，您可以在与 `agent.json` 相同的目录中提供一个自定义的 `PROMPT.md` 文件。
+
+太好了！现在让我们来阅读候选人的简历。
+
+```
+» Inside the same folder you can find a candidates folder. Check for john_resume.md and let me know if he is a good fit for the job.
+```
+
+您应该会看到类似以下的输出：
+
+```
+<Tool ll2oWo73YeGIft5VbOIpF9GNf0kevjEy>read_file {"path":"C:\\Users\\your_username\\file-assistant\\candidates\\john_resume.md"}
+
+Tool ll2oWo73YeGIft5VbOIpF9GNf0kevjEy
+[Reading 58 lines from start]
+
+(...)
+John Wayne 非常**适合**高级食品技术工程师职位。他在 AI 和机器学习方面的技术专长，结合他在食品相关研究和出版物方面的经验，使他成为一位优秀的候选人。他还具备在协作、创新的环境中茁壮成长所需的软技能和文化契合度。
+```
+
+太棒了！现在我们可以继续邀请候选人参加面试。
+
+```
+» Create a file called "invitation.md" in the "file-assistant" folder and write a short invitation to John to come in for an interview.
+```
+
+您应该会看到类似以下内容被写入 `invitation.md` 文件：
+
+```markdown
+# 面试邀请
+
+亲爱的 John：
+
+我们诚挚地邀请您参加高级食品技术工程师职位的面试。面试将于 [插入日期和时间] 在 [插入地点或虚拟会议详情] 举行。
+
+请您确认是否有空，如果需要任何其他信息，也请随时告知我们。
+
+此致，
+[您的名字]
+[您的联系信息]
+```
+
+太好了！我们成功地创建了一个可以帮助我们在本地处理敏感信息的助手。
+
+### 探索其他模型和加速选项
+
+在上面的例子中，Jan-Nano 模型利用 Vulkan 加速在 AMD GPU 上实现了高效的本地 LLM 推理。您还可以通过访问 http://localhost:8000/#model-management 或查看[模型文档](https://lemonade-server.ai/docs/server/server_models/)来尝试其他模型和加速选项。
+
+对于需要简洁上下文并能从 NPU + iGPU 加速中受益的 Windows 应用，您可以尝试 Lemonade Server 提供的混合模型——该模型针对 AMD Ryzen AI 300 系列 PC 进行了优化。诸如 `Llama-xLAM-2-8b-fc-r-Hybrid` 之类的模型专门为工具调用进行了微调，并能提供快速、响应迅速的性能！
+
+## 总结
+
+在本单元中，我们展示了如何使用 AMD NPU 和 iGPU 来加速我们的端到端 Tiny Agents 应用。我们还展示了如何创建一个在本地处理敏感信息的助手。
+
+现在您已经学会了如何利用 Lemonade Server 进行本地模型加速和开发注重隐私的应用，您可以在 [Lemonade GitHub 仓库](https://github.com/lemonade-sdk/lemonade)中探索更多的示例和功能。该仓库包含了额外的文档、示例实现，并由一个活跃的社区进行维护。
