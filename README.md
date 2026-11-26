@@ -12,9 +12,7 @@ If you like the course, **don't hesitate to ⭐ star this repository**. This hel
 
 The course is divided into 4 units. These will take you from **the basics of Model Context Protocol to a final project implementing MCP in an AI application**.
 
-Sign up here (it's free) 👉 [Coming Soon]
-
-You can access the course here 👉 [Coming Soon]
+Start the free course 👉 [Course introduction](https://huggingface.co/learn/mcp-course/en/unit0/introduction)
 
 | Unit    | Topic                                               | Description                                                                                             |
 | ------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
