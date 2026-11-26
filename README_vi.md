@@ -12,9 +12,7 @@ Nếu bạn thích khóa học này, **đừng ngần ngại đánh dấu ⭐ ch
 
 Khóa học được chia thành 4 phần. Những phần này sẽ đưa bạn từ **những kiến thức cơ bản về Model Context Protocol đến một dự án cuối cùng triển khai MCP trong ứng dụng AI**.
 
-Đăng ký tại đây (miễn phí) 👉 [Sắp ra mắt]
-
-Bạn có thể truy cập khóa học tại đây 👉 [Sắp ra mắt]
+Bắt đầu khóa học miễn phí 👉 [Giới thiệu khóa học (tiếng Anh)](https://huggingface.co/learn/mcp-course/en/unit0/introduction)
 
 | Phần    | Chủ đề                                              | Mô tả                                                                                                 |
 | ------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
